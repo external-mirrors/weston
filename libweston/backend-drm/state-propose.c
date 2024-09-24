@@ -400,19 +400,19 @@ drm_output_find_plane_for_view(struct drm_output_state *state,
 	/* check view for valid buffer, doesn't make sense to even try */
 	if (!weston_view_has_valid_buffer(ev)) {
 		pnode->try_view_on_plane_failure_reasons |=
-			FAILURE_REASONS_FB_FORMAT_INCOMPATIBLE;
+			FAILURE_REASONS_NO_BUFFER;
 		return NULL;
 	}
 
 	buffer = ev->surface->buffer_ref.buffer;
 	if (buffer->type == WESTON_BUFFER_SOLID) {
 		pnode->try_view_on_plane_failure_reasons |=
-			FAILURE_REASONS_FB_FORMAT_INCOMPATIBLE;
+			FAILURE_REASONS_BUFFER_TYPE;
 		return NULL;
 	} else if (buffer->type == WESTON_BUFFER_SHM) {
 		if (!output->cursor_plane || device->cursors_are_broken) {
 			pnode->try_view_on_plane_failure_reasons |=
-				FAILURE_REASONS_FB_FORMAT_INCOMPATIBLE;
+				FAILURE_REASONS_BUFFER_TYPE;
 			return NULL;
 		}
 
@@ -433,7 +433,7 @@ drm_output_find_plane_for_view(struct drm_output_state *state,
 				     "(buffer (%dx%d) too large for cursor plane)\n",
 				     ev, buffer->width, buffer->height);
 			pnode->try_view_on_plane_failure_reasons |=
-				FAILURE_REASONS_FB_FORMAT_INCOMPATIBLE;
+				FAILURE_REASONS_BUFFER_TOO_BIG;
 			return NULL;
 		}
 
