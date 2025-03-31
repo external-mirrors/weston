@@ -42,7 +42,6 @@
 #include <unistd.h>
 #include <xkbcommon/xkbcommon-keysyms.h>
 #include <xkbcommon/xkbcommon.h>
-#define AML_UNSTABLE_API 1
 #include <aml.h>
 #include <neatvnc.h>
 #include <drm_fourcc.h>
@@ -89,7 +88,7 @@ struct vnc_output {
 	struct wl_event_source *finish_frame_timer;
 	struct nvnc_display *display;
 
-	struct nvnc_fb_pool *fb_pool;
+	struct nvnc_frame_pool *frame_pool;
 
 	struct wl_list peers;
 
@@ -111,7 +110,7 @@ struct vnc_head {
 
 struct vnc_buffer {
 	weston_renderbuffer_t rb;
-	struct nvnc_fb *fb;
+	struct nvnc_frame *frame;
 	struct vnc_output *output;
 };
 
@@ -296,7 +295,7 @@ static void
 vnc_handle_key_event(struct nvnc_client *client, uint32_t keysym,
 		     bool is_pressed)
 {
-	struct vnc_peer *peer = nvnc_get_userdata(client);
+	struct vnc_peer *peer = nvnc_client_get_userdata(client);
 	uint32_t key = 0;
 	bool needs_shift = false;
 	enum weston_key_state_update state_update;
@@ -365,7 +364,7 @@ static void
 vnc_handle_key_code_event(struct nvnc_client *client, uint32_t key,
 			  bool is_pressed)
 {
-	struct vnc_peer *peer = nvnc_get_userdata(client);
+	struct vnc_peer *peer = nvnc_client_get_userdata(client);
 	enum wl_keyboard_key_state state;
 	struct timespec time;
 	struct weston_key_event key_event;
@@ -415,7 +414,7 @@ static bool
 vnc_handle_desktop_layout_event(struct nvnc_client *client,
 				const struct nvnc_desktop_layout *layout)
 {
-	struct vnc_peer *peer = nvnc_get_userdata(client);
+	struct vnc_peer *peer = nvnc_client_get_userdata(client);
 	struct vnc_output *output = peer->backend->output;
 	struct weston_mode new_mode;
 	uint16_t width = nvnc_desktop_layout_get_width(layout);
@@ -439,7 +438,7 @@ static void
 vnc_pointer_event(struct nvnc_client *client, uint16_t x, uint16_t y,
 		  enum nvnc_button_mask button_mask)
 {
-	struct vnc_peer *peer = nvnc_get_userdata(client);
+	struct vnc_peer *peer = nvnc_client_get_userdata(client);
 	struct vnc_output *output = peer->backend->output;
 	struct timespec time;
 	enum nvnc_button_mask changed_button_mask;
@@ -511,23 +510,29 @@ vnc_pointer_event(struct nvnc_client *client, uint16_t x, uint16_t y,
 	notify_pointer_frame(peer->seat);
 }
 
-static bool
-vnc_handle_auth(const char *username, const char *password, void *userdata)
+static void
+vnc_handle_auth(struct nvnc_auth_creds *creds, void *userdata)
 {
+	const char *username = nvnc_auth_creds_get_username(creds);
+	const char *password = nvnc_auth_creds_get_password(creds);
 	struct passwd *pw = getpwnam(username);
 
 	if (!pw || pw->pw_uid != getuid()) {
 		weston_log("VNC: wrong user '%s'\n", username);
-		return false;
+		nvnc_auth_creds_reject(creds, "Invalid username");
+		return;
 	}
 
-	return weston_authenticate_user(username, password);
+	if (weston_authenticate_user(username, password))
+		nvnc_auth_creds_accept(creds);
+	else
+		nvnc_auth_creds_reject(creds, "Invalid password");
 }
 
 static void
-vnc_client_cleanup(struct nvnc_client *client)
+vnc_client_cleanup(void *userdata)
 {
-	struct vnc_peer *peer = nvnc_get_userdata(client);
+	struct vnc_peer *peer = userdata;
 	struct vnc_output *output = peer->backend->output;
 
 	wl_list_remove(&peer->link);
@@ -577,7 +582,7 @@ vnc_output_update_cursor(struct vnc_output *output)
 	pixman_region32_t damage;
 	struct weston_buffer *buffer;
 	struct weston_surface *cursor_surface;
-	struct nvnc_fb *fb;
+	struct nvnc_frame *frame;
 	uint8_t *src, *dst;
 	int i;
 
@@ -594,12 +599,11 @@ vnc_output_update_cursor(struct vnc_output *output)
 	cursor_surface = output->cursor_surface;
 	buffer = cursor_surface->buffer_ref.buffer;
 
-	fb = nvnc_fb_new(buffer->width, buffer->height, DRM_FORMAT_ARGB8888,
-			 buffer->width);
-	assert(fb);
+	frame = nvnc_frame_new(buffer->width, buffer->height, DRM_FORMAT_ARGB8888, buffer->width);
+	assert(frame);
 
 	src = wl_shm_buffer_get_data(buffer->shm_buffer);
-	dst = nvnc_fb_get_addr(fb);
+	dst = nvnc_frame_get_addr(frame);
 
 	wl_shm_buffer_begin_access(buffer->shm_buffer);
 	for (i = 0; i < buffer->height; i++)
@@ -607,9 +611,8 @@ vnc_output_update_cursor(struct vnc_output *output)
 		       4 * buffer->width);
 	wl_shm_buffer_end_access(buffer->shm_buffer);
 
-	nvnc_set_cursor(backend->server, fb, buffer->width, buffer->height,
-			pointer->hotspot.c.x, pointer->hotspot.c.y, true);
-	nvnc_fb_unref(fb);
+	nvnc_set_cursor(backend->server, frame, pointer->hotspot.c.x, pointer->hotspot.c.y, true);
+	nvnc_frame_unref(frame);
 }
 
 static void
@@ -709,16 +712,16 @@ vnc_rb_discarded_cb(weston_renderbuffer_t rb, void *data)
 {
 	struct vnc_buffer *buffer = (struct vnc_buffer *) data;
 
-	assert(nvnc_get_userdata(buffer->fb) == buffer);
+	assert(nvnc_frame_get_userdata(buffer->frame) == buffer);
 
-	nvnc_set_userdata(buffer->fb, NULL, NULL);
+	nvnc_frame_set_userdata(buffer->frame, NULL, NULL);
 	vnc_buffer_destroy(buffer);
 
 	return true;
 }
 
 static struct vnc_buffer *
-vnc_buffer_create(struct nvnc_fb* fb, struct vnc_output *output)
+vnc_buffer_create(struct nvnc_frame* frame, struct vnc_output *output)
 {
 	const struct pixel_format_info *pfmt =
 		pixel_format_get_info(DRM_FORMAT_XRGB8888);
@@ -726,10 +729,10 @@ vnc_buffer_create(struct nvnc_fb* fb, struct vnc_output *output)
 	struct vnc_buffer *buffer = xmalloc(sizeof *buffer);
 
 	buffer->rb = rdr->create_renderbuffer(&output->base, pfmt,
-					      nvnc_fb_get_addr(fb),
+					      nvnc_frame_get_addr(frame),
 					      output->base.current_mode->width * 4,
 					      vnc_rb_discarded_cb, buffer);
-	buffer->fb = fb;
+	buffer->frame = frame;
 	buffer->output = output;
 
 	return buffer;
@@ -754,16 +757,16 @@ vnc_update_buffer(struct nvnc_display *display, struct pixman_region32 *damage)
 	struct vnc_buffer *buffer;
 	pixman_region32_t local_damage;
 	pixman_region16_t nvnc_damage;
-	struct nvnc_fb *fb;
+	struct nvnc_frame *frame;
 
-	fb = nvnc_fb_pool_acquire(output->fb_pool);
-	assert(fb);
+	frame = nvnc_frame_pool_acquire(output->frame_pool);
+	assert(frame);
 
-	buffer = nvnc_get_userdata(fb);
+	buffer = nvnc_frame_get_userdata(frame);
 	if (!buffer) {
-		buffer = vnc_buffer_create(fb, output);
-		nvnc_set_userdata(fb, buffer,
-				  (nvnc_cleanup_fn) vnc_buffer_destroy);
+		buffer = vnc_buffer_create(frame, output);
+		nvnc_frame_set_userdata(frame, buffer,
+					(nvnc_cleanup_fn) vnc_buffer_destroy);
 	}
 
 	vnc_log_damage(backend, damage);
@@ -778,8 +781,9 @@ vnc_update_buffer(struct nvnc_display *display, struct pixman_region32 *damage)
 	pixman_region_init(&nvnc_damage);
 	vnc_region32_to_region16(&nvnc_damage, &local_damage);
 
-	nvnc_display_feed_buffer(output->display, fb, &nvnc_damage);
-	nvnc_fb_unref(fb);
+	nvnc_frame_set_damage(frame, &nvnc_damage);
+	nvnc_display_feed_frame(output->display, frame);
+	nvnc_frame_unref(frame);
 	pixman_region32_fini(&local_damage);
 	pixman_region_fini(&nvnc_damage);
 }
@@ -809,8 +813,7 @@ vnc_new_client(struct nvnc_client *client)
 
 	wl_list_insert(&output->peers, &peer->link);
 
-	nvnc_set_userdata(client, peer, NULL);
-	nvnc_set_client_cleanup_fn(client, vnc_client_cleanup);
+	nvnc_client_set_userdata(client, peer, vnc_client_cleanup);
 
 	/*
 	 * Make up for repaints that were skipped when no clients were
@@ -896,10 +899,10 @@ vnc_output_enable(struct weston_output *base)
 							     finish_frame_handler,
 							     output);
 
-	output->fb_pool = nvnc_fb_pool_new(output->base.current_mode->width,
-					   output->base.current_mode->height,
-					   backend->formats[0]->format,
-					   output->base.current_mode->width);
+	output->frame_pool = nvnc_frame_pool_new(output->base.current_mode->width,
+						 output->base.current_mode->height,
+						 backend->formats[0]->format,
+						 output->base.current_mode->width);
 
 	output->display = nvnc_display_new(0, 0);
 
@@ -924,7 +927,7 @@ vnc_output_disable(struct weston_output *base)
 
 	nvnc_remove_display(backend->server, output->display);
 	nvnc_display_unref(output->display);
-	nvnc_fb_pool_unref(output->fb_pool);
+	nvnc_frame_pool_unref(output->frame_pool);
 
 	switch (renderer->type) {
 	case WESTON_RENDERER_PIXMAN:
@@ -993,7 +996,7 @@ vnc_destroy(struct weston_backend *base)
 	struct weston_compositor *ec = backend->compositor;
 	struct weston_head *head, *next;
 
-	nvnc_close(backend->server);
+	nvnc_del(backend->server);
 
 	wl_list_remove(&backend->base.link);
 
@@ -1149,15 +1152,15 @@ vnc_switch_mode(struct weston_output *base, struct weston_mode *target_mode)
 	/* vnc_buffers are stored as user data pointers into the renderbuffers
 	 * for the discarded callback. weston_renderer_resize_output(), which
 	 * triggers the renderbuffer's discarded callbacks, must be called
-	 * before nvnc_fb_pool_resize(), which destroys all the nvnc_fbs and
-	 * their associated vnc_buffers, so that the vnc_buffers are valid at
-	 * callback. */
+	 * before nvnc_frame_pool_resize(), which destroys all the nvnc_frames
+	 * and their associated vnc_buffers, so that the vnc_buffers are valid
+	 * at callback. */
 	if (!weston_renderer_resize_output(base, &fb_size, NULL))
 		return -1;
 
-	nvnc_fb_pool_resize(output->fb_pool, target_mode->width,
-			    target_mode->height, DRM_FORMAT_XRGB8888,
-			    target_mode->width);
+	nvnc_frame_pool_resize(output->frame_pool, target_mode->width,
+			       target_mode->height, DRM_FORMAT_XRGB8888,
+			       target_mode->width);
 
 	return 0;
 }
@@ -1305,9 +1308,14 @@ vnc_backend_create(struct weston_compositor *compositor,
 						  vnc_aml_dispatch,
 						  backend->aml);
 
-	backend->server = nvnc_open(config->bind_address, config->port);
+	backend->server = nvnc_new();
 	if (!backend->server)
 		goto err_aml;
+
+	ret = nvnc_listen_tcp(backend->server, config->bind_address, config->port,
+			      NVNC_STREAM_NORMAL);
+	if (ret)
+		goto err_nvnc;
 
 	nvnc_set_new_client_fn(backend->server, vnc_new_client);
 	nvnc_set_pointer_fn(backend->server, vnc_pointer_event);
@@ -1379,7 +1387,7 @@ vnc_backend_create(struct weston_compositor *compositor,
 	return backend;
 
 err_nvnc:
-	nvnc_close(backend->server);
+	nvnc_del(backend->server);
 err_aml:
 	aml_unref(backend->aml);
 err_output:

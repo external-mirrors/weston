@@ -208,13 +208,13 @@ fdo_log_section_end install_seatd
 
 # Build and install aml and neatvnc, which are required for the VNC backend
 fdo_log_section_start_collapsed install_aml_neatvnc "install_aml_neatvnc"
-git clone --branch v0.3.0 --depth=1 https://github.com/any1/aml.git
+git clone --branch v1.0.0 --depth=1 https://github.com/any1/aml.git
 cd aml
 meson setup build --wrap-mode=nofallback
 ninja ${NINJAFLAGS} -C build install
 cd ..
 rm -rf aml
-git clone --branch v0.7.0 --depth=1 https://github.com/any1/neatvnc.git
+git clone --branch v1.0.0 --depth=1 https://github.com/any1/neatvnc.git
 cd neatvnc
 meson setup build --wrap-mode=nofallback -Dauto_features=disabled
 ninja ${NINJAFLAGS} -C build install
