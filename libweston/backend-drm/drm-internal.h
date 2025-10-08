@@ -705,6 +705,8 @@ struct drm_output {
 
 	bool reused_state;
 	bool force_rebuild_state;
+
+	enum wdrm_color_format connector_color_format;
 };
 
 void
@@ -937,6 +939,9 @@ drm_output_ensure_hdr_output_metadata_blob(struct drm_output *output);
 
 enum wdrm_colorspace
 wdrm_colorspace_from_output(struct weston_output *output);
+
+enum wdrm_color_format
+wdrm_color_format_from_output(struct weston_output *output);
 
 #ifdef BUILD_DRM_GBM
 extern struct drm_fb *

@@ -2863,6 +2863,10 @@ drm_output_enable(struct weston_output *base)
 	if (output->connector_colorspace == WDRM_COLORSPACE__COUNT)
 		return -1;
 
+	output->connector_color_format = wdrm_color_format_from_output(&output->base);
+	if (output->connector_color_format == WDRM_COLOR_FORMAT__COUNT)
+		return -1;
+
 	ret = drm_output_attach_crtc(output);
 	if (ret < 0)
 		return -1;
@@ -3245,6 +3249,13 @@ drm_head_log_info(struct drm_head *head, const char *msg)
 					    head->base.underscan_vborder_max);
 		}
 
+		str = weston_color_format_mask_to_str(head->base.supported_color_format_mask);
+		if (str) {
+			weston_log_continue(STAMP_SPACE
+					    "Supported color formats: %s\n",
+					    str);
+		}
+		free(str);
 	} else {
 		weston_log("DRM: head '%s' %s, connector %d is disconnected.\n",
 			   head->base.name, msg, head->connector.connector_id);

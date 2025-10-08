@@ -553,6 +553,47 @@ drm_head_get_underscan_caps(const struct drm_head *head,
 	*hborder_max_out = hborder_max;
 }
 
+static enum weston_color_format
+color_format_from_wdrm_color_format(enum wdrm_color_format format)
+{
+	switch (format) {
+	case WDRM_COLOR_FORMAT_AUTO:
+		return WESTON_COLOR_FORMAT_AUTO;
+	case WDRM_COLOR_FORMAT_RGB:
+		return WESTON_COLOR_FORMAT_RGB;
+	case WDRM_COLOR_FORMAT_YUV444:
+		return WESTON_COLOR_FORMAT_YUV444;
+	case WDRM_COLOR_FORMAT_YUV422:
+		return WESTON_COLOR_FORMAT_YUV422;
+	case WDRM_COLOR_FORMAT_YUV420:
+		return WESTON_COLOR_FORMAT_YUV420;
+	default:
+		return WESTON_COLOR_FORMAT_AUTO;
+	}
+}
+
+static uint32_t
+drm_head_get_kms_color_formats(const struct drm_head *head)
+{
+	const struct drm_property_info *info;
+	uint32_t color_formats = WESTON_COLOR_FORMAT_AUTO;
+	unsigned i;
+
+	/* Cannot bother implementing without atomic */
+	if (!head->connector.device->atomic_modeset)
+		return color_formats;
+
+	info = &head->connector.props[WDRM_CONNECTOR_COLOR_FORMAT];
+	if (info->prop_id == 0)
+		return color_formats;
+
+	for (i = 0; i < WDRM_COLOR_FORMAT__COUNT; i++)
+		if (info->enum_values[i].valid)
+			color_formats |= color_format_from_wdrm_color_format(i);
+
+	return color_formats;
+}
+
 static uint32_t
 drm_refresh_rate_mHz(const drmModeModeInfo *info)
 {
@@ -788,6 +829,9 @@ update_head_from_connector(struct drm_head *head)
 	if (!drm_head_get_margin_caps(head, &hborder_max, &vborder_max))
 		drm_head_get_underscan_caps(head, &hborder_max, &vborder_max);
 	weston_head_set_supported_underscan(&head->base, hborder_max, vborder_max);
+
+	dhi.color_format_mask &= drm_head_get_kms_color_formats(head);
+	weston_head_set_supported_color_format_mask(&head->base, dhi.color_format_mask);
 
 	drm_head_info_fini(&dhi);
 }

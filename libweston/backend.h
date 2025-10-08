@@ -190,6 +190,9 @@ weston_head_set_supported_vrr_modes_mask(struct weston_head *head,
 void
 weston_head_set_supported_underscan(struct weston_head *head,
 				    uint32_t hborder, uint32_t vborder);
+void
+weston_head_set_supported_color_format_mask(struct weston_head *head,
+					    uint32_t color_format_mask);
 /* weston_output */
 
 void

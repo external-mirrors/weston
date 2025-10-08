@@ -283,6 +283,14 @@ struct drm_property_enum_info underscan_enums[] = {
 	[WDRM_UNDERSCAN_AUTO] = { .name = "auto", },
 };
 
+struct drm_property_enum_info color_format_enums[] = {
+	[WDRM_COLOR_FORMAT_AUTO] = { .name = "AUTO", },
+	[WDRM_COLOR_FORMAT_RGB] = { .name = "RGB", },
+	[WDRM_COLOR_FORMAT_YUV422] = { .name = "YUV 4:2:2", },
+	[WDRM_COLOR_FORMAT_YUV444] = { .name = "YUV 4:4:4", },
+	[WDRM_COLOR_FORMAT_YUV420] = { .name = "YUV 4:2:0", },
+};
+
 const struct drm_property_info connector_props[] = {
 	[WDRM_CONNECTOR_EDID] = { .name = "EDID" },
 	[WDRM_CONNECTOR_DPMS] = {
@@ -349,6 +357,11 @@ const struct drm_property_info connector_props[] = {
 	},
 	[WDRM_CONNECTOR_BOTTOM_MARGIN] = {
 		.name = "bottom margin",
+	},
+	[WDRM_CONNECTOR_COLOR_FORMAT] = {
+		.name = "color format",
+		.enum_values = color_format_enums,
+		.num_enum_values = WDRM_COLOR_FORMAT__COUNT,
 	},
 };
 
@@ -1480,6 +1493,32 @@ drm_plane_set_color_encoding(struct drm_plane *plane,
 }
 
 static int
+drm_connector_set_color_format(struct drm_connector *connector,
+			       enum wdrm_color_format color_format,
+			       drmModeAtomicReq *req)
+{
+	const struct drm_property_info *info;
+	const struct drm_property_enum_info *enum_info;
+
+	assert(color_format >= 0);
+	assert(color_format < WDRM_COLOR_FORMAT__COUNT);
+
+	if (!drm_connector_has_prop(connector, WDRM_CONNECTOR_COLOR_FORMAT)) {
+		if (color_format == WDRM_COLOR_FORMAT_AUTO)
+			return 0;
+
+		return -1;
+	}
+
+	info = &connector->props[WDRM_CONNECTOR_COLOR_FORMAT];
+	enum_info = &info->enum_values[color_format];
+	assert(enum_info->valid);
+
+	return connector_add_prop(req, connector, WDRM_CONNECTOR_COLOR_FORMAT,
+				  enum_info->value);
+}
+
+static int
 drm_plane_set_color_range(struct drm_plane *plane,
 			  enum wdrm_plane_color_range color_range,
 			  drmModeAtomicReq *req)
@@ -1789,6 +1828,8 @@ drm_output_apply_state_atomic(struct drm_output_state *state,
 		ret |= drm_connector_set_colorspace(&head->connector,
 						    output->connector_colorspace, req);
 		ret |= drm_connector_set_underscan(&head->connector, output, req);
+		ret |= drm_connector_set_color_format(&head->connector,
+						      output->connector_color_format, req);
 	}
 
 	if (ret != 0) {
@@ -2005,6 +2046,11 @@ drm_pending_state_apply_atomic(struct drm_pending_state *pending_state,
 	wl_list_for_each(output_state, &pending_state->output_list, link) {
 		if (output_state->output->is_virtual)
 			continue;
+
+		if (output_state->output->connector_color_format !=
+		    wdrm_color_format_from_output(&output_state->output->base))
+			weston_assert_true(b->compositor, output_state->output->base.enabled);
+
 		if (mode == DRM_STATE_APPLY_SYNC)
 			assert(output_state->dpms == WESTON_DPMS_OFF);
 		may_tear &= output_state->tear;
