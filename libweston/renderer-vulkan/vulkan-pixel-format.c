@@ -200,10 +200,16 @@ vulkan_renderer_query_dmabuf_format(struct vulkan_renderer *vr, const struct pix
 
 	vkGetPhysicalDeviceFormatProperties2(vr->phys_dev, format->vulkan_format, &format_props);
 
+	VkFormatFeatureFlags features = format_props.formatProperties.optimalTilingFeatures;
 	struct weston_drm_format *fmt = NULL;
 
-	// dmabuf texture properties
-	if ((format_props.formatProperties.optimalTilingFeatures & format_tex_features) != format_tex_features)
+	if ((features & format_tex_features) != format_tex_features)
+		return false;
+
+	/* YCbCr conversion requires at least one chroma sample mode */
+	if (format->color_model == COLOR_MODEL_YUV &&
+	    !(features & VK_FORMAT_FEATURE_MIDPOINT_CHROMA_SAMPLES_BIT) &&
+	    !(features & VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT))
 		return false;
 
 	VkImageFormatProperties iformat_props;

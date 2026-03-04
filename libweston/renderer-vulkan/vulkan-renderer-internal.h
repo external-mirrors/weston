@@ -89,6 +89,7 @@ enum vulkan_device_ext_flag {
 	EXTENSION_KHR_MAINTENANCE_1                      = 1ull << 13,
 	EXTENSION_KHR_SAMPLER_YCBCR_CONVERSION           = 1ull << 14,
 	EXTENSION_KHR_SWAPCHAIN                          = 1ull << 15,
+	EXTENSION_EXT_YCBCR_2PLANE_444_FORMATS           = 1ull << 16,
 };
 
 enum vulkan_pipeline_texture_variant {
@@ -107,7 +108,13 @@ struct vulkan_pipeline_requirements
 	bool input_is_premult:1;
 	bool blend:1;
 	bool green_tint:1;
+	bool has_immutable_sampler:1;
 	VkRenderPass renderpass;
+
+	/* Only set when has_immutable_sampler is 1.
+	 * Must be zero otherwise to avoid creating unnecessary pipelines. */
+	VkSampler immutable_sampler;
+	VkFormat ycbcr_format;
 };
 
 struct vulkan_pipeline_config {
@@ -187,10 +194,13 @@ struct vulkan_renderer {
 	PFN_vkGetPhysicalDeviceXcbPresentationSupportKHR get_xcb_presentation_support;
 #endif
 
+	PFN_vkBindImageMemory2KHR bind_image_memory2;
 	PFN_vkGetImageMemoryRequirements2KHR get_image_memory_requirements2;
 	PFN_vkGetMemoryFdPropertiesKHR get_memory_fd_properties;
 	PFN_vkGetSemaphoreFdKHR get_semaphore_fd;
 	PFN_vkImportSemaphoreFdKHR import_semaphore_fd;
+	PFN_vkCreateSamplerYcbcrConversionKHR create_sampler_ycbcr_conversion;
+	PFN_vkDestroySamplerYcbcrConversionKHR destroy_sampler_ycbcr_conversion;
 
 	/* Debug modes. */
 	struct weston_binding *debug_mode_binding;

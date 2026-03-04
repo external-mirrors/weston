@@ -292,7 +292,8 @@ static void create_graphics_pipeline(struct vulkan_renderer *vr,
 }
 
 static void
-create_descriptor_set_layout(struct vulkan_renderer *vr, struct vulkan_pipeline *pipeline)
+create_descriptor_set_layout(struct vulkan_renderer *vr, struct vulkan_pipeline *pipeline,
+			     const VkSampler *immutable_sampler)
 {
 	VkResult result;
 
@@ -315,6 +316,7 @@ create_descriptor_set_layout(struct vulkan_renderer *vr, struct vulkan_pipeline 
 		.descriptorCount = 1,
 		.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 		.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+		.pImmutableSamplers = immutable_sampler, /* NULL except for ycbcr textures */
 	};
 
 	const VkDescriptorSetLayoutBinding bindings[] = {
@@ -347,7 +349,9 @@ vulkan_pipeline_create(struct vulkan_renderer *vr,
 	wl_list_init(&pipeline->link);
 	pipeline->key = *reqs;
 
-	create_descriptor_set_layout(vr, pipeline);
+	create_descriptor_set_layout(vr, pipeline,
+				     reqs->has_immutable_sampler ?
+				     &reqs->immutable_sampler : NULL);
 
 	create_graphics_pipeline(vr, reqs, pipeline);
 

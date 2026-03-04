@@ -53,11 +53,13 @@
 #include "linux-explicit-synchronization.h"
 #include "output-capture.h"
 #include "pixel-formats.h"
+#include "color-representation.h"
 
 #include "shared/fd-util.h"
 #include "shared/helpers.h"
 #include "shared/platform.h"
 #include "shared/string-helpers.h"
+#include "shared/weston-assert.h"
 #include "shared/weston-drm-fourcc.h"
 #include "shared/xalloc.h"
 #include "libweston/weston-log.h"
@@ -225,6 +227,7 @@ struct vulkan_buffer_state {
 	struct vulkan_renderer_texture_image texture;
 	VkSampler sampler_linear;
 	VkSampler sampler_nearest;
+	VkSamplerYcbcrConversion ycbcr_conv;
 
 	VkDescriptorSet descriptor_set;
 
@@ -404,6 +407,11 @@ static const struct vulkan_extension_table vulkan_device_ext_table[] = {
 		.flag = EXTENSION_KHR_SWAPCHAIN,
 		.instance_dep = EXTENSION_KHR_SURFACE,
 	},
+	{
+		.name = VK_EXT_YCBCR_2PLANE_444_FORMATS_EXTENSION_NAME,
+		.flag = EXTENSION_EXT_YCBCR_2PLANE_444_FORMATS,
+		.device_dep = EXTENSION_KHR_SAMPLER_YCBCR_CONVERSION,
+	},
 };
 
 static void
@@ -478,6 +486,8 @@ destroy_buffer_state(struct vulkan_buffer_state *vb)
 
 	destroy_sampler(vr->dev, vb->sampler_linear);
 	destroy_sampler(vr->dev, vb->sampler_nearest);
+	if (vb->ycbcr_conv)
+		vr->destroy_sampler_ycbcr_conversion(vr->dev, vb->ycbcr_conv, NULL);
 	destroy_texture_image(vr, &vb->texture);
 
 	destroy_buffer(vr->dev, vb->fs_ubo_buffer, vb->fs_ubo_memory);
@@ -1205,11 +1215,12 @@ create_framebuffer(VkDevice device, VkRenderPass renderpass, VkImageView image_v
 }
 
 static void
-create_image_view(VkDevice device, VkImage image, VkFormat format, VkImageView *image_view)
+create_image_view_ycbcr(VkDevice device, VkImage image, VkFormat format,
+		        VkSamplerYcbcrConversion ycbcr_conv, VkImageView *image_view)
 {
 	VkResult result;
 
-	const VkImageViewCreateInfo view_info = {
+	VkImageViewCreateInfo view_info = {
 		.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
 		.image = image,
 		.viewType = VK_IMAGE_VIEW_TYPE_2D,
@@ -1220,9 +1231,21 @@ create_image_view(VkDevice device, VkImage image, VkFormat format, VkImageView *
 		.subresourceRange.baseArrayLayer = 0,
 		.subresourceRange.layerCount = 1,
 	};
+	VkSamplerYcbcrConversionInfo sampler_ycbcr_conv_info = {
+		.sType = VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO,
+		.conversion = ycbcr_conv,
+	};
+	if (ycbcr_conv != VK_NULL_HANDLE)
+		pnext(&view_info, &sampler_ycbcr_conv_info);
 
 	result = vkCreateImageView(device, &view_info, NULL, image_view);
 	check_vk_success(result, "vkCreateImageView");
+}
+
+static void
+create_image_view(VkDevice device, VkImage image, VkFormat format, VkImageView *image_view)
+{
+	create_image_view_ycbcr(device, image, format, VK_NULL_HANDLE, image_view);
 }
 
 static void
@@ -1515,6 +1538,12 @@ vulkan_pipeline_config_init_for_paint_node(struct vulkan_pipeline_config *pconf,
 			pnode->surface->surface_to_buffer_matrix,
 		.paint_node_alpha = pnode->alpha,
 	};
+
+	if (vb->ycbcr_conv) {
+		pconf->req.has_immutable_sampler = true;
+		pconf->req.ycbcr_format = buffer->pixel_format->vulkan_format;
+		pconf->req.immutable_sampler = pnode->needs_filtering ? vb->sampler_linear : vb->sampler_nearest;
+	}
 
 	weston_matrix_multiply(&pconf->projection, &vo->output_matrix);
 
@@ -2646,12 +2675,128 @@ vulkan_renderer_repaint_output(struct weston_output *output,
 	vo->frame_index = (vo->frame_index + 1) % vo->num_frames;
 }
 
+static VkSamplerYcbcrModelConversion
+get_vulkan_ycbcr_model(struct vulkan_renderer *vr,
+		       enum weston_color_matrix_coef coef)
+{
+	switch (coef) {
+	case WESTON_COLOR_MATRIX_COEF_IDENTITY:
+		return VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
+	case WESTON_COLOR_MATRIX_COEF_BT601:
+		return VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_601;
+	case WESTON_COLOR_MATRIX_COEF_BT709:
+		return VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_709;
+	case WESTON_COLOR_MATRIX_COEF_BT2020:
+		return VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_2020;
+	default:
+		weston_assert_not_reached(vr->compositor, "unknown color matrix coef");
+	}
+}
+
+static VkSamplerYcbcrRange
+get_vulkan_ycbcr_range(struct vulkan_renderer *vr,
+		       enum weston_color_quant_range range)
+{
+	switch (range) {
+	case WESTON_COLOR_QUANT_RANGE_FULL:
+		return VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
+	case WESTON_COLOR_QUANT_RANGE_LIMITED:
+		return VK_SAMPLER_YCBCR_RANGE_ITU_NARROW;
+	default:
+		weston_assert_not_reached(vr->compositor, "invalid quantization range");
+	}
+}
+
 static void
-create_texture_sampler(struct vulkan_renderer *vr, VkSampler *texture_sampler, VkFilter filter)
+get_vulkan_chroma_location(struct vulkan_renderer *vr,
+			   enum weston_ycbcr_chroma_location loc,
+			   VkChromaLocation *x_out, VkChromaLocation *y_out)
+{
+	/* Vulkan values as listed in the color-representation-v1 spec */
+
+	switch (loc) {
+	case WESTON_YCBCR_CHROMA_LOCATION_TYPE_0: /* x=0, y=0.5 */
+		*x_out = VK_CHROMA_LOCATION_COSITED_EVEN;
+		*y_out = VK_CHROMA_LOCATION_MIDPOINT;
+		return;
+	case WESTON_YCBCR_CHROMA_LOCATION_TYPE_1:
+	case WESTON_YCBCR_CHROMA_LOCATION_TYPE_5: /* no Vulkan equivalent listed */
+	case WESTON_YCBCR_CHROMA_LOCATION_UNSET:
+		*x_out = VK_CHROMA_LOCATION_MIDPOINT;
+		*y_out = VK_CHROMA_LOCATION_MIDPOINT;
+		return;
+	case WESTON_YCBCR_CHROMA_LOCATION_TYPE_2:
+		*x_out = VK_CHROMA_LOCATION_COSITED_EVEN;
+		*y_out = VK_CHROMA_LOCATION_COSITED_EVEN;
+		return;
+	case WESTON_YCBCR_CHROMA_LOCATION_TYPE_3:
+		*x_out = VK_CHROMA_LOCATION_MIDPOINT;
+		*y_out = VK_CHROMA_LOCATION_COSITED_EVEN;
+		return;
+	case WESTON_YCBCR_CHROMA_LOCATION_TYPE_4: /* no Vulkan equivalent listed */
+		*x_out = VK_CHROMA_LOCATION_COSITED_EVEN;
+		*y_out = VK_CHROMA_LOCATION_MIDPOINT;
+		return;
+	default:
+		weston_assert_not_reached(vr->compositor, "invalid chroma location");
+	}
+}
+
+static void
+create_texture_ycbcr_conv(struct vulkan_renderer *vr,
+			  const struct pixel_format_info *pixel_format,
+			  const struct weston_color_representation *color_rep,
+			  VkSamplerYcbcrConversion *ycbcr_conv,
+			  VkFormatProperties format_props)
+{
+	assert(vulkan_device_has(vr, EXTENSION_KHR_SAMPLER_YCBCR_CONVERSION));
+
+	VkResult result;
+	VkChromaLocation x_chroma, y_chroma;
+
+	get_vulkan_chroma_location(vr, color_rep->chroma_location, &x_chroma, &y_chroma);
+
+	if (!(format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_MIDPOINT_CHROMA_SAMPLES_BIT)) {
+		if (x_chroma == VK_CHROMA_LOCATION_MIDPOINT || y_chroma == VK_CHROMA_LOCATION_MIDPOINT) {
+			weston_log("warning: format %s does not support midpoint chroma\n", pixel_format->drm_format_name);
+		}
+	}
+
+	if (!(format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
+		if (x_chroma == VK_CHROMA_LOCATION_COSITED_EVEN || y_chroma == VK_CHROMA_LOCATION_COSITED_EVEN) {
+			weston_log("warning: format %s does not support cosited chroma\n", pixel_format->drm_format_name);
+		}
+	}
+
+	const VkComponentMapping comp = {
+		.r = VK_COMPONENT_SWIZZLE_IDENTITY,
+		.g = VK_COMPONENT_SWIZZLE_IDENTITY,
+		.b = VK_COMPONENT_SWIZZLE_IDENTITY,
+		.a = VK_COMPONENT_SWIZZLE_IDENTITY,
+	};
+
+	const VkSamplerYcbcrConversionCreateInfo ycbcr_conv_info = {
+		.sType = VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO,
+		.format = pixel_format->vulkan_format,
+		.ycbcrModel = get_vulkan_ycbcr_model(vr, color_rep->matrix_coefficients),
+		.ycbcrRange = get_vulkan_ycbcr_range(vr, color_rep->quant_range),
+		.components = comp,
+		.xChromaOffset = x_chroma,
+		.yChromaOffset = y_chroma,
+		.chromaFilter = VK_FILTER_NEAREST,
+		.forceExplicitReconstruction = VK_FALSE,
+	};
+	result = vr->create_sampler_ycbcr_conversion(vr->dev, &ycbcr_conv_info, NULL, ycbcr_conv);
+	check_vk_success(result, "vkCreateSamplerYcbcrConversion");
+}
+
+static void
+create_texture_sampler_ycbcr(struct vulkan_renderer *vr, VkSampler *texture_sampler,
+			     VkSamplerYcbcrConversion ycbcr_conv, VkFilter filter)
 {
 	VkResult result;
 
-	const VkSamplerCreateInfo sampler_info = {
+	VkSamplerCreateInfo sampler_info = {
 		.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
 		.magFilter = filter,
 		.minFilter = filter,
@@ -2664,9 +2809,21 @@ create_texture_sampler(struct vulkan_renderer *vr, VkSampler *texture_sampler, V
 		.compareEnable = VK_FALSE,
 		.compareOp = VK_COMPARE_OP_ALWAYS,
 	};
+	VkSamplerYcbcrConversionInfo sampler_ycbcr_conv_info = {
+		.sType = VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO,
+		.conversion = ycbcr_conv,
+	};
+	if (ycbcr_conv != VK_NULL_HANDLE)
+		pnext(&sampler_info, &sampler_ycbcr_conv_info);
 
 	result = vkCreateSampler(vr->dev, &sampler_info, NULL, texture_sampler);
 	check_vk_success(result, "vkCreateSampler");
+}
+
+static void
+create_texture_sampler(struct vulkan_renderer *vr, VkSampler *texture_sampler, VkFilter filter)
+{
+	create_texture_sampler_ycbcr(vr, texture_sampler, VK_NULL_HANDLE, filter);
 }
 
 static void
@@ -3987,9 +4144,34 @@ vulkan_renderer_import_dmabuf(struct weston_compositor *ec,
 
 	import_dmabuf(vr, vb->texture.image, &vb->texture.memory, &dmabuf->attributes);
 
-	create_texture_sampler(vr, &vb->sampler_linear, VK_FILTER_LINEAR);
-	create_texture_sampler(vr, &vb->sampler_nearest, VK_FILTER_NEAREST);
-	create_image_view(vr->dev, vb->texture.image, format, &vb->texture.image_view);
+	bool separate_filter = true;
+
+	vb->ycbcr_conv = VK_NULL_HANDLE;
+	if (pixel_format->color_model == COLOR_MODEL_YUV &&
+	    vulkan_device_has(vr, EXTENSION_KHR_SAMPLER_YCBCR_CONVERSION)) {
+		struct weston_color_representation color_rep;
+		weston_reset_color_representation(&color_rep);
+		color_rep = weston_fill_color_representation(&color_rep,
+							     pixel_format);
+
+		VkFormatProperties format_props;
+		vkGetPhysicalDeviceFormatProperties(vr->phys_dev, pixel_format->vulkan_format, &format_props);
+		VkFormatFeatureFlags features = format_props.optimalTilingFeatures;
+
+		separate_filter = !!(features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_SEPARATE_RECONSTRUCTION_FILTER_BIT);
+
+		create_texture_ycbcr_conv(vr, pixel_format, &color_rep,
+					  &vb->ycbcr_conv,
+					  format_props);
+	}
+
+	if (!separate_filter && vb->ycbcr_conv != VK_NULL_HANDLE)
+		weston_log("warning: format %s does not support separate reconstruction filter\n", pixel_format->drm_format_name);
+
+	create_texture_sampler_ycbcr(vr, &vb->sampler_nearest, vb->ycbcr_conv, VK_FILTER_NEAREST);
+	create_texture_sampler_ycbcr(vr, &vb->sampler_linear, vb->ycbcr_conv, VK_FILTER_LINEAR);
+	create_image_view_ycbcr(vr->dev, vb->texture.image, format, vb->ycbcr_conv,
+				&vb->texture.image_view);
 
 	assert(vb->num_textures == 0);
 	vb->num_textures = 1;
@@ -4012,8 +4194,8 @@ vulkan_renderer_get_supported_dmabuf_formats(struct weston_compositor *ec)
 }
 
 static int
-populate_supported_formats(struct weston_compositor *ec,
-			   struct weston_drm_format_array *supported_formats)
+populate_supported_dmabuf_formats(struct weston_compositor *ec,
+				  struct weston_drm_format_array *supported_formats)
 {
 	struct vulkan_renderer *vr = get_renderer(ec);
 
@@ -4065,6 +4247,7 @@ static int
 open_drm_device_node(struct vulkan_renderer *vr)
 {
 	assert(vulkan_device_has(vr, EXTENSION_EXT_PHYSICAL_DEVICE_DRM));
+	assert(vulkan_instance_has(vr, EXTENSION_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2));
 
 	VkPhysicalDeviceProperties2 phys_dev_props = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
@@ -4127,6 +4310,10 @@ populate_supported_shm_formats(struct weston_compositor *ec)
 			continue;
 
 		if (info->vulkan_format == VK_FORMAT_UNDEFINED)
+			continue;
+
+		if (info->color_model == COLOR_MODEL_YUV &&
+		    !vulkan_device_has(vr, EXTENSION_KHR_SAMPLER_YCBCR_CONVERSION))
 			continue;
 
 		if (!vulkan_renderer_query_shm_format(vr, info))
@@ -4296,6 +4483,12 @@ vulkan_renderer_setup_device_extensions(struct vulkan_renderer *vr)
 		load_device_proc(vr, "vkGetSemaphoreFdKHR", &vr->get_semaphore_fd);
 		load_device_proc(vr, "vkImportSemaphoreFdKHR", &vr->import_semaphore_fd);
 	}
+
+	// VK_KHR_sampler_ycbcr_conversion
+	if (vulkan_device_has(vr, EXTENSION_KHR_SAMPLER_YCBCR_CONVERSION)) {
+		load_device_proc(vr, "vkCreateSamplerYcbcrConversionKHR", &vr->create_sampler_ycbcr_conversion);
+		load_device_proc(vr, "vkDestroySamplerYcbcrConversionKHR", &vr->destroy_sampler_ycbcr_conversion);
+	}
 }
 
 static void
@@ -4304,6 +4497,8 @@ vulkan_renderer_create_device(struct vulkan_renderer *vr)
 	uint32_t num_avail_device_extns;
 	uint32_t num_device_extns = 0;
 	VkResult result;
+
+	assert(vulkan_instance_has(vr, EXTENSION_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2));
 
 	result = vkEnumerateDeviceExtensionProperties(vr->phys_dev, NULL, &num_avail_device_extns, NULL);
 	check_vk_success(result, "vkEnumerateDeviceExtensionProperties");
@@ -4325,6 +4520,24 @@ vulkan_renderer_create_device(struct vulkan_renderer *vr)
 			device_extns[num_device_extns++] = ext->name;
 	}
 
+	/* Query physical device features for features like ycbcr which need
+	 * to be explicitly enabled when creating the device. */
+	VkPhysicalDeviceFeatures2 phys_dev_features = {
+		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
+	};
+	VkPhysicalDeviceSamplerYcbcrConversionFeatures phys_dev_ycbcr_features = {
+		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES_KHR,
+	};
+	VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT phys_dev_2plane444_features = {
+		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_YCBCR_2_PLANE_444_FORMATS_FEATURES_EXT,
+	};
+	if (vulkan_device_has(vr, EXTENSION_KHR_SAMPLER_YCBCR_CONVERSION)) {
+		pnext(&phys_dev_features, &phys_dev_ycbcr_features);
+		if (vulkan_device_has(vr, EXTENSION_EXT_YCBCR_2PLANE_444_FORMATS))
+			pnext(&phys_dev_features, &phys_dev_2plane444_features);
+	}
+	vkGetPhysicalDeviceFeatures2(vr->phys_dev, &phys_dev_features);
+
 	const VkDeviceQueueCreateInfo device_queue_info = {
 		.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
 		.queueFamilyIndex = vr->queue_family,
@@ -4332,13 +4545,29 @@ vulkan_renderer_create_device(struct vulkan_renderer *vr)
 		.pQueuePriorities = (float[]){ 1.0f },
 	};
 
-	const VkDeviceCreateInfo device_create_info = {
+	VkDeviceCreateInfo device_create_info = {
 		.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
 		.queueCreateInfoCount = 1,
 		.pQueueCreateInfos = &device_queue_info,
 		.enabledExtensionCount = num_device_extns,
 		.ppEnabledExtensionNames = device_extns,
 	};
+
+	/* samplerYcbcrConversion needs to be enabled when creating
+	 * the device, if supported */
+	VkPhysicalDeviceSamplerYcbcrConversionFeatures ycbcr_features = {
+		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES_KHR,
+		.samplerYcbcrConversion = phys_dev_ycbcr_features.samplerYcbcrConversion,
+	};
+	VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT ycbcr_2plane444_features = {
+		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_YCBCR_2_PLANE_444_FORMATS_FEATURES_EXT,
+		.ycbcr2plane444Formats = phys_dev_2plane444_features.ycbcr2plane444Formats,
+	};
+	if (phys_dev_ycbcr_features.samplerYcbcrConversion) {
+		pnext(&device_create_info, &ycbcr_features);
+		if (phys_dev_2plane444_features.ycbcr2plane444Formats)
+			pnext(&device_create_info, &ycbcr_2plane444_features);
+	}
 
 	result = vkCreateDevice(vr->phys_dev, &device_create_info, NULL, &vr->dev);
 	check_vk_success(result, "vkCreateDevice");
@@ -4458,7 +4687,7 @@ vulkan_renderer_display_create(struct weston_compositor *ec,
 		vr->base.create_renderbuffer_dmabuf =
 			vulkan_renderer_create_renderbuffer_dmabuf;
 
-		ret = populate_supported_formats(ec, &vr->supported_formats);
+		ret = populate_supported_dmabuf_formats(ec, &vr->supported_formats);
 		if (ret < 0)
 			abort();
 
