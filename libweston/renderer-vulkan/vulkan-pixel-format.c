@@ -241,8 +241,22 @@ vulkan_renderer_query_shm_format(struct vulkan_renderer *vr, const struct pixel_
 
 	vkGetPhysicalDeviceFormatProperties2(vr->phys_dev, format->vulkan_format, &format_props);
 
-	if ((format_props.formatProperties.optimalTilingFeatures & format_shm_tex_features) != format_shm_tex_features)
+	VkFormatFeatureFlags features = format_props.formatProperties.optimalTilingFeatures;
+
+	if ((features & format_shm_tex_features) != format_shm_tex_features)
 		return false;
+
+	if (format->color_model == COLOR_MODEL_YUV) {
+		/* YCbCr conversion requires at least one chroma sample mode */
+		if (!(features & VK_FORMAT_FEATURE_MIDPOINT_CHROMA_SAMPLES_BIT) &&
+		    !(features & VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT))
+			return false;
+
+		/* Multiplanar images are created with DISJOINT_BIT */
+		if (format->num_planes > 1 &&
+		    !(features & VK_FORMAT_FEATURE_DISJOINT_BIT))
+			return false;
+	}
 
 	return true;
 }

@@ -66,6 +66,9 @@
 
 #include <xf86drm.h> /* Physical device drm */
 
+#define ALIGN(value, alignment) (((value) + (alignment) - 1) & ~((alignment) - 1))
+#define MAX_PLANES 3
+
 enum vulkan_debug_mode {
 	DEBUG_MODE_NONE = 0,
 	DEBUG_MODE_FRAGMENT,
@@ -2826,32 +2829,81 @@ create_texture_sampler(struct vulkan_renderer *vr, VkSampler *texture_sampler, V
 	create_texture_sampler_ycbcr(vr, texture_sampler, VK_NULL_HANDLE, filter);
 }
 
-static void
-copy_buffer_to_sub_image(VkCommandBuffer cmd_buffer,
-			 VkBuffer buffer, VkImage image,
-			 uint32_t buffer_width, uint32_t buffer_height,
-			 uint32_t pitch,
-			 uint32_t bpp,
-			 uint32_t xoff, uint32_t yoff,
-			 uint32_t xcopy, uint32_t ycopy)
-{
-	const VkOffset3D image_offset = { xoff, yoff };
-	const VkExtent3D image_extent = { xcopy, ycopy, 1 };
-
-	const VkBufferImageCopy region = {
-		.bufferOffset = ((pitch * yoff) + xoff) * (bpp/8),
-		.bufferRowLength = pitch,
-		.bufferImageHeight = buffer_height,
-		.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-		.imageSubresource.mipLevel = 0,
-		.imageSubresource.baseArrayLayer = 0,
-		.imageSubresource.layerCount = 1,
-		.imageOffset = image_offset,
-		.imageExtent = image_extent,
-	};
-
-	vkCmdCopyBufferToImage(cmd_buffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
-}
+struct multiplanar_format_info {
+	uint32_t format;
+	struct {
+		size_t sample_size;
+	} planes[MAX_PLANES];
+};
+static const struct multiplanar_format_info multiplanar_formats[] = {
+	{
+		.format = DRM_FORMAT_NV12,
+		.planes = {
+			{ sizeof(uint8_t) },
+			{ sizeof(uint16_t) },
+		},
+	},
+	{
+		.format = DRM_FORMAT_NV16,
+		.planes = {
+			{ sizeof(uint8_t) },
+			{ sizeof(uint16_t) },
+		},
+	},
+	{
+		/* Requires VK_EXT_ycbcr_2plane_444_formats */
+		.format = DRM_FORMAT_NV24,
+		.planes = {
+			{ sizeof(uint8_t) },
+			{ sizeof(uint16_t) },
+		},
+	},
+	{
+		.format = DRM_FORMAT_P010,
+		.planes = {
+			{ sizeof(uint16_t) },
+			{ sizeof(uint32_t) },
+		},
+	},
+	{
+		.format = DRM_FORMAT_P012,
+		.planes = {
+			{ sizeof(uint16_t) },
+			{ sizeof(uint32_t) },
+		},
+	},
+	{
+		.format = DRM_FORMAT_YUV420,
+		.planes = {
+			{ sizeof(uint8_t) },
+			{ sizeof(uint8_t) },
+			{ sizeof(uint8_t) },
+		},
+	},
+	{
+		.format = DRM_FORMAT_YUV422,
+		.planes = {
+			{ sizeof(uint8_t) },
+			{ sizeof(uint8_t) },
+			{ sizeof(uint8_t) },
+		},
+	},
+	{
+		.format = DRM_FORMAT_YUV444,
+		.planes = {
+			{ sizeof(uint8_t) },
+			{ sizeof(uint8_t) },
+			{ sizeof(uint8_t) },
+		},
+	},
+	{
+		.format = DRM_FORMAT_P016,
+		.planes = {
+			{ sizeof(uint16_t) },
+			{ sizeof(uint32_t) },
+		},
+	},
+};
 
 static void
 update_texture_image(struct vulkan_renderer *vr,
@@ -2863,15 +2915,71 @@ update_texture_image(struct vulkan_renderer *vr,
 		     uint32_t xoff, uint32_t yoff,
 		     uint32_t xcopy, uint32_t ycopy)
 {
-	VkDeviceSize image_size = pitch * buffer_height * (pixel_format->bpp/8);
+	uint32_t plane_count = pixel_format_get_plane_count(pixel_format);
+	VkDeviceSize buffer_size;
+	VkBufferImageCopy regions[MAX_PLANES] = { 0 };
 	VkResult result;
+
+	if (plane_count > 1) {
+		const struct multiplanar_format_info *mp = NULL;
+		uint32_t buffer_offset = 0;
+
+		for (uint32_t i = 0; i < ARRAY_LENGTH(multiplanar_formats); ++i) {
+			if (multiplanar_formats[i].format == pixel_format->format) {
+				mp = &multiplanar_formats[i];
+				break;
+			}
+		}
+		assert(mp);
+
+		for (uint32_t i = 0; i < plane_count; i++) {
+			uint32_t hsub = pixel_format_hsub(pixel_format, i);
+			uint32_t vsub = pixel_format_vsub(pixel_format, i);
+			uint32_t bw = buffer_width / hsub;
+			uint32_t bh = buffer_height / vsub;
+
+			const VkOffset3D image_offset = { xoff / hsub, yoff / vsub, 0 };
+			const VkExtent3D image_extent = { xcopy / hsub, ycopy / vsub, 1 };
+			const VkBufferImageCopy region = {
+				.bufferOffset = buffer_offset,
+				.bufferRowLength = 0,   // these are 0 for tightly packed data (match imageExtent texels)
+				.bufferImageHeight = 0, // these are 0 for tightly packed data (match imageExtent texels)
+				.imageSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT << i,
+				.imageSubresource.layerCount = 1,
+				.imageOffset = image_offset,
+				.imageExtent = image_extent,
+			};
+
+			assert(mp->planes[i].sample_size > 0);
+			regions[i] = region;
+
+			buffer_offset += bw * bh * mp->planes[i].sample_size;
+		}
+
+		buffer_size = buffer_offset;
+	} else {
+		const VkOffset3D image_offset = { xoff, yoff, 0 };
+		const VkExtent3D image_extent = { xcopy, ycopy, 1 };
+		const VkBufferImageCopy region = {
+			.bufferOffset = ((pitch * yoff) + xoff) * (pixel_format->bpp / 8),
+			.bufferRowLength = pitch,
+			.bufferImageHeight = buffer_height,
+			.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+			.imageSubresource.layerCount = 1,
+			.imageOffset = image_offset,
+			.imageExtent = image_extent,
+		};
+
+		buffer_size = pitch * buffer_height * (pixel_format->bpp / 8);
+		regions[0] = region;
+	}
 
 	vkWaitForFences(vr->dev, 1, &texture->upload_fence, VK_TRUE, UINT64_MAX);
 	vkResetFences(vr->dev, 1, &texture->upload_fence);
 
 	assert(pixels);
 
-	memcpy(texture->staging_map, pixels, (size_t)image_size);
+	memcpy(texture->staging_map, pixels, (size_t)buffer_size);
 
 	const VkCommandBufferBeginInfo begin_info = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -2889,9 +2997,8 @@ update_texture_image(struct vulkan_renderer *vr,
 				VK_ACCESS_SHADER_READ_BIT, VK_ACCESS_TRANSFER_WRITE_BIT,
 				VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED);
 
-	copy_buffer_to_sub_image(cmd_buffer, texture->staging_buffer, texture->image,
-				 buffer_width, buffer_height, pitch, pixel_format->bpp,
-				 xoff, yoff, xcopy, ycopy);
+	vkCmdCopyBufferToImage(cmd_buffer, texture->staging_buffer, texture->image,
+			       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, plane_count, regions);
 
 	transition_image_layout(cmd_buffer, texture->image,
 				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
@@ -2961,8 +3068,6 @@ create_texture_image(struct vulkan_renderer *vr,
 	create_image(vr, buffer_width, buffer_height, pixel_format->vulkan_format, VK_IMAGE_TILING_OPTIMAL,
 		     VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 		     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &texture->image, &texture->memory);
-
-	create_image_view(vr->dev, texture->image, pixel_format->vulkan_format, &texture->image_view);
 }
 
 static void
@@ -3005,20 +3110,15 @@ vulkan_renderer_flush_damage(struct weston_paint_node *pnode)
 
 	data = wl_shm_buffer_get_data(buffer->shm_buffer);
 
+	if (vb->num_textures > 1)
+		vb->needs_full_upload = true;
+
 	if (vb->needs_full_upload || quirks->force_full_upload) {
 		wl_shm_buffer_begin_access(buffer->shm_buffer);
-
-		for (int j = 0; j < vb->num_textures; j++) {
-			int hsub = pixel_format_hsub(buffer->pixel_format, j);
-			int vsub = pixel_format_vsub(buffer->pixel_format, j);
-			void *pixels = data + vb->offset[j];
-			uint32_t buffer_width = buffer->width / hsub;
-			uint32_t buffer_height = buffer->height / vsub;
-
-			update_texture_image_all(vr, &vb->texture, VK_IMAGE_LAYOUT_UNDEFINED,
-						 buffer->pixel_format, buffer_width, buffer_height,
-						 vb->pitch, pixels);
-		}
+		update_texture_image(vr, &vb->texture, VK_IMAGE_LAYOUT_UNDEFINED,
+				     buffer->pixel_format, buffer->width, buffer->height,
+				     vb->pitch, data,
+				     0, 0, buffer->width, buffer->height);
 		wl_shm_buffer_end_access(buffer->shm_buffer);
 		goto done;
 	}
@@ -3070,6 +3170,195 @@ handle_buffer_destroy(struct wl_listener *listener, void *data)
 }
 
 static void
+create_image_multiplanar(struct vulkan_renderer *vr,
+		  uint32_t width, uint32_t height,
+		  struct vulkan_renderer_texture_image *texture,
+		  uint32_t num_planes,
+		  VkFormat format, VkImageTiling tiling,
+		  VkImageUsageFlags usage, VkMemoryPropertyFlags properties)
+{
+	assert(vulkan_device_has(vr, EXTENSION_KHR_BIND_MEMORY_2));
+	assert(vulkan_device_has(vr, EXTENSION_KHR_GET_MEMORY_REQUIREMENTS_2));
+
+	VkResult result;
+
+	const VkImageCreateInfo image_info = {
+		.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+		.imageType = VK_IMAGE_TYPE_2D,
+		.format = format,
+		.extent.width = width,
+		.extent.height = height,
+		.extent.depth = 1,
+		.mipLevels = 1,
+		.arrayLayers = 1,
+		.samples = VK_SAMPLE_COUNT_1_BIT,
+		.tiling = tiling,
+		.usage = usage,
+		.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+		.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+		.flags = num_planes > 1 ? VK_IMAGE_CREATE_DISJOINT_BIT : 0,
+	};
+
+	result = vkCreateImage(vr->dev, &image_info, NULL, &texture->image);
+	check_vk_success(result, "vkCreateImage");
+
+	VkImagePlaneMemoryRequirementsInfo plane_req_info[MAX_PLANES] = {
+		{
+			.sType = VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO,
+			.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT
+		},
+		{
+			.sType = VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO,
+			.planeAspect = VK_IMAGE_ASPECT_PLANE_1_BIT
+		},
+		{
+			.sType = VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO,
+			.planeAspect = VK_IMAGE_ASPECT_PLANE_2_BIT
+		},
+	};
+
+	VkImageMemoryRequirementsInfo2 mem_reqs_info[MAX_PLANES] = {
+		{
+			.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2,
+			.image = texture->image,
+		},
+		{
+			.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2,
+			.image = texture->image,
+		},
+		{
+			.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2,
+			.image = texture->image,
+		},
+	};
+
+	VkMemoryRequirements2 mem_reqs[MAX_PLANES] = {
+		{
+			.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2,
+		},
+		{
+			.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2,
+		},
+		{
+			.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2,
+		},
+	};
+
+	for (uint32_t i = 0; i < num_planes; i++) {
+		pnext(&mem_reqs_info[i], &plane_req_info[i]);
+		vr->get_image_memory_requirements2(vr->dev, &mem_reqs_info[i], &mem_reqs[i]);
+	}
+
+	VkDeviceSize offsets[MAX_PLANES] = { 0, 0, 0 };
+	VkDeviceSize total_size = 0;
+	for (uint32_t i = 0; i < num_planes; i++) {
+		VkDeviceSize aligned_size = ALIGN(mem_reqs[i].memoryRequirements.size, mem_reqs[i].memoryRequirements.alignment);
+		offsets[i] = total_size;
+		total_size += aligned_size;
+	}
+
+	uint32_t allowed_bits = 0xffffffff;
+	for (uint32_t i = 0; i < num_planes; i++) {
+		allowed_bits &= mem_reqs[i].memoryRequirements.memoryTypeBits;
+	}
+	assert(allowed_bits != 0);
+
+	int memory_type = find_memory_type(vr, allowed_bits, properties);
+	assert(memory_type >= 0);
+
+	const VkMemoryAllocateInfo alloc_info = {
+		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+		.allocationSize = total_size,
+		.memoryTypeIndex = memory_type,
+	};
+	result = vkAllocateMemory(vr->dev, &alloc_info, NULL, &texture->memory);
+	check_vk_success(result, "vkAllocateMemory");
+
+	VkBindImagePlaneMemoryInfo bind_plane[MAX_PLANES] = {
+		{
+			.sType = VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO,
+			.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT,
+		},
+		{
+			.sType = VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO,
+			.planeAspect = VK_IMAGE_ASPECT_PLANE_1_BIT,
+		},
+		{
+			.sType = VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO,
+			.planeAspect = VK_IMAGE_ASPECT_PLANE_2_BIT,
+		},
+	};
+	VkBindImageMemoryInfo bind_info[MAX_PLANES] = {
+		{
+			.sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO,
+			.image = texture->image,
+			.memory = texture->memory,
+			.memoryOffset = offsets[0],
+		},
+		{
+			.sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO,
+			.image = texture->image,
+			.memory = texture->memory,
+			.memoryOffset = offsets[1],
+		},
+		{
+			.sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO,
+			.image = texture->image,
+			.memory = texture->memory,
+			.memoryOffset = offsets[2],
+		},
+	};
+
+	for (uint32_t i = 0; i < num_planes; i++) {
+		pnext(&bind_info[i], &bind_plane[i]);
+	}
+
+	result = vr->bind_image_memory2(vr->dev, num_planes, bind_info);
+	check_vk_success(result, "vkBindImageMemory2");
+
+	VkDeviceSize image_size = total_size;
+	create_buffer(vr, image_size,
+		      VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		      &texture->staging_buffer, &texture->staging_memory);
+
+	result = vkMapMemory(vr->dev, texture->staging_memory, 0, image_size, 0, &texture->staging_map);
+	check_vk_success(result, "vkMapMemory");
+}
+
+static void
+create_texture_image_multiplanar(struct vulkan_renderer *vr,
+				 struct vulkan_renderer_texture_image *texture,
+				 const struct pixel_format_info *pixel_format,
+				 uint32_t buffer_width, uint32_t buffer_height)
+{
+	VkResult result;
+
+	uint32_t num_planes = pixel_format_get_plane_count(pixel_format);
+
+	const VkFenceCreateInfo fence_info = {
+		.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+		.flags = VK_FENCE_CREATE_SIGNALED_BIT,
+	};
+	result = vkCreateFence(vr->dev, &fence_info, NULL, &texture->upload_fence);
+	check_vk_success(result, "vkCreateFence");
+
+	const VkCommandBufferAllocateInfo cmd_alloc_info = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+		.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+		.commandPool = vr->cmd_pool,
+		.commandBufferCount = 1,
+	};
+	result = vkAllocateCommandBuffers(vr->dev, &cmd_alloc_info, &texture->upload_cmd);
+	check_vk_success(result, "vkAllocateCommandBuffers");
+
+	create_image_multiplanar(vr, buffer_width, buffer_height, texture, num_planes,
+				 pixel_format->vulkan_format, VK_IMAGE_TILING_OPTIMAL,
+				 VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+				 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+}
+
+static void
 vulkan_renderer_attach_shm(struct weston_surface *surface, struct weston_buffer *buffer)
 {
 	struct weston_compositor *ec = surface->compositor;
@@ -3082,19 +3371,24 @@ vulkan_renderer_attach_shm(struct weston_surface *surface, struct weston_buffer 
 	uint32_t pitch;
 	int offset[3] = { 0, 0, 0 };
 	unsigned int num_planes;
+	bool is_ycbcr = buffer->pixel_format->color_model == COLOR_MODEL_YUV &&
+			buffer->pixel_format->vulkan_format;
 
-	int bpp = buffer->pixel_format->bpp;
-
-	assert(pixel_format_get_plane_count(buffer->pixel_format) == 1);
-	num_planes = 1;
+	num_planes = pixel_format_get_plane_count(buffer->pixel_format);
 
 	if (pixel_format_is_opaque(buffer->pixel_format))
 		pipeline_variant = PIPELINE_VARIANT_RGBX;
 	else
 		pipeline_variant = PIPELINE_VARIANT_RGBA;
 
-	assert(bpp > 0 && !(bpp & 7));
-	pitch = buffer->stride / (bpp / 8);
+	if (num_planes > 1) {
+		/* Multiplanar formats have no bpp */
+		pitch = buffer->width;
+	} else {
+		int bpp = buffer->pixel_format->bpp;
+		assert(bpp > 0 && !(bpp & 7));
+		pitch = buffer->stride / (bpp / 8);
+	}
 
 	vulkan_format[0] = buffer->pixel_format->vulkan_format;
 	vulkan_format[1] = buffer->pixel_format->vulkan_format;
@@ -3133,16 +3427,41 @@ vulkan_renderer_attach_shm(struct weston_surface *surface, struct weston_buffer 
 	vs->buffer = vb;
 	vs->surface = surface;
 
-	for (uint32_t i = 0; i < num_planes; i++) {
-		int hsub = pixel_format_hsub(buffer->pixel_format, i);
-		int vsub = pixel_format_vsub(buffer->pixel_format, i);
-		uint32_t buffer_width = buffer->width / hsub;
-		uint32_t buffer_height = buffer->height / vsub;
+	bool separate_filter = true;
 
-		create_texture_image(vr, &vb->texture, buffer->pixel_format, buffer_width, buffer_height, pitch);
-		create_texture_sampler(vr, &vb->sampler_nearest, VK_FILTER_NEAREST);
-		create_texture_sampler(vr, &vb->sampler_linear, VK_FILTER_LINEAR);
+	if (is_ycbcr) {
+		struct weston_color_representation color_rep;
+
+		VkFormatProperties format_props;
+		vkGetPhysicalDeviceFormatProperties(vr->phys_dev, buffer->pixel_format->vulkan_format, &format_props);
+		VkFormatFeatureFlags features = format_props.optimalTilingFeatures;
+
+		separate_filter = !!(features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_SEPARATE_RECONSTRUCTION_FILTER_BIT);
+
+		assert(vulkan_device_has(vr, EXTENSION_KHR_SAMPLER_YCBCR_CONVERSION));
+		color_rep = weston_fill_color_representation(&surface->color_representation,
+							     buffer->pixel_format);
+		create_texture_ycbcr_conv(vr, buffer->pixel_format, &color_rep,
+					  &vb->ycbcr_conv,
+					  format_props);
 	}
+
+	if (num_planes > 1) {
+		create_texture_image_multiplanar(vr, &vb->texture, buffer->pixel_format,
+						 buffer->width, buffer->height);
+	} else {
+		create_texture_image(vr, &vb->texture, buffer->pixel_format,
+				     buffer->width, buffer->height, pitch);
+	}
+
+	if (is_ycbcr && !separate_filter)
+		weston_log("warning: format %s does not support separate reconstruction filter\n", buffer->pixel_format->drm_format_name);
+
+	create_texture_sampler_ycbcr(vr, &vb->sampler_nearest, vb->ycbcr_conv, VK_FILTER_NEAREST);
+	create_texture_sampler_ycbcr(vr, &vb->sampler_linear, vb->ycbcr_conv, VK_FILTER_LINEAR);
+	create_image_view_ycbcr(vr->dev, vb->texture.image, buffer->pixel_format->vulkan_format,
+				vb->ycbcr_conv, &vb->texture.image_view);
+
 	create_vs_ubo_buffer(vr, &vb->vs_ubo_buffer, &vb->vs_ubo_memory, &vb->vs_ubo_map);
 	create_fs_ubo_buffer(vr, &vb->fs_ubo_buffer, &vb->fs_ubo_memory, &vb->fs_ubo_map);
 }
@@ -3153,6 +3472,7 @@ create_texture_image_dummy(struct vulkan_renderer *vr)
 	const struct pixel_format_info *dummy_pixel_format = pixel_format_get_info(DRM_FORMAT_ARGB8888);
 	const uint32_t dummy_pixels[1] = { 0 };
 	create_texture_image(vr, &vr->dummy.image, dummy_pixel_format, 1, 1, 1);
+	create_image_view(vr->dev, vr->dummy.image.image, dummy_pixel_format->vulkan_format, &vr->dummy.image.image_view);
 	create_texture_sampler(vr, &vr->dummy.sampler, VK_FILTER_NEAREST);
 	update_texture_image_all(vr, &vr->dummy.image, VK_IMAGE_LAYOUT_UNDEFINED,
 				 dummy_pixel_format, 1, 1, 1, dummy_pixels);
@@ -3391,6 +3711,7 @@ vulkan_renderer_output_set_border(struct weston_output *output,
 	uint32_t pitch = tex_width;
 
 	create_texture_image(vr, &border->texture, pixel_format, tex_width, height, pitch);
+	create_image_view(vr->dev, border->texture.image, pixel_format->vulkan_format, &border->texture.image_view);
 	create_texture_sampler(vr, &border->sampler, VK_FILTER_NEAREST);
 	update_texture_image_all(vr, &border->texture, VK_IMAGE_LAYOUT_UNDEFINED,
 				 pixel_format, tex_width, height, pitch, data);
@@ -4312,10 +4633,6 @@ populate_supported_shm_formats(struct weston_compositor *ec)
 		if (info->vulkan_format == VK_FORMAT_UNDEFINED)
 			continue;
 
-		if (info->color_model == COLOR_MODEL_YUV &&
-		    !vulkan_device_has(vr, EXTENSION_KHR_SAMPLER_YCBCR_CONVERSION))
-			continue;
-
 		if (!vulkan_renderer_query_shm_format(vr, info))
 			continue;
 
@@ -4488,6 +4805,11 @@ vulkan_renderer_setup_device_extensions(struct vulkan_renderer *vr)
 	if (vulkan_device_has(vr, EXTENSION_KHR_SAMPLER_YCBCR_CONVERSION)) {
 		load_device_proc(vr, "vkCreateSamplerYcbcrConversionKHR", &vr->create_sampler_ycbcr_conversion);
 		load_device_proc(vr, "vkDestroySamplerYcbcrConversionKHR", &vr->destroy_sampler_ycbcr_conversion);
+	}
+
+	// VK_KHR_bind_memory2
+	if (vulkan_device_has(vr, EXTENSION_KHR_BIND_MEMORY_2)) {
+		load_device_proc(vr, "vkBindImageMemory2KHR", &vr->bind_image_memory2);
 	}
 }
 
