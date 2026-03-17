@@ -201,6 +201,7 @@ if get_option('color-management-lcms')
 				color_management_v1_client_protocol_h,
 				color_management_v1_protocol_c,
 			],
+			'dep_objs': [ dep_lcms_util ]
 		},
 		{
 			'name': 'lcms-util',
