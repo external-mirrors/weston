@@ -301,6 +301,7 @@ vnc_handle_key_event(struct nvnc_client *client, uint32_t keysym,
 	bool needs_shift = false;
 	enum weston_key_state_update state_update;
 	enum wl_keyboard_key_state state;
+	struct weston_key_event key_event;
 	struct timespec time;
 	int i;
 
@@ -337,19 +338,27 @@ vnc_handle_key_event(struct nvnc_client *client, uint32_t keysym,
 	}
 
 	/* emulate lshift press */
-	if (needs_shift)
-		notify_key(peer->seat, &time, KEY_LEFTSHIFT,
-			   WL_KEYBOARD_KEY_STATE_PRESSED,
-			   STATE_UPDATE_AUTOMATIC);
+	if (needs_shift) {
+		weston_key_event_init(&key_event, &time, peer->seat,
+				      KEY_LEFTSHIFT,
+				      WL_KEYBOARD_KEY_STATE_PRESSED,
+				      STATE_UPDATE_AUTOMATIC);
+		notify_key(&key_event);
+	}
 
 	/* send detected key code */
-	notify_key(peer->seat, &time, key, state, state_update);
+	weston_key_event_init(&key_event, &time, peer->seat,
+			      key, state, state_update);
+	notify_key(&key_event);
 
 	/* emulate lshift release */
-	if (needs_shift)
-		notify_key(peer->seat, &time, KEY_LEFTSHIFT,
-			   WL_KEYBOARD_KEY_STATE_RELEASED,
-			   STATE_UPDATE_AUTOMATIC);
+	if (needs_shift) {
+		weston_key_event_init(&key_event, &time, peer->seat,
+				      KEY_LEFTSHIFT,
+				      WL_KEYBOARD_KEY_STATE_RELEASED,
+				      STATE_UPDATE_AUTOMATIC);
+		notify_key(&key_event);
+	}
 }
 
 static void
@@ -359,6 +368,7 @@ vnc_handle_key_code_event(struct nvnc_client *client, uint32_t key,
 	struct vnc_peer *peer = nvnc_get_userdata(client);
 	enum wl_keyboard_key_state state;
 	struct timespec time;
+	struct weston_key_event key_event;
 
 	weston_compositor_get_time(&time);
 
@@ -367,7 +377,9 @@ vnc_handle_key_code_event(struct nvnc_client *client, uint32_t key,
 	else
 		state = WL_KEYBOARD_KEY_STATE_RELEASED;
 
-	notify_key(peer->seat, &time, key, state, STATE_UPDATE_AUTOMATIC);
+	weston_key_event_init(&key_event, &time, peer->seat,
+			      key, state, STATE_UPDATE_AUTOMATIC);
+	notify_key(&key_event);
 }
 
 static void

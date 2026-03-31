@@ -621,13 +621,15 @@ unbind_keyboard(struct wl_resource *resource)
 
 static void
 input_method_context_grab_key(struct weston_keyboard_grab *grab,
-			      const struct timespec *time, uint32_t key,
-			      uint32_t state_w)
+			      const struct weston_key_event *key_event)
 {
 	struct weston_keyboard *keyboard = grab->keyboard;
 	struct wl_display *display;
 	uint32_t serial;
 	uint32_t msecs;
+	uint32_t key = key_event->key;
+	struct timespec time = key_event->base.ts;
+	uint32_t state_w = key_event->key_state;
 
 	if (!keyboard->input_method_resource)
 		return;
@@ -635,7 +637,7 @@ input_method_context_grab_key(struct weston_keyboard_grab *grab,
 	display = wl_client_get_display(
 		wl_resource_get_client(keyboard->input_method_resource));
 	serial = wl_display_next_serial(display);
-	msecs = timespec_to_msec(time);
+	msecs = timespec_to_msec(&time);
 	wl_keyboard_send_key(keyboard->input_method_resource,
 			     serial, msecs, key, state_w);
 }
@@ -712,10 +714,14 @@ input_method_context_key(struct wl_client *client,
 	struct weston_keyboard *keyboard = weston_seat_get_keyboard(seat);
 	struct weston_keyboard_grab *default_grab = &keyboard->default_grab;
 	struct timespec ts;
+	struct weston_key_event key_event;
 
 	timespec_from_msec(&ts, time);
 
-	default_grab->interface->key(default_grab, &ts, key, state_w);
+	weston_key_event_init(&key_event, &ts, seat, key,
+			      state_w, STATE_UPDATE_NONE);
+
+	default_grab->interface->key(default_grab, &key_event);
 }
 
 static void

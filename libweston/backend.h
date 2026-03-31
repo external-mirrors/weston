@@ -242,9 +242,8 @@ notify_button(struct weston_seat *seat, const struct timespec *time,
 	      int32_t button, enum wl_pointer_button_state state);
 
 void
-notify_key(struct weston_seat *seat, const struct timespec *time, uint32_t key,
-	   enum wl_keyboard_key_state state,
-	   enum weston_key_state_update update_state);
+notify_key(const struct weston_key_event *key_event);
+
 void
 notify_keyboard_focus_in(struct weston_seat *seat, struct wl_array *keys,
 			 enum weston_key_state_update update_state);

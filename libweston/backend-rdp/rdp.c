@@ -1573,6 +1573,7 @@ xf_input_keyboard_event(rdpInput *input, UINT16 flags, XF_KEV_CODE_TYPE code)
 	bool send_release_key = false;
 	int notify = 0;
 	struct timespec time;
+	struct weston_key_event key_event;
 
         rdp_debug_verbose(peerContext->rdpBackend, "RDP backend: %s flags:0x%x, code:0x%x\n",
 			  __func__, flags, code);
@@ -1638,14 +1639,17 @@ xf_input_keyboard_event(rdpInput *input, UINT16 flags, XF_KEV_CODE_TYPE code)
 		/*weston_log("code=%x ext=%d vk_code=%x scan_code=%x\n", code, (flags & KBD_FLAGS_EXTENDED) ? 1 : 0,
 				vk_code, scan_code);*/
 		weston_compositor_get_time(&time);
-		notify_key(peerContext->item.seat, &time,
-					scan_code - 8, keyState, STATE_UPDATE_AUTOMATIC);
+
+		weston_key_event_init(&key_event, &time, peerContext->item.seat,
+				      scan_code - 8, keyState,
+				      STATE_UPDATE_AUTOMATIC);
+		notify_key(&key_event);
 
 		if (send_release_key) {
-			notify_key(peerContext->item.seat, &time,
-				   scan_code - 8,
-				   WL_KEYBOARD_KEY_STATE_RELEASED,
-				   STATE_UPDATE_AUTOMATIC);
+			weston_key_event_init(&key_event, &time, peerContext->item.seat,
+					      scan_code - 8, WL_KEYBOARD_KEY_STATE_RELEASED,
+					      STATE_UPDATE_AUTOMATIC);
+			notify_key(&key_event);
 		}
 	}
 

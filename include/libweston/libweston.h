@@ -188,6 +188,11 @@ struct weston_spring {
 	uint32_t clip;
 };
 
+enum weston_key_state_update {
+	STATE_UPDATE_AUTOMATIC,
+	STATE_UPDATE_NONE,
+};
+
 /* bit compatible with drm definitions. */
 enum dpms_enum {
 	WESTON_DPMS_ON,
@@ -615,6 +620,20 @@ struct weston_pointer_axis_event {
 	int32_t discrete;
 };
 
+/* base/common struct which all weston_xxx_event should "inherit" */
+struct weston_input_event {
+       struct timespec ts;
+       struct weston_seat *seat;
+};
+
+struct weston_key_event {
+	struct weston_input_event base;
+	uint32_t key;
+	enum wl_keyboard_key_state key_state;
+	enum weston_key_state_update key_update_state;
+};
+
+
 struct weston_pointer_grab;
 struct weston_pointer_grab_interface {
 	void (*focus)(struct weston_pointer_grab *grab);
@@ -640,7 +659,7 @@ struct weston_pointer_grab {
 struct weston_keyboard_grab;
 struct weston_keyboard_grab_interface {
 	void (*key)(struct weston_keyboard_grab *grab,
-		    const struct timespec *time, uint32_t key, uint32_t state);
+		    const struct weston_key_event *key_event);
 	void (*modifiers)(struct weston_keyboard_grab *grab, uint32_t serial,
 			  uint32_t mods_depressed, uint32_t mods_latched,
 			  uint32_t mods_locked, uint32_t group);
@@ -1003,8 +1022,14 @@ weston_keyboard_set_locks(struct weston_keyboard *keyboard,
 
 void
 weston_keyboard_send_key(struct weston_keyboard *keyboard,
-			 const struct timespec *time, uint32_t key,
-			 enum wl_keyboard_key_state state);
+			 const struct weston_key_event *key_event);
+
+void
+weston_key_event_init(struct weston_key_event *event, struct timespec *ts,
+		      struct weston_seat *seat, uint32_t key,
+		      enum wl_keyboard_key_state key_state,
+		      enum weston_key_state_update key_update_state);
+
 void
 weston_keyboard_send_modifiers(struct weston_keyboard *keyboard,
 			       uint32_t serial, uint32_t mods_depressed,
@@ -2123,12 +2148,6 @@ struct content_protection {
 	struct weston_log_scope *debug;
 	struct wl_list protected_list;
 	struct wl_event_source *surface_protection_update;
-};
-
-
-enum weston_key_state_update {
-	STATE_UPDATE_AUTOMATIC,
-	STATE_UPDATE_NONE,
 };
 
 enum weston_activate_flag {

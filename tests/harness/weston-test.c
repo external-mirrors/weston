@@ -494,10 +494,13 @@ send_key(struct wl_client *client, struct wl_resource *resource,
 	struct weston_test *test = wl_resource_get_user_data(resource);
 	struct weston_seat *seat = get_seat(test);
 	struct timespec time;
+	struct weston_key_event key_event;
 
 	timespec_from_proto(&time, tv_sec_hi, tv_sec_lo, tv_nsec);
 
-	notify_key(seat, &time, key, state, STATE_UPDATE_AUTOMATIC);
+	weston_key_event_init(&key_event, &time, seat,
+			      key, state, STATE_UPDATE_AUTOMATIC);
+	notify_key(&key_event);
 }
 
 static void

@@ -2004,6 +2004,7 @@ input_handle_key(void *data, struct wl_keyboard *keyboard,
 {
 	struct wayland_input *input = data;
 	struct timespec ts;
+	struct weston_key_event key_event;
 
 	if (!input->keyboard_focus)
 		return;
@@ -2011,10 +2012,11 @@ input_handle_key(void *data, struct wl_keyboard *keyboard,
 	timespec_from_msec(&ts, time);
 
 	input->key_serial = serial;
-	notify_key(&input->base, &ts, key,
-		   state ? WL_KEYBOARD_KEY_STATE_PRESSED :
-			   WL_KEYBOARD_KEY_STATE_RELEASED,
-		   input->keyboard_state_update);
+
+	weston_key_event_init(&key_event, &ts, &input->base,
+			      key, state ? WL_KEYBOARD_KEY_STATE_PRESSED :
+			      WL_KEYBOARD_KEY_STATE_RELEASED, input->keyboard_state_update);
+	notify_key(&key_event);
 }
 
 static void

@@ -838,7 +838,7 @@ static const struct weston_touch_grab_interface touch_drag_grab_interface = {
 
 static void
 drag_grab_keyboard_key(struct weston_keyboard_grab *grab,
-		       const struct timespec *time, uint32_t key, uint32_t state)
+		       const struct weston_key_event *key_event)
 {
 }
 

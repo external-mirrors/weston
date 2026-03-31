@@ -1089,9 +1089,7 @@ weston_keyboard_has_focus_resource(struct weston_keyboard *keyboard)
 /** Send wl_keyboard.key events to focused resources.
  *
  * \param keyboard The keyboard where the key events originates from.
- * \param time The timestamp of the event
- * \param key The key value of the event
- * \param state The state enum value of the event
+ * \param key_event The weston_key_event as a pointer
  *
  * For every resource that is currently in focus, send a wl_keyboard.key event
  * with the passed parameters. The focused resources are the wl_keyboard
@@ -1099,35 +1097,36 @@ weston_keyboard_has_focus_resource(struct weston_keyboard *keyboard)
  */
 WL_EXPORT void
 weston_keyboard_send_key(struct weston_keyboard *keyboard,
-			 const struct timespec *time, uint32_t key,
-			 enum wl_keyboard_key_state state)
+			 const struct weston_key_event *key_event)
 {
 	struct wl_resource *resource;
 	struct wl_display *display = keyboard->seat->compositor->wl_display;
 	uint32_t serial;
 	struct wl_list *resource_list;
 	uint32_t msecs;
+	struct timespec time = key_event->base.ts;
+	uint32_t key = key_event->key;
+	enum wl_keyboard_key_state state = key_event->key_state;
 
 	if (!weston_keyboard_has_focus_resource(keyboard))
 		return;
 
 	resource_list = &keyboard->focus_resource_list;
 	serial = wl_display_next_serial(display);
-	msecs = timespec_to_msec(time);
+	msecs = timespec_to_msec(&time);
 	wl_resource_for_each(resource, resource_list) {
 		send_timestamps_for_input_resource(resource,
 						   &keyboard->timestamps_list,
-						   time);
+						   &time);
 		wl_keyboard_send_key(resource, serial, msecs, key, state);
 	}
 };
 
 static void
 default_grab_keyboard_key(struct weston_keyboard_grab *grab,
-			  const struct timespec *time, uint32_t key,
-			  uint32_t state)
+			  const struct weston_key_event *key_event)
 {
-	weston_keyboard_send_key(grab->keyboard, time, key, state);
+	weston_keyboard_send_key(grab->keyboard, key_event);
 }
 
 static void
@@ -2664,13 +2663,16 @@ update_keymap(struct weston_seat *seat)
 }
 
 WL_EXPORT void
-notify_key(struct weston_seat *seat, const struct timespec *time, uint32_t key,
-	   enum wl_keyboard_key_state state,
-	   enum weston_key_state_update update_state)
+notify_key(const struct weston_key_event *key_event)
 {
+	struct timespec time = key_event->base.ts;
+	struct weston_seat *seat = key_event->base.seat;
 	struct weston_compositor *compositor = seat->compositor;
 	struct weston_keyboard *keyboard = weston_seat_get_keyboard(seat);
 	struct weston_keyboard_grab *grab = keyboard->grab;
+	enum wl_keyboard_key_state state = key_event->key_state;
+	uint32_t key = key_event->key;
+	enum weston_key_state_update update_state = key_event->key_update_state;
 	uint32_t *k, *end;
 
 	end = keyboard->keys.data + keyboard->keys.size;
@@ -2697,12 +2699,12 @@ notify_key(struct weston_seat *seat, const struct timespec *time, uint32_t key,
 
 	if (grab == &keyboard->default_grab ||
 	    grab == &keyboard->input_method_grab) {
-		weston_compositor_run_key_binding(compositor, keyboard, time,
+		weston_compositor_run_key_binding(compositor, keyboard, &time,
 						  key, state);
 		grab = keyboard->grab;
 	}
 
-	grab->interface->key(grab, time, key, state);
+	grab->interface->key(grab, key_event);
 
 	if (keyboard->pending_keymap &&
 	    keyboard->keys.size == 0)
@@ -2717,7 +2719,7 @@ notify_key(struct weston_seat *seat, const struct timespec *time, uint32_t key,
 
 	keyboard->grab_serial = wl_display_get_serial(compositor->wl_display);
 	if (state == WL_KEYBOARD_KEY_STATE_PRESSED) {
-		keyboard->grab_time = *time;
+		keyboard->grab_time = time;
 		keyboard->grab_key = key;
 	}
 }
@@ -6026,4 +6028,25 @@ weston_input_init(struct weston_compositor *compositor)
 		return -1;
 
 	return 0;
+}
+
+static void
+weston_input_event_init(struct weston_input_event *ievent, struct timespec *ts,
+			struct weston_seat *seat)
+{
+	ievent->ts = *ts;
+	ievent->seat = seat;
+}
+
+WL_EXPORT void
+weston_key_event_init(struct weston_key_event *event, struct timespec *ts,
+		      struct weston_seat *seat, uint32_t key,
+		      enum wl_keyboard_key_state key_state,
+		      enum weston_key_state_update key_update_state)
+{
+	weston_input_event_init(&event->base, ts, seat);
+
+	event->key = key;
+	event->key_state = key_state;
+	event->key_update_state = key_update_state;
 }

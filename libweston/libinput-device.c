@@ -98,6 +98,8 @@ handle_keyboard_key(struct libinput_device *libinput_device,
 	int seat_key_count =
 		libinput_event_keyboard_get_seat_key_count(keyboard_event);
 	struct timespec time;
+	uint32_t key = libinput_event_keyboard_get_key(keyboard_event);
+	struct weston_key_event key_event;
 
 	/* Ignore key events that are not seat wide state changes. */
 	if ((key_state == LIBINPUT_KEY_STATE_PRESSED &&
@@ -106,12 +108,12 @@ handle_keyboard_key(struct libinput_device *libinput_device,
 	     seat_key_count != 0))
 		return;
 
-	timespec_from_usec(&time,
-			   libinput_event_keyboard_get_time_usec(keyboard_event));
+	timespec_from_usec(&time, libinput_event_keyboard_get_time_usec(keyboard_event));
 
-	notify_key(device->seat, &time,
-		   libinput_event_keyboard_get_key(keyboard_event),
-		   key_state, STATE_UPDATE_AUTOMATIC);
+	weston_key_event_init(&key_event, &time, device->seat,
+			      key, key_state, STATE_UPDATE_AUTOMATIC);
+
+	notify_key(&key_event);
 }
 
 static bool

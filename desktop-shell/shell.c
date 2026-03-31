@@ -4189,11 +4189,11 @@ switcher_destroy(struct switcher *switcher)
 }
 
 static void
-switcher_key(struct weston_keyboard_grab *grab,
-	     const struct timespec *time, uint32_t key, uint32_t state_w)
+switcher_key(struct weston_keyboard_grab *grab, const struct weston_key_event *key_event)
 {
 	struct switcher *switcher = container_of(grab, struct switcher, grab);
-	enum wl_keyboard_key_state state = state_w;
+	enum wl_keyboard_key_state state = key_event->key_state;
+	uint32_t key = key_event->key;
 
 	if (key == KEY_TAB && state == WL_KEYBOARD_KEY_STATE_PRESSED)
 		switcher_next(switcher);

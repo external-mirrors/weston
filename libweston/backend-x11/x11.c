@@ -1630,11 +1630,15 @@ x11_backend_handle_event(int fd, uint32_t mask, void *data)
 				 * event below. */
 				update_xkb_state_from_core(b, key_release->state);
 				weston_compositor_get_time(&time);
-				notify_key(&b->core_seat,
-					   &time,
-					   key_release->detail - 8,
-					   WL_KEYBOARD_KEY_STATE_RELEASED,
-					   STATE_UPDATE_AUTOMATIC);
+
+				struct weston_key_event key_event;
+
+				weston_key_event_init(&key_event, &time, &b->core_seat,
+						      key_release->detail - 8,
+						      WL_KEYBOARD_KEY_STATE_RELEASED,
+						      STATE_UPDATE_AUTOMATIC);
+
+				notify_key(&key_event);
 				free(b->prev_event);
 				b->prev_event = NULL;
 				break;
@@ -1675,12 +1679,15 @@ x11_backend_handle_event(int fd, uint32_t mask, void *data)
 			if (!b->has_xkb)
 				update_xkb_state_from_core(b, key_press->state);
 			weston_compositor_get_time(&time);
-			notify_key(&b->core_seat,
-				   &time,
-				   key_press->detail - 8,
-				   WL_KEYBOARD_KEY_STATE_PRESSED,
-				   b->has_xkb ? STATE_UPDATE_NONE :
-						STATE_UPDATE_AUTOMATIC);
+
+			struct weston_key_event key_event;
+
+			weston_key_event_init(&key_event, &time, &b->core_seat,
+					      key_release->detail - 8,
+					      WL_KEYBOARD_KEY_STATE_PRESSED,
+					      b->has_xkb ? STATE_UPDATE_NONE : STATE_UPDATE_AUTOMATIC);
+			notify_key(&key_event);
+
 			break;
 		case XCB_KEY_RELEASE:
 			/* If we don't have XKB, we need to use the lame
@@ -1691,11 +1698,13 @@ x11_backend_handle_event(int fd, uint32_t mask, void *data)
 			}
 			key_release = (xcb_key_press_event_t *) event;
 			weston_compositor_get_time(&time);
-			notify_key(&b->core_seat,
-				   &time,
-				   key_release->detail - 8,
-				   WL_KEYBOARD_KEY_STATE_RELEASED,
-				   STATE_UPDATE_NONE);
+
+			struct weston_key_event w_key_event;
+
+			weston_key_event_init(&w_key_event, &time, &b->core_seat,
+					      key_release->detail - 8,
+					      WL_KEYBOARD_KEY_STATE_RELEASED, STATE_UPDATE_NONE);
+			notify_key(&w_key_event);
 			break;
 		case XCB_BUTTON_PRESS:
 		case XCB_BUTTON_RELEASE:
@@ -1824,11 +1833,14 @@ x11_backend_handle_event(int fd, uint32_t mask, void *data)
 		key_release = (xcb_key_press_event_t *) b->prev_event;
 		update_xkb_state_from_core(b, key_release->state);
 		weston_compositor_get_time(&time);
-		notify_key(&b->core_seat,
-			   &time,
-			   key_release->detail - 8,
-			   WL_KEYBOARD_KEY_STATE_RELEASED,
-			   STATE_UPDATE_AUTOMATIC);
+
+		struct weston_key_event lshift_key_event;
+
+		weston_key_event_init(&lshift_key_event, &time, &b->core_seat,
+				      key_release->detail - 8,
+				      WL_KEYBOARD_KEY_STATE_RELEASED, STATE_UPDATE_AUTOMATIC);
+		notify_key(&lshift_key_event);
+
 		free(b->prev_event);
 		b->prev_event = NULL;
 		break;
