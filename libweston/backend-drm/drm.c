@@ -553,9 +553,13 @@ drm_writeback_state_alloc(void)
 }
 
 static void
-drm_writeback_state_free(struct drm_writeback_state *state)
+drm_writeback_state_free(struct weston_compositor *c,
+			 struct drm_writeback_state *state)
 {
 	struct drm_fb **fb;
+
+	/* Capture task must be retired before freeing the state. */
+	assert(state->ct == NULL);
 
 	if (state->out_fence_fd >= 0)
 		close(state->out_fence_fd);
@@ -653,7 +657,7 @@ drm_output_pick_writeback_capture_task(struct drm_output *output)
 	return;
 
 err_fb:
-	drm_writeback_state_free(output->wb_state);
+	free(output->wb_state);
 	output->wb_state = NULL;
 err:
 	weston_capture_task_retire_failed(ct, msg);
@@ -2923,6 +2927,7 @@ static void
 drm_writeback_success_screenshot(struct drm_writeback_state *state)
 {
 	struct drm_output *output = state->output;
+	struct weston_compositor *c = output->base.compositor;
 	struct weston_buffer *buffer;
 	int width, height;
 	int dst_stride, src_stride;
@@ -2954,9 +2959,10 @@ drm_writeback_success_screenshot(struct drm_writeback_state *state)
 	wl_shm_buffer_end_access(buffer->shm_buffer);
 
 	weston_capture_task_retire_complete(state->ct);
+	state->ct = NULL;
 
 destroy_state:
-	drm_writeback_state_free(state);
+	drm_writeback_state_free(c, state);
 	output->wb_state = NULL;
 }
 
@@ -2965,6 +2971,7 @@ drm_writeback_fail_screenshot(struct drm_writeback_state *state,
 			      const char *err_msg)
 {
 	struct drm_output *output = state->output;
+	struct weston_compositor *c = output->base.compositor;
 
 	/**
 	 * Capture task already retired, see
@@ -2975,9 +2982,10 @@ drm_writeback_fail_screenshot(struct drm_writeback_state *state,
 		goto destroy_state;
 
 	weston_capture_task_retire_failed(state->ct, err_msg);
+	state->ct = NULL;
 
 destroy_state:
-	drm_writeback_state_free(state);
+	drm_writeback_state_free(c, state);
 	output->wb_state = NULL;
 }
 
