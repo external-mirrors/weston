@@ -1539,30 +1539,6 @@ vulkan_pipeline_config_init_for_paint_node(struct vulkan_pipeline_config *pconf,
 	return true;
 }
 
-static void
-rect_to_quad(pixman_box32_t *rect,
-	     struct weston_paint_node *pnode,
-	     struct clipper_quad *quad)
-{
-	struct clipper_vertex polygon[4];
-	struct weston_coord_global rect_g[4] = {
-		{ .c = weston_coord(rect->x1, rect->y1) },
-		{ .c = weston_coord(rect->x2, rect->y1) },
-		{ .c = weston_coord(rect->x2, rect->y2) },
-		{ .c = weston_coord(rect->x1, rect->y2) },
-	};
-	struct weston_coord rect_s;
-
-	/* Transform rect to surface space. */
-	for (int i = 0; i < 4; i++) {
-		rect_s = weston_coord_global_to_surface(pnode->view, rect_g[i]).c;
-		polygon[i].x = (float)rect_s.x;
-		polygon[i].y = (float)rect_s.y;
-	}
-
-	clipper_quad_init(quad, polygon, pnode->simple_transform);
-}
-
 static uint32_t
 generate_fans(struct weston_paint_node *pnode,
 	      pixman_region32_t *region,
@@ -1588,7 +1564,7 @@ generate_fans(struct weston_paint_node *pnode,
 	cnt = wl_array_add(vtxcnt, nrects * nsurf * sizeof(uint32_t));
 
 	for (int i = 0; i < nrects; i++) {
-		rect_to_quad(&rects[i], pnode, &quad);
+		clipper_quad_init_from_global_rect(&quad, pnode, &rects[i]);
 		for (int j = 0; j < nsurf; j++) {
 			uint32_t n;
 

@@ -29,6 +29,8 @@
 #include <stdbool.h>
 #include <pixman.h>
 
+struct weston_paint_node;
+
 struct clipper_vertex {
 	float x, y;
 };
@@ -77,5 +79,10 @@ clipper_quad_clip_box32(struct clipper_quad *quad,
 
 float
 clipper_float_difference(float a, float b);
+
+void
+clipper_quad_init_from_global_rect(struct clipper_quad *quad,
+				   const struct weston_paint_node *pnode,
+				   pixman_box32_t *rect);
 
 #endif

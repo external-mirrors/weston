@@ -54,6 +54,8 @@
 #include <linux/input.h>
 #include <wayland-client.h>
 
+#include <libweston/libweston.h>
+#include "libweston/libweston-internal.h"
 #include "libweston/matrix.h"
 #include "libweston/vertex-clipping.h"
 #include "shared/helpers.h"
@@ -70,28 +72,21 @@ struct geometry {
 	float c; /* cos phi */
 	float phi;
 	bool axis_aligned;
-};
-
-struct weston_surface {
-};
-
-struct weston_view {
-	struct weston_surface *surface;
-	struct geometry *geometry;
+	struct weston_view view;
 };
 
 static void
 weston_view_from_global_float(struct weston_view *view,
 			      float x, float y, float *sx, float *sy)
 {
-	struct geometry *g = view->geometry;
+	struct geometry *g = container_of(view, struct geometry, view);
 
 	/* pure rotation around origin by sine and cosine */
 	*sx = g->c * x + g->s * y;
 	*sy = -g->s * x + g->c * y;
 }
 
-static struct weston_coord_surface
+struct weston_coord_surface
 weston_coord_global_to_surface(struct weston_view *view, struct weston_coord_global g_pos)
 {
 	float sx, sy;
@@ -102,31 +97,6 @@ weston_coord_global_to_surface(struct weston_view *view, struct weston_coord_glo
 
 	return pos;
 }
-
-/* ---------------------- copied begins -----------------------*/
-/* Keep this in sync with what is in gl-renderer.c! */
-
-static void
-global_to_surface(pixman_box32_t *rect, struct weston_view *ev,
-		  struct clipper_vertex polygon[4])
-{
-	struct weston_coord_global rect_g[4] = {
-		{ .c = weston_coord(rect->x1, rect->y1) },
-		{ .c = weston_coord(rect->x2, rect->y1) },
-		{ .c = weston_coord(rect->x2, rect->y2) },
-		{ .c = weston_coord(rect->x1, rect->y2) },
-	};
-	struct weston_coord rect_s;
-	int i;
-
-	for (i = 0; i < 4; i++) {
-		rect_s = weston_coord_global_to_surface(ev, rect_g[i]).c;
-		polygon[i].x = (float)rect_s.x;
-		polygon[i].y = (float)rect_s.y;
-	}
-}
-
-/* ---------------------- copied ends -----------------------*/
 
 static void
 geometry_set_phi(struct geometry *g, float phi)
@@ -173,7 +143,6 @@ struct cliptest {
 
 	struct geometry geometry;
 	struct weston_surface surface;
-	struct weston_view view;
 };
 
 static void
@@ -239,7 +208,7 @@ static void
 draw_geometry(cairo_t *cr, struct weston_view *view,
 	      struct clipper_vertex *v, int n, struct clipper_quad *quad)
 {
-	struct geometry *g = view->geometry;
+	struct geometry *g = container_of(view, struct geometry, view);
 	float cx, cy;
 
 	draw_box(cr, &g->quad, view);
@@ -268,17 +237,21 @@ draw_geometry(cairo_t *cr, struct weston_view *view,
 static void
 redraw_handler(struct widget *widget, void *data)
 {
+	struct weston_paint_node pnode;
 	struct cliptest *cliptest = data;
-	struct geometry *g = cliptest->view.geometry;
+	struct geometry *g = &cliptest->geometry;
+	struct weston_view *view = &g->view;
 	struct rectangle allocation;
 	cairo_t *cr;
 	cairo_surface_t *surface;
 	struct clipper_quad quad;
-	struct clipper_vertex transformed_v[4], v[8];
+	struct clipper_vertex v[8];
 	int n;
 
-	global_to_surface(&g->quad, &cliptest->view, transformed_v);
-	clipper_quad_init(&quad, transformed_v, g->axis_aligned);
+	pnode.simple_transform = g->axis_aligned;
+	pnode.view = view;
+
+	clipper_quad_init_from_global_rect(&quad, &pnode, &g->quad);
 	n = clipper_quad_clip_box32(&quad, &g->surf, v);
 
 	widget_get_allocation(cliptest->widget, &allocation);
@@ -313,7 +286,7 @@ redraw_handler(struct widget *widget, void *data)
 		cairo_select_font_face(cr, "sans-serif", CAIRO_FONT_SLANT_NORMAL,
 				       CAIRO_FONT_WEIGHT_BOLD);
 		cairo_set_font_size(cr, 5.0);
-		draw_geometry(cr, &cliptest->view, v, n, &quad);
+		draw_geometry(cr, view, v, n, &quad);
 	cairo_pop_group_to_source(cr);
 	cairo_paint(cr);
 
@@ -479,8 +452,7 @@ cliptest_create(struct display *display)
 	struct cliptest *cliptest;
 
 	cliptest = xzalloc(sizeof *cliptest);
-	cliptest->view.surface = &cliptest->surface;
-	cliptest->view.geometry = &cliptest->geometry;
+	cliptest->geometry.view.surface = &cliptest->surface;
 	geometry_init(&cliptest->geometry);
 	geometry_init(&cliptest->ui.geometry);
 
@@ -531,11 +503,12 @@ read_timer(void)
 static int
 benchmark(void)
 {
+	struct weston_paint_node pnode;
 	struct weston_surface surface;
-	struct weston_view view;
 	struct geometry geom;
+	struct weston_view *view = &geom.view;
 	struct clipper_quad quad;
-	struct clipper_vertex transformed_v[4], v[8];
+	struct clipper_vertex v[8];
 	int i;
 	double t;
 	const int N = 1000000;
@@ -552,14 +525,14 @@ benchmark(void)
 
 	geometry_set_phi(&geom, 0.0);
 
-	view.surface = &surface;
-	view.geometry = &geom;
+	view->surface = &surface;
+	pnode.view = view;
 
 	reset_timer();
 	for (i = 0; i < N; i++) {
 		geometry_set_phi(&geom, (float)i / 360.0f);
-		global_to_surface(&geom.quad, &view, transformed_v);
-		clipper_quad_init(&quad, transformed_v, geom.axis_aligned);
+		pnode.simple_transform = geom.axis_aligned;
+		clipper_quad_init_from_global_rect(&quad, &pnode, &geom.quad);
 		clipper_quad_clip_box32(&quad, &geom.surf, v);
 	}
 	t = read_timer();

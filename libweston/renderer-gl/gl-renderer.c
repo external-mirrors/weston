@@ -2184,26 +2184,6 @@ compress_bands(pixman_box32_t *inrects, int nrects, pixman_box32_t **outrects)
 	return nout;
 }
 
-static void
-global_to_surface(pixman_box32_t *rect, const struct weston_paint_node *pnode,
-		  struct clipper_vertex polygon[4])
-{
-	struct weston_coord_global rect_g[4] = {
-		{ .c = weston_coord(rect->x1, rect->y1) },
-		{ .c = weston_coord(rect->x2, rect->y1) },
-		{ .c = weston_coord(rect->x2, rect->y2) },
-		{ .c = weston_coord(rect->x1, rect->y2) },
-	};
-	struct weston_coord rect_s;
-	int i;
-
-	for (i = 0; i < 4; i++) {
-		rect_s = weston_coord_global_to_surface_for_paint_node(pnode, rect_g[i]).c;
-		polygon[i].x = (float)rect_s.x;
-		polygon[i].y = (float)rect_s.y;
-	}
-}
-
 /* Transform damage 'region' in global coordinates to damage 'quads' in surface
  * coordinates. 'quads' and 'nquads' are output arguments set if 'quads' is
  * NULL, no transformation happens otherwise. Caller must free 'quads' if
@@ -2218,9 +2198,8 @@ transform_damage(const struct weston_paint_node *pnode,
 	WESTON_TRACE_FUNC(("paint node", pnode));
 	pixman_box32_t *rects;
 	int nrects, i;
-	bool compress, axis_aligned;
+	bool compress;
 	struct clipper_quad *quads_alloc;
-	struct clipper_vertex polygon[4];
 
 	if (*quads)
 		return;
@@ -2241,11 +2220,8 @@ transform_damage(const struct weston_paint_node *pnode,
 	 * stores standard output transforms (translations, flips and rotations
 	 * by 90°), then all the transformed quads are axis-aligned in surface
 	 * space. */
-	axis_aligned = pnode->simple_transform;
-	for (i = 0; i < nrects; i++) {
-		global_to_surface(&rects[i], pnode, polygon);
-		clipper_quad_init(&quads_alloc[i], polygon, axis_aligned);
-	}
+	for (i = 0; i < nrects; i++)
+		clipper_quad_init_from_global_rect(&quads_alloc[i], pnode, &rects[i]);
 
 	if (compress)
 		free(rects);

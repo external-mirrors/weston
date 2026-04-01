@@ -29,6 +29,8 @@
 
 #include "shared/helpers.h"
 #include "vertex-clipping.h"
+#include <libweston/libweston.h>
+#include <libweston/libweston-internal.h>
 
 struct clip_context {
 	struct clipper_vertex prev;
@@ -413,4 +415,28 @@ clipper_quad_clip_box32(struct clipper_quad *quad,
 	};
 
 	return clipper_quad_clip(quad, box_vertices, vertices);
+}
+
+WL_EXPORT void
+clipper_quad_init_from_global_rect(struct clipper_quad *quad,
+				   const struct weston_paint_node *pnode,
+				   pixman_box32_t *rect)
+{
+	struct weston_view *ev = pnode->view;
+	struct clipper_vertex polygon[4];
+	struct weston_coord_global rect_g[4] = {
+		{ .c = weston_coord(rect->x1, rect->y1) },
+		{ .c = weston_coord(rect->x2, rect->y1) },
+		{ .c = weston_coord(rect->x2, rect->y2) },
+		{ .c = weston_coord(rect->x1, rect->y2) },
+	};
+	struct weston_coord rect_s;
+	int i;
+
+	for (i = 0; i < 4; i++) {
+		rect_s = weston_coord_global_to_surface(ev, rect_g[i]).c;
+		polygon[i].x = (float)rect_s.x;
+		polygon[i].y = (float)rect_s.y;
+	}
+	clipper_quad_init(quad, polygon, pnode->simple_transform);
 }
