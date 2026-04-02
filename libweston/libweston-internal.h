@@ -498,7 +498,7 @@ weston_touch_start_drag(struct weston_touch *touch,
 /* weston_touch_device */
 
 bool
-weston_touch_device_can_calibrate(struct weston_touch_device *device);
+weston_touch_device_can_calibrate(const struct weston_touch_device *device);
 
 /* weston_tablet */
 

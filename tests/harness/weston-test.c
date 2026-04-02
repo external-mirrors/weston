@@ -555,9 +555,12 @@ send_touch(struct wl_client *client, struct wl_resource *resource,
 	struct weston_touch_device *device = test->touch_device[0];
 	struct timespec time;
 	struct weston_coord_global pos;
+	struct weston_touch_event event;
+	struct weston_seat *seat;
 
 	assert(device);
 
+	seat = get_seat(test);
 	timespec_from_proto(&time, tv_sec_hi, tv_sec_lo, tv_nsec);
 
 	if (touch_type == WL_TOUCH_UP) {
@@ -569,11 +572,14 @@ send_touch(struct wl_client *client, struct wl_resource *resource,
 
 			return;
 		}
-
-		notify_touch(device, &time, touch_id, NULL, touch_type);
+		weston_touch_event_init(&event, &time, seat, device,
+					touch_type, touch_id, NULL);
+		notify_touch(&event);
 	} else {
 		pos.c = weston_coord_from_fixed(x, y);
-		notify_touch(device, &time, touch_id, &pos, touch_type);
+		weston_touch_event_init(&event, &time, seat, device,
+					touch_type, touch_id, &pos);
+		notify_touch(&event);
 	}
 }
 

@@ -185,28 +185,23 @@ static const struct weston_pointer_grab_interface weston_desktop_seat_pointer_po
 
 static void
 weston_desktop_seat_popup_grab_touch_down(struct weston_touch_grab *grab,
-					  const struct timespec *time,
-					  int touch_id,
-					  struct weston_coord_global pos)
+					  const struct weston_touch_event *event)
 {
-	weston_touch_send_down(grab->touch, time, touch_id, pos);
+	weston_touch_send_down(event);
 }
 
 static void
 weston_desktop_seat_popup_grab_touch_up(struct weston_touch_grab *grab,
-					const struct timespec *time,
-					int touch_id)
+					const struct weston_touch_event *event)
 {
-	weston_touch_send_up(grab->touch, time, touch_id);
+	weston_touch_send_up(event);
 }
 
 static void
 weston_desktop_seat_popup_grab_touch_motion(struct weston_touch_grab *grab,
-					    const struct timespec *time,
-					    int touch_id,
-					    struct weston_coord_global pos)
+					    const struct weston_touch_event *event)
 {
-	weston_touch_send_motion(grab->touch, time, touch_id, pos);
+	weston_touch_send_motion(event);
 }
 
 static void

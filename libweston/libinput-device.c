@@ -458,15 +458,16 @@ handle_touch_with_coords(struct libinput_device *libinput_device,
 	struct weston_point2d_device_normalized norm;
 	uint32_t width, height;
 	struct timespec time;
-	int32_t slot;
+	int32_t touch_id;
 	struct weston_coord_global pos;
+	struct weston_touch_event event;
 
 	if (!device->output)
 		return;
 
 	timespec_from_usec(&time,
 			   libinput_event_touch_get_time_usec(touch_event));
-	slot = libinput_event_touch_get_seat_slot(touch_event);
+	touch_id = libinput_event_touch_get_seat_slot(touch_event);
 
 	width = device->output->current_mode->width;
 	height = device->output->current_mode->height;
@@ -475,14 +476,15 @@ handle_touch_with_coords(struct libinput_device *libinput_device,
 
 	pos = weston_coord_global_from_output_point(x, y, device->output);
 
+	weston_touch_event_init(&event, &time, device->seat, device->touch_device,
+				touch_type, touch_id, &pos);
+
 	if (weston_touch_device_can_calibrate(device->touch_device)) {
 		norm.x = libinput_event_touch_get_x_transformed(touch_event, 1);
 		norm.y = libinput_event_touch_get_y_transformed(touch_event, 1);
-		notify_touch_normalized(device->touch_device, &time, slot,
-					&pos, &norm, touch_type);
+		notify_touch_normalized(&event, &norm);
 	} else {
-		notify_touch(device->touch_device, &time, slot,
-			     &pos, touch_type);
+		notify_touch(&event);
 	}
 }
 
@@ -507,15 +509,19 @@ handle_touch_up(struct libinput_device *libinput_device,
 	struct evdev_device *device =
 		libinput_device_get_user_data(libinput_device);
 	struct timespec time;
-	int32_t slot = libinput_event_touch_get_seat_slot(touch_event);
+	struct weston_touch_event event;
+	struct weston_seat *seat;
 
 	if (!device->output)
 		return;
 
+	seat = device->touch_device->aggregate->seat;
 	timespec_from_usec(&time,
 			   libinput_event_touch_get_time_usec(touch_event));
 
-	notify_touch(device->touch_device, &time, slot, NULL, WL_TOUCH_UP);
+	weston_touch_event_init(&event, &time, seat, device->touch_device, WL_TOUCH_UP,
+				libinput_event_touch_get_seat_slot(touch_event), NULL);
+	notify_touch(&event);
 }
 
 static void

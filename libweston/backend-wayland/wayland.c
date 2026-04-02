@@ -2089,6 +2089,7 @@ input_handle_touch_down(void *data, struct wl_touch *wl_touch,
 	struct weston_coord_global pos;
 	double x, y;
 	struct timespec ts;
+	struct weston_touch_event event;
 
 	x = wl_fixed_to_double(fixed_x);
 	y = wl_fixed_to_double(fixed_y);
@@ -2129,7 +2130,9 @@ input_handle_touch_down(void *data, struct wl_touch *wl_touch,
 
 	pos = weston_coord_global_from_output_point(x,y, &output->base);
 
-	notify_touch(input->touch_device, &ts, id, &pos, WL_TOUCH_DOWN);
+	weston_touch_event_init(&event, &ts, &input->base, input->touch_device,
+				WL_TOUCH_DOWN, id, &pos);
+	notify_touch(&event);
 	input->touch_active = true;
 }
 
@@ -2141,6 +2144,7 @@ input_handle_touch_up(void *data, struct wl_touch *wl_touch,
 	struct wayland_output *output = input->touch_focus;
 	bool active = input->touch_active;
 	struct timespec ts;
+	struct weston_touch_event event;
 
 	timespec_from_msec(&ts, time);
 
@@ -2165,8 +2169,11 @@ input_handle_touch_up(void *data, struct wl_touch *wl_touch,
 			weston_output_schedule_repaint(&output->base);
 	}
 
+	weston_touch_event_init(&event, &ts, &input->base, input->touch_device,
+				WL_TOUCH_UP, id, NULL);
+
 	if (active)
-		notify_touch(input->touch_device, &ts, id, NULL, WL_TOUCH_UP);
+		notify_touch(&event);
 }
 
 static void
@@ -2180,6 +2187,7 @@ input_handle_touch_motion(void *data, struct wl_touch *wl_touch,
 	double x, y;
 	struct weston_coord_global pos;
 	struct timespec ts;
+	struct weston_touch_event event;
 
 	x = wl_fixed_to_double(fixed_x);
 	y = wl_fixed_to_double(fixed_y);
@@ -2195,8 +2203,9 @@ input_handle_touch_motion(void *data, struct wl_touch *wl_touch,
 	}
 
 	pos = weston_coord_global_from_output_point(x, y, &output->base);
-
-	notify_touch(input->touch_device, &ts, id, &pos, WL_TOUCH_MOTION);
+	weston_touch_event_init(&event, &ts, &input->base, input->touch_device,
+				WL_TOUCH_MOTION, id, &pos);
+	notify_touch(&event);
 }
 
 static void

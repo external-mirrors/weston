@@ -640,6 +640,14 @@ struct weston_key_event {
 	enum weston_key_state_update key_update_state;
 };
 
+struct weston_touch_event {
+	struct weston_input_event base;
+	const struct weston_touch_device *device;
+	int32_t touch_type;
+	int32_t touch_id;
+	struct weston_coord_global pos;
+};
+
 
 struct weston_pointer_grab;
 struct weston_pointer_grab_interface {
@@ -677,17 +685,9 @@ struct weston_keyboard_grab {
 
 struct weston_touch_grab;
 struct weston_touch_grab_interface {
-	void (*down)(struct weston_touch_grab *grab,
-			const struct timespec *time,
-			int touch_id,
-			struct weston_coord_global c);
-	void (*up)(struct weston_touch_grab *grab,
-			const struct timespec *time,
-			int touch_id);
-	void (*motion)(struct weston_touch_grab *grab,
-			const struct timespec *time,
-			int touch_id,
-			struct weston_coord_global c);
+	void (*down)(struct weston_touch_grab *grab, const struct weston_touch_event *event);
+	void (*up)(struct weston_touch_grab *grab, const struct weston_touch_event *event);
+	void (*motion)(struct weston_touch_grab *grab, const struct weston_touch_event *event);
 	void (*frame)(struct weston_touch_grab *grab);
 	void (*cancel)(struct weston_touch_grab *grab);
 };
@@ -1053,6 +1053,12 @@ weston_pointer_axis_event_init(struct weston_pointer_axis_event *event,
 			       int32_t discrete);
 
 void
+weston_touch_event_init(struct weston_touch_event *event, struct timespec *ts,
+			struct weston_seat *seat, struct weston_touch_device *device,
+			int32_t touch_type, int32_t touch_id,
+			const struct weston_coord_global *pos);
+
+void
 weston_keyboard_send_modifiers(struct weston_keyboard *keyboard,
 			       uint32_t serial, uint32_t mods_depressed,
 			       uint32_t mods_latched,
@@ -1068,15 +1074,11 @@ void
 weston_touch_end_grab(struct weston_touch *touch);
 
 void
-weston_touch_send_down(struct weston_touch *touch, const struct timespec *time,
-		       int touch_id, struct weston_coord_global pos);
+weston_touch_send_down(const struct weston_touch_event *event);
 void
-weston_touch_send_up(struct weston_touch *touch, const struct timespec *time,
-		     int touch_id);
+weston_touch_send_up(const struct weston_touch_event *event);
 void
-weston_touch_send_motion(struct weston_touch *touch,
-			 const struct timespec *time, int touch_id,
-			 struct weston_coord_global pos);
+weston_touch_send_motion(const struct weston_touch_event *event);
 void
 weston_touch_send_frame(struct weston_touch *touch);
 

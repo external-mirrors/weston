@@ -267,22 +267,17 @@ clear_pointer_focus(struct weston_seat *seat);
 /* weston_touch_device */
 
 void
-notify_touch_normalized(struct weston_touch_device *device,
-			const struct timespec *time,
-			int touch_id,
-			const struct weston_coord_global *pos,
-			const struct weston_point2d_device_normalized *norm,
-			int touch_type);
+notify_touch_normalized(const struct weston_touch_event *event,
+			const struct weston_point2d_device_normalized *norm);
 
 /** Feed in touch down, motion, and up events, non-calibratable device.
  *
  * @sa notify_touch_cal
  */
 static inline void
-notify_touch(struct weston_touch_device *device, const struct timespec *time,
-	     int touch_id, const struct weston_coord_global *pos, int touch_type)
+notify_touch(const struct weston_touch_event *event)
 {
-	notify_touch_normalized(device, time, touch_id, pos, NULL, touch_type);
+	notify_touch_normalized(event, NULL);
 }
 
 void
@@ -292,10 +287,8 @@ void
 notify_touch_cancel(struct weston_touch_device *device);
 
 void
-notify_touch_calibrator(struct weston_touch_device *device,
-			const struct timespec *time, int32_t slot,
-			const struct weston_point2d_device_normalized *norm,
-			int touch_type);
+notify_touch_calibrator(const struct weston_touch_event *event,
+			const struct weston_point2d_device_normalized *norm);
 void
 notify_touch_calibrator_cancel(struct weston_touch_device *device);
 void

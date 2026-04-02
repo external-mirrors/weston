@@ -178,13 +178,13 @@ weston_touch_device_destroy(struct weston_touch_device *device)
 
 /** Is it possible to run calibration on this touch device? */
 WL_EXPORT bool
-weston_touch_device_can_calibrate(struct weston_touch_device *device)
+weston_touch_device_can_calibrate(const struct weston_touch_device *device)
 {
 	return !!device->ops;
 }
 
 static enum weston_touch_mode
-weston_touch_device_get_mode(struct weston_touch_device *device)
+weston_touch_device_get_mode(const struct weston_touch_device *device)
 {
 	return device->aggregate->seat->compositor->touch_mode;
 }
@@ -886,19 +886,16 @@ weston_touch_has_focus_resource(struct weston_touch *touch)
 
 /** Send wl_touch.down events to focused resources.
  *
- * \param touch The touch where the down events originates from.
- * \param time The timestamp of the event
- * \param touch_id The touch_id value of the event
- * \param pos The global coordinate of the event
+ * \param event The weston_touch_event
  *
  * For every resource that is currently in focus, send a wl_touch.down event
  * with the passed parameters. The focused resources are the wl_touch
  * resources of the client which currently has the surface with touch focus.
  */
 WL_EXPORT void
-weston_touch_send_down(struct weston_touch *touch, const struct timespec *time,
-		       int touch_id, struct weston_coord_global pos)
+weston_touch_send_down(const struct weston_touch_event *event)
 {
+	struct weston_touch *touch = event->base.seat->touch_state;
 	struct wl_display *display = touch->seat->compositor->wl_display;
 	uint32_t serial;
 	struct wl_resource *resource;
@@ -909,45 +906,42 @@ weston_touch_send_down(struct weston_touch *touch, const struct timespec *time,
 	if (!weston_touch_has_focus_resource(touch))
 		return;
 
-	surf_pos = weston_coord_global_to_surface(touch->focus, pos);
+	surf_pos = weston_coord_global_to_surface(touch->focus, event->pos);
+	weston_view_update_transform(touch->focus);
 
 	resource_list = &touch->focus_resource_list;
 	serial = wl_display_next_serial(display);
-	msecs = timespec_to_msec(time);
+	msecs = timespec_to_msec(&event->base.ts);
 	wl_resource_for_each(resource, resource_list) {
 		send_timestamps_for_input_resource(resource,
 						   &touch->timestamps_list,
-						   time);
+						   &event->base.ts);
 		wl_touch_send_down(resource, serial, msecs,
 				   touch->focus->surface->resource,
-				   touch_id,
+				   event->touch_id,
 				   wl_fixed_from_double(surf_pos.c.x),
 				   wl_fixed_from_double(surf_pos.c.y));
 	}
 }
 
 static void
-default_grab_touch_down(struct weston_touch_grab *grab,
-			const struct timespec *time, int touch_id,
-			struct weston_coord_global pos)
+default_grab_touch_down(struct weston_touch_grab *grab, const struct weston_touch_event *event)
 {
-	weston_touch_send_down(grab->touch, time, touch_id, pos);
+	weston_touch_send_down(event);
 }
 
 /** Send wl_touch.up events to focused resources.
  *
- * \param touch The touch where the up events originates from.
- * \param time The timestamp of the event
- * \param touch_id The touch_id value of the event
+ * \param event The weston_touch_event
  *
  * For every resource that is currently in focus, send a wl_touch.up event
  * with the passed parameters. The focused resources are the wl_touch
  * resources of the client which currently has the surface with touch focus.
  */
 WL_EXPORT void
-weston_touch_send_up(struct weston_touch *touch, const struct timespec *time,
-		     int touch_id)
+weston_touch_send_up(const struct weston_touch_event *event)
 {
+	struct weston_touch *touch = event->base.seat->touch_state;
 	struct wl_display *display = touch->seat->compositor->wl_display;
 	uint32_t serial;
 	struct wl_resource *resource;
@@ -959,66 +953,60 @@ weston_touch_send_up(struct weston_touch *touch, const struct timespec *time,
 
 	resource_list = &touch->focus_resource_list;
 	serial = wl_display_next_serial(display);
-	msecs = timespec_to_msec(time);
+	msecs = timespec_to_msec(&event->base.ts);
 	wl_resource_for_each(resource, resource_list) {
 		send_timestamps_for_input_resource(resource,
 						   &touch->timestamps_list,
-						   time);
-		wl_touch_send_up(resource, serial, msecs, touch_id);
+						   &event->base.ts);
+		wl_touch_send_up(resource, serial, msecs, event->touch_id);
 	}
 }
 
 static void
-default_grab_touch_up(struct weston_touch_grab *grab,
-		      const struct timespec *time, int touch_id)
+default_grab_touch_up(struct weston_touch_grab *grab, const struct weston_touch_event *event)
 {
-	weston_touch_send_up(grab->touch, time, touch_id);
+	weston_touch_send_up(event);
 }
 
 /** Send wl_touch.motion events to focused resources.
  *
- * \param touch The touch where the motion events originates from.
- * \param time The timestamp of the event
- * \param touch_id The touch_id value of the event
- * \param pos The global coordinate of the event
+ * \param event The weston_touch_event
  *
  * For every resource that is currently in focus, send a wl_touch.motion event
  * with the passed parameters. The focused resources are the wl_touch
  * resources of the client which currently has the surface with touch focus.
  */
 WL_EXPORT void
-weston_touch_send_motion(struct weston_touch *touch,
-			 const struct timespec *time, int touch_id,
-			 struct weston_coord_global pos)
+weston_touch_send_motion(const struct weston_touch_event *event)
 {
 	struct wl_resource *resource;
 	struct wl_list *resource_list;
 	uint32_t msecs;
 	struct weston_coord_surface surf_pos;
+	struct weston_touch *touch = event->base.seat->touch_state;
 
 	if (!weston_touch_has_focus_resource(touch))
 		return;
 
-	surf_pos = weston_coord_global_to_surface(touch->focus, pos);
+	surf_pos = weston_coord_global_to_surface(touch->focus, event->pos);
+	weston_view_update_transform(touch->focus);
 
 	resource_list = &touch->focus_resource_list;
-	msecs = timespec_to_msec(time);
+	msecs = timespec_to_msec(&event->base.ts);
 	wl_resource_for_each(resource, resource_list) {
 		send_timestamps_for_input_resource(resource,
 						   &touch->timestamps_list,
-						   time);
-		wl_touch_send_motion(resource, msecs, touch_id,
+						   &event->base.ts);
+		wl_touch_send_motion(resource, msecs, event->touch_id,
 				     wl_fixed_from_double(surf_pos.c.x),
 				     wl_fixed_from_double(surf_pos.c.y));
 	}
 }
 
 static void
-default_grab_touch_motion(struct weston_touch_grab *grab,
-			  const struct timespec *time, int touch_id,
-			  struct weston_coord_global pos)
+default_grab_touch_motion(struct weston_touch_grab *grab, const struct weston_touch_event *event)
 {
-	weston_touch_send_motion(grab->touch, time, touch_id, pos);
+	weston_touch_send_motion(event);
 }
 
 
@@ -2835,29 +2823,25 @@ weston_touch_set_focus(struct weston_touch *touch, struct weston_view *view)
 }
 
 static void
-process_touch_normal(struct weston_touch_device *device,
-		     const struct timespec *time, int touch_id,
-		     const struct weston_coord_global *pos, int touch_type)
+process_touch_normal(const struct weston_touch_device *device,
+		     const struct weston_touch_event *event)
 {
 	struct weston_touch *touch = device->aggregate;
 	struct weston_touch_grab *grab = device->aggregate->grab;
 	struct weston_compositor *ec = device->aggregate->seat->compositor;
 	struct weston_view *ev;
 
-	if (touch_type != WL_TOUCH_UP)
-		assert(pos);
-
 	/* Update grab's global coordinates. */
-	if (touch_id == touch->grab_touch_id && touch_type != WL_TOUCH_UP)
-		touch->grab_pos = *pos;
+	if (event->touch_id == touch->grab_touch_id && event->touch_type != WL_TOUCH_UP)
+		touch->grab_pos = event->pos;
 
-	switch (touch_type) {
+	switch (event->touch_type) {
 	case WL_TOUCH_DOWN:
 		/* the first finger down picks the view, and all further go
 		 * to that view for the remainder of the touch session i.e.
 		 * until all touch points are up again. */
 		if (touch->num_tp == 1) {
-			ev = weston_compositor_pick_view(ec, *pos);
+			ev = weston_compositor_pick_view(ec, event->pos);
 			weston_touch_set_focus(touch, ev);
 		} else if (!touch->focus) {
 			/* Unexpected condition: We have non-initial touch but
@@ -2869,15 +2853,16 @@ process_touch_normal(struct weston_touch_device *device,
 		}
 
 		weston_compositor_run_touch_binding(ec, touch,
-						    time, touch_type);
+						    &event->base.ts,
+						    event->touch_type);
 
-		grab->interface->down(grab, time, touch_id, *pos);
+		grab->interface->down(grab, event);
 		if (touch->num_tp == 1) {
 			touch->grab_serial =
 				wl_display_get_serial(ec->wl_display);
-			touch->grab_touch_id = touch_id;
-			touch->grab_time = *time;
-			touch->grab_pos = *pos;
+			touch->grab_touch_id = event->touch_id;
+			touch->grab_time = event->base.ts;
+			touch->grab_pos = event->pos;
 		}
 
 		break;
@@ -2886,10 +2871,10 @@ process_touch_normal(struct weston_touch_device *device,
 		if (!ev)
 			break;
 
-		grab->interface->motion(grab, time, touch_id, *pos);
+		grab->interface->motion(grab, event);
 		break;
 	case WL_TOUCH_UP:
-		grab->interface->up(grab, time, touch_id);
+		grab->interface->up(grab, event);
 		touch->pending_focus_reset = true;
 		break;
 	}
@@ -3000,12 +2985,8 @@ weston_compositor_set_touch_mode_calib(struct weston_compositor *compositor)
  * → touch_update → ... → touch_update → touch_end. The driver is responsible
  * for sending along such order.
  *
- * \param device The physical device that generated the event.
- * \param time The event timestamp.
- * \param touch_id ID for the touch point of this event (multi-touch).
- * \param pos X,Y coordinate in compositor global space, or NULL for WL_TOUCH_UP.
+ * \param event The weston_touch_event event
  * \param norm Normalized device X, Y coordinates in calibration space, or NULL.
- * \param touch_type Either WL_TOUCH_DOWN, WL_TOUCH_UP, or WL_TOUCH_MOTION.
  *
  * Coordinates double_x and double_y are used for normal operation.
  *
@@ -3018,29 +2999,21 @@ weston_compositor_set_touch_mode_calib(struct weston_compositor *compositor)
  * weston_output.
  */
 WL_EXPORT void
-notify_touch_normalized(struct weston_touch_device *device,
-			const struct timespec *time,
-			int touch_id,
-			const struct weston_coord_global *pos,
-			const struct weston_point2d_device_normalized *norm,
-			int touch_type)
+notify_touch_normalized(const struct weston_touch_event *event,
+			const struct weston_point2d_device_normalized *norm)
 {
-	struct weston_seat *seat = device->aggregate->seat;
-	struct weston_touch *touch = device->aggregate;
+	struct weston_seat *seat = event->base.seat;
+	struct weston_touch *touch = seat->touch_state;
 
-	if (touch_type != WL_TOUCH_UP) {
-		assert(pos);
-
-		if (weston_touch_device_can_calibrate(device))
+	if (event->touch_type != WL_TOUCH_UP) {
+		if (weston_touch_device_can_calibrate(event->device))
 			assert(norm != NULL);
 		else
 			assert(norm == NULL);
-	} else {
-		assert(!pos);
 	}
 
 	/* Update touchpoints count regardless of the current mode. */
-	switch (touch_type) {
+	switch (event->touch_type) {
 	case WL_TOUCH_DOWN:
 		weston_compositor_idle_inhibit(seat->compositor);
 
@@ -3053,7 +3026,7 @@ notify_touch_normalized(struct weston_touch_device *device,
 			 * case we didn't get the corresponding down
 			 * event. */
 			weston_log("Unmatched touch up event on seat %s, device %s\n",
-				   seat->seat_name, device->syspath);
+				   seat->seat_name, event->device->syspath);
 			return;
 		}
 		weston_compositor_idle_release(seat->compositor);
@@ -3065,15 +3038,14 @@ notify_touch_normalized(struct weston_touch_device *device,
 	}
 
 	/* Properly forward the touch event */
-	switch (weston_touch_device_get_mode(device)) {
+	switch (weston_touch_device_get_mode(event->device)) {
 	case WESTON_TOUCH_MODE_NORMAL:
 	case WESTON_TOUCH_MODE_PREP_CALIB:
-		process_touch_normal(device, time, touch_id, pos, touch_type);
+		process_touch_normal(event->device, event);
 		break;
 	case WESTON_TOUCH_MODE_CALIB:
 	case WESTON_TOUCH_MODE_PREP_NORMAL:
-		notify_touch_calibrator(device, time, touch_id,
-					norm, touch_type);
+		notify_touch_calibrator(event, norm);
 		break;
 	}
 }
@@ -6067,4 +6039,25 @@ weston_pointer_axis_event_init(struct weston_pointer_axis_event *event,
 	event->value = value;
 	event->has_discrete = has_discrete;
 	event->discrete = discrete;
+}
+
+WL_EXPORT void
+weston_touch_event_init(struct weston_touch_event *event, struct timespec *ts,
+			struct weston_seat *seat, struct weston_touch_device *device,
+			int32_t touch_type, int32_t touch_id,
+			const struct weston_coord_global *pos)
+{
+	weston_input_event_init(&event->base, ts, seat);
+
+	weston_assert_ptr_not_null(event->base.seat->compositor, device);
+
+	event->touch_type = touch_type;
+	event->touch_id = touch_id;
+	event->device = device;
+	event->pos.c = weston_coord(0, 0);
+
+	if (touch_type == WL_TOUCH_DOWN || touch_type == WL_TOUCH_MOTION) {
+		weston_assert_ptr_not_null(event->base.seat->compositor, pos);
+		event->pos = *pos;
+	}
 }

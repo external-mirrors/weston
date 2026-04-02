@@ -730,9 +730,7 @@ static const struct weston_pointer_grab_interface pointer_drag_grab_interface = 
 };
 
 static void
-drag_grab_touch_down(struct weston_touch_grab *grab,
-		     const struct timespec *time, int touch_id,
-		     struct weston_coord_global c)
+drag_grab_touch_down(struct weston_touch_grab *grab, const struct weston_touch_event *event)
 {
 }
 
@@ -750,14 +748,13 @@ data_device_end_touch_drag_grab(struct weston_touch_drag *drag)
 }
 
 static void
-drag_grab_touch_up(struct weston_touch_grab *grab,
-		   const struct timespec *time, int touch_id)
+drag_grab_touch_up(struct weston_touch_grab *grab, const struct weston_touch_event *event)
 {
+	struct weston_touch *touch = grab->touch;
 	struct weston_touch_drag *touch_drag =
 		container_of(grab, struct weston_touch_drag, grab);
-	struct weston_touch *touch = grab->touch;
 
-	if (touch_id != touch->grab_touch_id)
+	if (event->touch_id != touch->grab_touch_id)
 		return;
 
 	if (touch_drag->base.focus_resource)
@@ -778,16 +775,14 @@ drag_grab_touch_focus(struct weston_touch_drag *drag)
 }
 
 static void
-drag_grab_touch_motion(struct weston_touch_grab *grab,
-		       const struct timespec *time,
-		       int touch_id, struct weston_coord_global unused)
+drag_grab_touch_motion(struct weston_touch_grab *grab, const struct weston_touch_event *event)
 {
+	struct weston_touch *touch = grab->touch;
 	struct weston_touch_drag *touch_drag =
 		container_of(grab, struct weston_touch_drag, grab);
-	struct weston_touch *touch = grab->touch;
 	uint32_t msecs;
 
-	if (touch_id != touch->grab_touch_id)
+	if (event->touch_id != touch->grab_touch_id)
 		return;
 
 	drag_grab_touch_focus(touch_drag);
@@ -799,7 +794,7 @@ drag_grab_touch_motion(struct weston_touch_grab *grab,
 	if (touch_drag->base.focus_resource) {
 		struct weston_coord_surface surf_pos;
 
-		msecs = timespec_to_msec(time);
+		msecs = timespec_to_msec(&event->base.ts);
 		surf_pos = weston_coord_global_to_surface(touch_drag->base.focus,
 							  touch->grab_pos);
 		wl_data_device_send_motion(touch_drag->base.focus_resource,

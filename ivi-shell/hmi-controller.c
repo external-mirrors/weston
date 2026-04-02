@@ -1731,9 +1731,7 @@ pointer_move_grab_motion(struct weston_pointer_grab *grab,
 }
 
 static void
-touch_move_grab_motion(struct weston_touch_grab *grab,
-		       const struct timespec *time, int touch_id,
-		       struct weston_coord_global c)
+touch_move_grab_motion(struct weston_touch_grab *grab, const struct weston_touch_event *event)
 {
 	struct touch_move_grab *tch_move_grab = (struct touch_move_grab *)grab;
 	struct hmi_controller *hmi_ctrl =
@@ -1766,20 +1764,16 @@ pointer_move_workspace_grab_button(struct weston_pointer_grab *grab,
 }
 
 static void
-touch_nope_grab_down(struct weston_touch_grab *grab,
-		     const struct timespec *time,
-		     int touch_id, struct weston_coord_global c)
+touch_nope_grab_down(struct weston_touch_grab *grab, const struct weston_touch_event *event)
 {
 }
 
 static void
-touch_move_workspace_grab_up(struct weston_touch_grab *grab,
-			     const struct timespec *time,
-			     int touch_id)
+touch_move_workspace_grab_up(struct weston_touch_grab *grab, const struct weston_touch_event *event)
 {
 	struct touch_move_grab *tch_move_grab = (struct touch_move_grab *)grab;
 
-	if (0 == touch_id)
+	if (0 == event->touch_id)
 		tch_move_grab->is_active = 0;
 
 	if (0 == grab->touch->num_tp) {

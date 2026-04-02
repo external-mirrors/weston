@@ -757,21 +757,18 @@ surface_keyboard_focus_lost(struct weston_surface *surface)
 }
 
 static void
-touch_move_grab_down(struct weston_touch_grab *grab,
-		     const struct timespec *time,
-		     int touch_id, struct weston_coord_global c)
+touch_move_grab_down(struct weston_touch_grab *grab, const struct weston_touch_event *event)
 {
 }
 
 static void
-touch_move_grab_up(struct weston_touch_grab *grab, const struct timespec *time,
-		   int touch_id)
+touch_move_grab_up(struct weston_touch_grab *grab, const struct weston_touch_event *event)
 {
 	struct weston_touch_move_grab *move =
 		(struct weston_touch_move_grab *) container_of(
 			grab, struct shell_touch_grab, grab);
 
-	if (touch_id == 0)
+	if (event->touch_id == 0)
 		move->active = 0;
 
 	if (grab->touch->num_tp == 0) {
@@ -781,9 +778,7 @@ touch_move_grab_up(struct weston_touch_grab *grab, const struct timespec *time,
 }
 
 static void
-touch_move_grab_motion(struct weston_touch_grab *grab,
-		       const struct timespec *time, int touch_id,
-		       struct weston_coord_global unused)
+touch_move_grab_motion(struct weston_touch_grab *grab, const struct weston_touch_event *event)
 {
 	struct weston_touch_move_grab *move = (struct weston_touch_move_grab *) grab;
 	struct shell_surface *shsurf = move->base.shsurf;

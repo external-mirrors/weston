@@ -128,20 +128,20 @@ static const struct weston_pointer_grab_interface pointer_move_grab_interface = 
  */
 
 static void
-touch_move_grab_down(struct weston_touch_grab *grab,
-		     const struct timespec *time,
-		     int touch_id, struct weston_coord_global c)
+touch_move_grab_down(struct weston_touch_grab *grab, const struct weston_touch_event *event)
 {
 }
 
 static void
-touch_move_grab_up(struct weston_touch_grab *touch_grab,
-		   const struct timespec *time, int touch_id)
+touch_move_grab_up(struct weston_touch_grab *grab, const struct weston_touch_event *event)
 {
+	struct weston_touch *touch = event->base.seat->touch_state;
+	struct weston_touch_grab *touch_grab =
+		touch->grab;
 	struct kiosk_shell_grab *shgrab =
 		container_of(touch_grab, struct kiosk_shell_grab, touch_grab);
 
-	if (touch_id == 0)
+	if (event->touch_id == 0)
 		shgrab->active = false;
 
 	if (touch_grab->touch->num_tp == 0)
@@ -149,13 +149,13 @@ touch_move_grab_up(struct weston_touch_grab *touch_grab,
 }
 
 static void
-touch_move_grab_motion(struct weston_touch_grab *touch_grab,
-		       const struct timespec *time, int touch_id,
-		       struct weston_coord_global unused)
+touch_move_grab_motion(struct weston_touch_grab *grab, const struct weston_touch_event *event)
 {
+	struct weston_seat *seat = event->base.seat;
+	struct weston_touch *touch = seat->touch_state;
+	struct weston_touch_grab *touch_grab = touch->grab;
 	struct kiosk_shell_grab *shgrab =
 		container_of(touch_grab, struct kiosk_shell_grab, touch_grab);
-	struct weston_touch *touch = touch_grab->touch;
 	struct kiosk_shell_surface *shsurf = shgrab->shsurf;
 	struct weston_surface *surface;
 	struct weston_coord_global pos;
