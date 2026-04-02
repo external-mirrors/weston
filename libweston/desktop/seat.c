@@ -124,23 +124,23 @@ weston_desktop_seat_popup_grab_pointer_motion(struct weston_pointer_grab *grab,
 
 static void
 weston_desktop_seat_popup_grab_pointer_button(struct weston_pointer_grab *grab,
-					      const struct timespec *time,
-					      uint32_t button,
-					      enum wl_pointer_button_state state)
+					      const struct weston_pointer_button_event *button_event)
 {
 	struct weston_desktop_seat *seat =
 		wl_container_of(grab, seat, popup_grab.pointer);
 	struct weston_pointer *pointer = grab->pointer;
 	bool initial_up = seat->popup_grab.initial_up;
+	enum wl_pointer_button_state state = button_event->button_state;
+	struct timespec time = button_event->base.ts;
 
 	if (state == WL_POINTER_BUTTON_STATE_RELEASED)
 		seat->popup_grab.initial_up = true;
 
 	if (weston_pointer_has_focus_resource(pointer))
-		weston_pointer_send_button(pointer, time, button, state);
+		weston_pointer_send_button(pointer, button_event);
 	else if (state == WL_POINTER_BUTTON_STATE_RELEASED &&
 		 (initial_up ||
-		  (timespec_sub_to_msec(time, &grab->pointer->grab_time) > 500)))
+		  (timespec_sub_to_msec(&time, &grab->pointer->grab_time) > 500)))
 		weston_desktop_seat_popup_grab_end(seat);
 }
 

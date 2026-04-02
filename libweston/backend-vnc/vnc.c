@@ -443,6 +443,7 @@ vnc_pointer_event(struct nvnc_client *client, uint16_t x, uint16_t y,
 	struct vnc_output *output = peer->backend->output;
 	struct timespec time;
 	enum nvnc_button_mask changed_button_mask;
+	struct weston_pointer_button_event button_event;
 
 	weston_compositor_get_time(&time);
 
@@ -460,23 +461,33 @@ vnc_pointer_event(struct nvnc_client *client, uint16_t x, uint16_t y,
 
 	changed_button_mask = peer->last_button_mask ^ button_mask;
 
-	if (changed_button_mask & NVNC_BUTTON_LEFT)
-		notify_button(peer->seat, &time, BTN_LEFT,
-			      (button_mask & NVNC_BUTTON_LEFT) ?
-			      WL_POINTER_BUTTON_STATE_PRESSED :
-			      WL_POINTER_BUTTON_STATE_RELEASED);
+	if (changed_button_mask & NVNC_BUTTON_LEFT) {
+		weston_pointer_button_event_init(&button_event, &time, peer->seat,
+						 BTN_LEFT,
+						 (button_mask & NVNC_BUTTON_LEFT) ?
+						 WL_POINTER_BUTTON_STATE_PRESSED :
+						 WL_POINTER_BUTTON_STATE_RELEASED);
+		notify_button(&button_event);
+	}
 
-	if (changed_button_mask & NVNC_BUTTON_MIDDLE)
-		notify_button(peer->seat, &time, BTN_MIDDLE,
-			      (button_mask & NVNC_BUTTON_MIDDLE) ?
-			      WL_POINTER_BUTTON_STATE_PRESSED :
-			      WL_POINTER_BUTTON_STATE_RELEASED);
+	if (changed_button_mask & NVNC_BUTTON_MIDDLE) {
+		weston_pointer_button_event_init(&button_event, &time, peer->seat,
+						 BTN_MIDDLE,
+						 (button_mask & NVNC_BUTTON_MIDDLE) ?
+						 WL_POINTER_BUTTON_STATE_PRESSED :
+						 WL_POINTER_BUTTON_STATE_RELEASED);
+		notify_button(&button_event);
+	}
 
-	if (changed_button_mask & NVNC_BUTTON_RIGHT)
-		notify_button(peer->seat, &time, BTN_RIGHT,
-			      (button_mask & NVNC_BUTTON_RIGHT) ?
-			      WL_POINTER_BUTTON_STATE_PRESSED :
-			      WL_POINTER_BUTTON_STATE_RELEASED);
+	if (changed_button_mask & NVNC_BUTTON_RIGHT) {
+		weston_pointer_button_event_init(&button_event, &time, peer->seat,
+						 BTN_RIGHT,
+						 (button_mask & NVNC_BUTTON_RIGHT) ?
+						 WL_POINTER_BUTTON_STATE_PRESSED :
+						 WL_POINTER_BUTTON_STATE_RELEASED);
+		notify_button(&button_event);
+	}
+
 
 	if ((button_mask & NVNC_SCROLL_UP) ||
 	    (button_mask & NVNC_SCROLL_DOWN)) {

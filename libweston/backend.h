@@ -238,8 +238,7 @@ void
 notify_axis_source(struct weston_seat *seat, uint32_t source);
 
 void
-notify_button(struct weston_seat *seat, const struct timespec *time,
-	      int32_t button, enum wl_pointer_button_state state);
+notify_button(const struct weston_pointer_button_event *b_event);
 
 void
 notify_key(const struct weston_key_event *key_event);

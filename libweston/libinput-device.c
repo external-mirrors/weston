@@ -194,6 +194,7 @@ handle_pointer_button(struct libinput_device *libinput_device,
 	int seat_button_count =
 		libinput_event_pointer_get_seat_button_count(pointer_event);
 	struct timespec time;
+	struct weston_pointer_button_event button_event;
 
 	ensure_pointer_capability(libinput_device);
 
@@ -207,9 +208,10 @@ handle_pointer_button(struct libinput_device *libinput_device,
 	timespec_from_usec(&time,
 			   libinput_event_pointer_get_time_usec(pointer_event));
 
-	notify_button(device->seat, &time,
-	              libinput_event_pointer_get_button(pointer_event),
-	              button_state);
+	weston_pointer_button_event_init(&button_event, &time, device->seat,
+					 libinput_event_pointer_get_button(pointer_event),
+					 button_state);
+	notify_button(&button_event);
 
 	return true;
 }

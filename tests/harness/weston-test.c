@@ -434,14 +434,17 @@ send_button(struct wl_client *client, struct wl_resource *resource,
 	    uint32_t tv_sec_hi, uint32_t tv_sec_lo, uint32_t tv_nsec,
 	    int32_t button, uint32_t state)
 {
-	struct timespec time;
+	struct weston_pointer_button_event button_event;
 
 	struct weston_test *test = wl_resource_get_user_data(resource);
 	struct weston_seat *seat = get_seat(test);
+	struct timespec time;
 
 	timespec_from_proto(&time, tv_sec_hi, tv_sec_lo, tv_nsec);
+	weston_pointer_button_event_init(&button_event, &time, seat,
+					 button, state);
 
-	notify_button(seat, &time, button, state);
+	notify_button(&button_event);
 }
 
 static void

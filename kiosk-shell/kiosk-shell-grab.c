@@ -93,13 +93,12 @@ pointer_move_grab_motion(struct weston_pointer_grab *pointer_grab,
 
 static void
 pointer_move_grab_button(struct weston_pointer_grab *pointer_grab,
-			 const struct timespec *time,
-			 uint32_t button, uint32_t state_w)
+			 const struct weston_pointer_button_event *button_event)
 {
 	struct kiosk_shell_grab *shgrab =
 		container_of(pointer_grab, struct kiosk_shell_grab, pointer_grab);
 	struct weston_pointer *pointer = pointer_grab->pointer;
-	enum wl_pointer_button_state state = state_w;
+	enum wl_pointer_button_state state = button_event->button_state;
 
 	if (pointer->button_count == 0 &&
 	    state == WL_POINTER_BUTTON_STATE_RELEASED)

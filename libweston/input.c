@@ -672,9 +672,7 @@ weston_pointer_has_focus_resource(struct weston_pointer *pointer)
 /** Send wl_pointer.button events to focused resources.
  *
  * \param pointer The pointer where the button events originates from.
- * \param time The timestamp of the event
- * \param button The button value of the event
- * \param state The state enum value of the event
+ * \param button_event A pointer to weston_pointer_button_event
  *
  * For every resource that is currently in focus, send a wl_pointer.button event
  * with the passed parameters. The focused resources are the wl_pointer
@@ -682,39 +680,41 @@ weston_pointer_has_focus_resource(struct weston_pointer *pointer)
  */
 WL_EXPORT void
 weston_pointer_send_button(struct weston_pointer *pointer,
-			   const struct timespec *time, uint32_t button,
-			   enum wl_pointer_button_state state)
+			  const struct weston_pointer_button_event *button_event)
 {
 	struct wl_display *display = pointer->seat->compositor->wl_display;
 	struct wl_list *resource_list;
 	struct wl_resource *resource;
 	uint32_t serial;
 	uint32_t msecs;
+	struct timespec time = button_event->base.ts;
+	uint32_t button = button_event->button;
+	enum wl_pointer_button_state state = button_event->button_state;
 
 	if (!weston_pointer_has_focus_resource(pointer))
 		return;
 
 	resource_list = &pointer->focus_client->pointer_resources;
 	serial = wl_display_next_serial(display);
-	msecs = timespec_to_msec(time);
+	msecs = timespec_to_msec(&time);
 	wl_resource_for_each(resource, resource_list) {
 		send_timestamps_for_input_resource(resource,
 		                                   &pointer->timestamps_list,
-		                                   time);
+		                                   &time);
 		wl_pointer_send_button(resource, serial, msecs, button, state);
 	}
 }
 
 static void
 default_grab_pointer_button(struct weston_pointer_grab *grab,
-			    const struct timespec *time, uint32_t button,
-			    enum wl_pointer_button_state state)
+			    const struct weston_pointer_button_event *button_event)
 {
 	struct weston_pointer *pointer = grab->pointer;
 	struct weston_compositor *compositor = pointer->seat->compositor;
 	struct weston_view *view;
+	enum wl_pointer_button_state state = button_event->button_state;
 
-	weston_pointer_send_button(pointer, time, button, state);
+	weston_pointer_send_button(pointer, button_event);
 
 	if (pointer->button_count == 0 &&
 	    state == WL_POINTER_BUTTON_STATE_RELEASED) {
@@ -2324,17 +2324,17 @@ weston_view_activate_input(struct weston_view *view,
 }
 
 WL_EXPORT void
-notify_button(struct weston_seat *seat, const struct timespec *time,
-	      int32_t button, enum wl_pointer_button_state state)
+notify_button(const struct weston_pointer_button_event *event)
 {
+	struct weston_seat *seat = event->base.seat;
 	struct weston_compositor *compositor = seat->compositor;
 	struct weston_pointer *pointer = weston_seat_get_pointer(seat);
 
-	if (state == WL_POINTER_BUTTON_STATE_PRESSED) {
+	if (event->button_state == WL_POINTER_BUTTON_STATE_PRESSED) {
 		weston_compositor_idle_inhibit(compositor);
 		if (pointer->button_count == 0) {
-			pointer->grab_button = button;
-			pointer->grab_time = *time;
+			pointer->grab_button = event->button;
+			pointer->grab_time = event->base.ts;
 			pointer->grab_pos = pointer->pos;
 		}
 		pointer->button_count++;
@@ -2343,10 +2343,10 @@ notify_button(struct weston_seat *seat, const struct timespec *time,
 		pointer->button_count--;
 	}
 
-	weston_compositor_run_button_binding(compositor, pointer, time, button,
-					     state);
+	weston_compositor_run_button_binding(compositor, pointer, &event->base.ts,
+					     event->button, event->button_state);
 
-	pointer->grab->interface->button(pointer->grab, time, button, state);
+	pointer->grab->interface->button(pointer->grab, event);
 
 	if (pointer->button_count == 1)
 		pointer->grab_serial =
@@ -4719,11 +4719,9 @@ locked_pointer_grab_pointer_motion(struct weston_pointer_grab *grab,
 
 static void
 locked_pointer_grab_pointer_button(struct weston_pointer_grab *grab,
-				   const struct timespec *time,
-				   uint32_t button,
-				   uint32_t state_w)
+				   const struct weston_pointer_button_event *button_event)
 {
-	weston_pointer_send_button(grab->pointer, time, button, state_w);
+	weston_pointer_send_button(grab->pointer, button_event);
 }
 
 static void
@@ -5721,11 +5719,9 @@ confined_pointer_grab_pointer_motion(struct weston_pointer_grab *grab,
 
 static void
 confined_pointer_grab_pointer_button(struct weston_pointer_grab *grab,
-				     const struct timespec *time,
-				     uint32_t button,
-				     uint32_t state_w)
+				     const struct weston_pointer_button_event *button_event)
 {
-	weston_pointer_send_button(grab->pointer, time, button, state_w);
+	weston_pointer_send_button(grab->pointer, button_event);
 }
 
 static void
@@ -6052,4 +6048,15 @@ weston_pointer_motion_event_init(struct weston_pointer_motion_event *event,
 
 
 	event->mask = mask;
+}
+
+WL_EXPORT void
+weston_pointer_button_event_init(struct weston_pointer_button_event *event,
+				 struct timespec *ts, struct weston_seat *seat,
+				 uint32_t button, enum wl_pointer_button_state button_state)
+{
+	weston_input_event_init(&event->base, ts, seat);
+
+	event->button = button;
+	event->button_state = button_state;
 }

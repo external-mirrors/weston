@@ -1466,10 +1466,16 @@ xf_mouseEvent(rdpInput *input, UINT16 flags, UINT16 x, UINT16 y)
 	}
 
 	if (button) {
+		struct weston_pointer_button_event button_event;
+
 		weston_compositor_get_time(&time);
-		notify_button(peerContext->item.seat, &time, button,
-			(flags & PTR_FLAGS_DOWN) ? WL_POINTER_BUTTON_STATE_PRESSED : WL_POINTER_BUTTON_STATE_RELEASED
-		);
+
+		weston_pointer_button_event_init(&button_event, &time,
+						 peerContext->item.seat,
+						 button, (flags & PTR_FLAGS_DOWN) ?
+						 WL_POINTER_BUTTON_STATE_PRESSED :
+						 WL_POINTER_BUTTON_STATE_RELEASED);
+		notify_button(&button_event);
 		need_frame = true;
 	}
 
@@ -1514,9 +1520,15 @@ xf_extendedMouseEvent(rdpInput *input, UINT16 flags, UINT16 x, UINT16 y)
 	}
 
 	if (button) {
+		struct weston_pointer_button_event button_event;
 		weston_compositor_get_time(&time);
-		notify_button(peerContext->item.seat, &time, button,
-			      (flags & PTR_XFLAGS_DOWN) ? WL_POINTER_BUTTON_STATE_PRESSED : WL_POINTER_BUTTON_STATE_RELEASED);
+
+		weston_pointer_button_event_init(&button_event, &time,
+						 peerContext->item.seat,
+						 button, (flags & PTR_XFLAGS_DOWN) ?
+						 WL_POINTER_BUTTON_STATE_PRESSED :
+						 WL_POINTER_BUTTON_STATE_RELEASED);
+		notify_button(&button_event);
 		need_frame = true;
 	}
 

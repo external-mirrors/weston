@@ -619,6 +619,12 @@ struct weston_pointer_motion_event {
 	struct weston_coord rel_unaccel;
 };
 
+struct weston_pointer_button_event {
+	struct weston_input_event base;
+	uint32_t button;
+	enum wl_pointer_button_state button_state;
+};
+
 struct weston_pointer_axis_event {
 	uint32_t axis;
 	double value;
@@ -640,8 +646,7 @@ struct weston_pointer_grab_interface {
 	void (*motion)(struct weston_pointer_grab *grab,
 		       const struct weston_pointer_motion_event *event);
 	void (*button)(struct weston_pointer_grab *grab,
-		       const struct timespec *time,
-		       uint32_t button, uint32_t state);
+		       const struct weston_pointer_button_event *button_event);
 	void (*axis)(struct weston_pointer_grab *grab,
 		     const struct timespec *time,
 		     struct weston_pointer_axis_event *event);
@@ -975,9 +980,7 @@ bool
 weston_pointer_has_focus_resource(struct weston_pointer *pointer);
 void
 weston_pointer_send_button(struct weston_pointer *pointer,
-			   const struct timespec *time,
-			   uint32_t button,
-			   enum wl_pointer_button_state state);
+			   const struct weston_pointer_button_event *button_event);
 void
 weston_pointer_send_axis(struct weston_pointer *pointer,
 			 const struct timespec *time,
@@ -1038,6 +1041,11 @@ weston_pointer_motion_event_init(struct weston_pointer_motion_event *event,
 				 const struct weston_coord_global *abs,
 				 const struct weston_coord *rel,
 				 const struct weston_coord *rel_unaccel);
+
+void
+weston_pointer_button_event_init(struct weston_pointer_button_event *event,
+				 struct timespec *ts, struct weston_seat *seat,
+				 uint32_t button, enum wl_pointer_button_state button_state);
 
 void
 weston_keyboard_send_modifiers(struct weston_keyboard *keyboard,

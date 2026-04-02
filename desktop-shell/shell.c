@@ -928,12 +928,12 @@ move_grab_motion(struct weston_pointer_grab *grab,
 
 static void
 move_grab_button(struct weston_pointer_grab *grab,
-		 const struct timespec *time, uint32_t button, uint32_t state_w)
+		 const struct weston_pointer_button_event *button_event)
 {
 	struct shell_grab *shell_grab = container_of(grab, struct shell_grab,
 						    grab);
 	struct weston_pointer *pointer = grab->pointer;
-	enum wl_pointer_button_state state = state_w;
+	enum wl_pointer_button_state state = button_event->button_state;
 
 	if (pointer->button_count == 0 &&
 	    state == WL_POINTER_BUTTON_STATE_RELEASED) {
@@ -1198,12 +1198,11 @@ resize_grab_motion(struct weston_pointer_grab *grab,
 
 static void
 resize_grab_button(struct weston_pointer_grab *grab,
-		   const struct timespec *time,
-		   uint32_t button, uint32_t state_w)
+		   const struct weston_pointer_button_event *button_event)
 {
 	struct weston_resize_grab *resize = (struct weston_resize_grab *) grab;
 	struct weston_pointer *pointer = grab->pointer;
-	enum wl_pointer_button_state state = state_w;
+	enum wl_pointer_button_state state = button_event->button_state;
 
 	if (pointer->button_count == 0 &&
 	    state == WL_POINTER_BUTTON_STATE_RELEASED) {
@@ -1316,19 +1315,20 @@ busy_cursor_grab_motion(struct weston_pointer_grab *grab,
 
 static void
 busy_cursor_grab_button(struct weston_pointer_grab *base,
-			const struct timespec *time,
-			uint32_t button, uint32_t state)
+			const struct weston_pointer_button_event *button_event)
 {
 	struct shell_grab *grab = (struct shell_grab *) base;
 	struct shell_surface *shsurf = grab->shsurf;
 	struct weston_pointer *pointer = grab->grab.pointer;
 	struct weston_seat *seat = pointer->seat;
 
-	if (shsurf && button == BTN_LEFT && state) {
+	if (shsurf && button_event->button == BTN_LEFT &&
+	    button_event->button_state) {
 		activate(shsurf->shell, shsurf->view, seat,
 			 WESTON_ACTIVATE_FLAG_CONFIGURE);
 		surface_move(shsurf, pointer, false);
-	} else if (shsurf && button == BTN_RIGHT && state) {
+	} else if (shsurf && button_event->button == BTN_RIGHT &&
+		   button_event->button_state) {
 		activate(shsurf->shell, shsurf->view, seat,
 			 WESTON_ACTIVATE_FLAG_CONFIGURE);
 		surface_rotate(shsurf, pointer);
@@ -3283,14 +3283,13 @@ rotate_grab_motion(struct weston_pointer_grab *grab,
 
 static void
 rotate_grab_button(struct weston_pointer_grab *grab,
-		   const struct timespec *time,
-		   uint32_t button, uint32_t state_w)
+		   const struct weston_pointer_button_event *button_event)
 {
 	struct rotate_grab *rotate =
 		container_of(grab, struct rotate_grab, base.grab);
 	struct weston_pointer *pointer = grab->pointer;
 	struct shell_surface *shsurf = rotate->base.shsurf;
-	enum wl_pointer_button_state state = state_w;
+	enum wl_pointer_button_state state = button_event->button_state;
 
 	if (pointer->button_count == 0 &&
 	    state == WL_POINTER_BUTTON_STATE_RELEASED) {

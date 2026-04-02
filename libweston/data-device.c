@@ -652,17 +652,16 @@ data_device_end_pointer_drag_grab(struct weston_pointer_drag *drag)
 
 static void
 drag_grab_button(struct weston_pointer_grab *grab,
-		 const struct timespec *time,
-		 uint32_t button, uint32_t state_w)
+		 const struct weston_pointer_button_event *button_event)
 {
 	struct weston_pointer_drag *drag =
 		container_of(grab, struct weston_pointer_drag, grab);
 	struct weston_pointer *pointer = drag->grab.pointer;
-	enum wl_pointer_button_state state = state_w;
+	enum wl_pointer_button_state state = button_event->button_state;
 	struct weston_data_source *data_source = drag->base.data_source;
 
 	if (data_source &&
-	    pointer->grab_button == button &&
+	    pointer->grab_button == button_event->button &&
 	    state == WL_POINTER_BUTTON_STATE_RELEASED) {
 		if (drag->base.focus_resource &&
 		    data_source->accepted &&

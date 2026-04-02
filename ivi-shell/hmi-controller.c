@@ -1755,11 +1755,10 @@ touch_move_grab_motion(struct weston_touch_grab *grab,
 
 static void
 pointer_move_workspace_grab_button(struct weston_pointer_grab *grab,
-				   const struct timespec *time, uint32_t button,
-				   uint32_t state_w)
+				   const struct weston_pointer_button_event *button_event)
 {
-	if (BTN_LEFT == button &&
-	    WL_POINTER_BUTTON_STATE_RELEASED == state_w) {
+	if (BTN_LEFT == button_event->button &&
+	    WL_POINTER_BUTTON_STATE_RELEASED == button_event->button_state) {
 		struct pointer_grab *pg = (struct pointer_grab *)grab;
 
 		pointer_move_workspace_grab_end(pg);
