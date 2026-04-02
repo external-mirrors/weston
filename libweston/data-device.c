@@ -591,8 +591,7 @@ drag_grab_focus(struct weston_pointer_grab *grab)
 
 static void
 drag_grab_motion(struct weston_pointer_grab *grab,
-		 const struct timespec *time,
-		 struct weston_pointer_motion_event *event)
+		 const struct weston_pointer_motion_event *event)
 {
 	struct weston_pointer_drag *drag =
 		container_of(grab, struct weston_pointer_drag, grab);
@@ -610,7 +609,7 @@ drag_grab_motion(struct weston_pointer_grab *grab,
 	if (drag->base.focus_resource) {
 		struct weston_coord_surface surf_pos;
 
-		msecs = timespec_to_msec(time);
+		msecs = timespec_to_msec(&event->base.ts);
 		surf_pos = weston_coord_global_to_surface(drag->base.focus,
 							  pointer->pos);
 

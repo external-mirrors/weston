@@ -605,7 +605,14 @@ enum weston_pointer_motion_mask {
 	WESTON_POINTER_MOTION_REL_UNACCEL = 1 << 2,
 };
 
+/* base/common struct which all weston_xxx_event should "inherit" */
+struct weston_input_event {
+       struct timespec ts;
+       struct weston_seat *seat;
+};
+
 struct weston_pointer_motion_event {
+	struct weston_input_event base;
 	uint32_t mask;
 	struct weston_coord_global abs;
 	struct weston_coord rel;
@@ -617,12 +624,6 @@ struct weston_pointer_axis_event {
 	double value;
 	bool has_discrete;
 	int32_t discrete;
-};
-
-/* base/common struct which all weston_xxx_event should "inherit" */
-struct weston_input_event {
-       struct timespec ts;
-       struct weston_seat *seat;
 };
 
 struct weston_key_event {
@@ -637,8 +638,7 @@ struct weston_pointer_grab;
 struct weston_pointer_grab_interface {
 	void (*focus)(struct weston_pointer_grab *grab);
 	void (*motion)(struct weston_pointer_grab *grab,
-		       const struct timespec *time,
-		       struct weston_pointer_motion_event *event);
+		       const struct weston_pointer_motion_event *event);
 	void (*button)(struct weston_pointer_grab *grab,
 		       const struct timespec *time,
 		       uint32_t button, uint32_t state);
@@ -966,12 +966,11 @@ struct weston_color_representation_matrix {
 
 struct weston_coord_global
 weston_pointer_motion_to_abs(struct weston_pointer *pointer,
-			     struct weston_pointer_motion_event *event);
+			     const struct weston_pointer_motion_event *event);
 
 void
 weston_pointer_send_motion(struct weston_pointer *pointer,
-			   const struct timespec *time,
-			   struct weston_pointer_motion_event *event);
+			   const struct weston_pointer_motion_event *event);
 bool
 weston_pointer_has_focus_resource(struct weston_pointer *pointer);
 void
@@ -1002,7 +1001,7 @@ void
 weston_pointer_end_grab(struct weston_pointer *pointer);
 void
 weston_pointer_move(struct weston_pointer *pointer,
-		    struct weston_pointer_motion_event *event);
+		    const struct weston_pointer_motion_event *event);
 void
 weston_pointer_move_to(struct weston_pointer *pointer,
 		       struct weston_coord_global pos);
@@ -1031,6 +1030,14 @@ weston_key_event_init(struct weston_key_event *event, struct timespec *ts,
 		      struct weston_seat *seat, uint32_t key,
 		      enum wl_keyboard_key_state key_state,
 		      enum weston_key_state_update key_update_state);
+
+void
+weston_pointer_motion_event_init(struct weston_pointer_motion_event *event,
+				 struct timespec *ts, struct weston_seat *seat,
+				 uint32_t mask,
+				 const struct weston_coord_global *abs,
+				 const struct weston_coord *rel,
+				 const struct weston_coord *rel_unaccel);
 
 void
 weston_keyboard_send_modifiers(struct weston_keyboard *keyboard,

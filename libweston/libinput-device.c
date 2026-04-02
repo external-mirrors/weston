@@ -122,9 +122,10 @@ handle_pointer_motion(struct libinput_device *libinput_device,
 {
 	struct evdev_device *device =
 		libinput_device_get_user_data(libinput_device);
-	struct weston_pointer_motion_event event = { 0 };
+	struct weston_pointer_motion_event event;
 	struct timespec time;
 	double dx_unaccel, dy_unaccel;
+	struct weston_coord rel, rel_unaccel;
 
 	ensure_pointer_capability(libinput_device);
 
@@ -133,14 +134,14 @@ handle_pointer_motion(struct libinput_device *libinput_device,
 	dx_unaccel = libinput_event_pointer_get_dx_unaccelerated(pointer_event);
 	dy_unaccel = libinput_event_pointer_get_dy_unaccelerated(pointer_event);
 
-	event = (struct weston_pointer_motion_event) {
-		.mask = WESTON_POINTER_MOTION_REL |
-			WESTON_POINTER_MOTION_REL_UNACCEL,
-	};
-	event.rel = weston_coord(libinput_event_pointer_get_dx(pointer_event),
-				 libinput_event_pointer_get_dy(pointer_event));
-	event.rel_unaccel = weston_coord(dx_unaccel, dy_unaccel);
-	notify_motion(device->seat, &time, &event);
+	rel = weston_coord(libinput_event_pointer_get_dx(pointer_event),
+			   libinput_event_pointer_get_dy(pointer_event));
+	rel_unaccel = weston_coord(dx_unaccel, dy_unaccel);
+
+	weston_pointer_motion_event_init(&event, &time, device->seat,
+					 WESTON_POINTER_MOTION_REL | WESTON_POINTER_MOTION_REL_UNACCEL,
+					 NULL, &rel, &rel_unaccel);
+	notify_motion(&event);
 
 	return true;
 }
@@ -155,6 +156,7 @@ handle_pointer_motion_absolute(
 	struct weston_output *output = device->output;
 	struct weston_coord_global pos;
 	struct timespec time;
+	struct weston_pointer_motion_event event;
 	double x, y;
 	uint32_t width, height;
 
@@ -173,7 +175,10 @@ handle_pointer_motion_absolute(
 	y = libinput_event_pointer_get_absolute_y_transformed(pointer_event,
 							      height);
 	pos = weston_coord_global_from_output_point(x, y, output);
-	notify_motion_absolute(device->seat, &time, pos);
+	weston_pointer_motion_event_init(&event, &time, device->seat,
+					 WESTON_POINTER_MOTION_ABS,
+					 &pos, NULL, NULL);
+	notify_motion_absolute(&event);
 
 	return true;
 }

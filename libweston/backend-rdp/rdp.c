@@ -1282,9 +1282,16 @@ rdp_translate_and_notify_mouse_position(RdpPeerContext *peerContext, UINT16 x, U
 	         different scaling. In such case, hit test to that window area on
 	         non primary-resident monitor (surface->output) dosn't work. */
 	if (to_weston_coordinate(peerContext, &sx, &sy)) {
+		struct weston_pointer_motion_event event;
+
 		pos.c = weston_coord(sx, sy);
 		weston_compositor_get_time(&time);
-		notify_motion_absolute(peerContext->item.seat, &time, pos);
+
+		weston_pointer_motion_event_init(&event, &time,
+						 peerContext->item.seat,
+						 WESTON_POINTER_MOTION_ABS,
+						 &pos, NULL, NULL);
+		notify_motion_absolute(&event);
 		return TRUE;
 	}
 	return FALSE;
@@ -1515,9 +1522,15 @@ xf_extendedMouseEvent(rdpInput *input, UINT16 flags, UINT16 x, UINT16 y)
 
 	output = rdp_get_first_output(peerContext->rdpBackend);
 	if (x < output->base.width && y < output->base.height) {
+		struct weston_pointer_motion_event event;
+
 		weston_compositor_get_time(&time);
 		pos.c = weston_coord(x, y);
-		notify_motion_absolute(peerContext->item.seat, &time, pos);
+
+		weston_pointer_motion_event_init(&event, &time, peerContext->item.seat,
+						 WESTON_POINTER_MOTION_ABS,
+						 &pos, NULL, NULL);
+		notify_motion_absolute(&event);
 		need_frame = true;
 	}
 

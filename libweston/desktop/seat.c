@@ -117,10 +117,9 @@ weston_desktop_seat_popup_grab_pointer_focus(struct weston_pointer_grab *grab)
 
 static void
 weston_desktop_seat_popup_grab_pointer_motion(struct weston_pointer_grab *grab,
-					      const struct timespec *time,
-					      struct weston_pointer_motion_event *event)
+					      const struct weston_pointer_motion_event *event)
 {
-	weston_pointer_send_motion(grab->pointer, time, event);
+	weston_pointer_send_motion(grab->pointer, event);
 }
 
 static void

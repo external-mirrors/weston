@@ -251,11 +251,11 @@ void
 notify_keyboard_focus_out(struct weston_seat *seat);
 
 void
-notify_motion(struct weston_seat *seat, const struct timespec *time,
-	      struct weston_pointer_motion_event *event);
+notify_motion(const struct weston_pointer_motion_event *event);
+
 void
-notify_motion_absolute(struct weston_seat *seat, const struct timespec *time,
-		       struct weston_coord_global pos);
+notify_motion_absolute(const struct weston_pointer_motion_event *event);
+
 void
 notify_modifiers(struct weston_seat *seat, uint32_t serial);
 

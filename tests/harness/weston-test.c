@@ -412,19 +412,19 @@ move_pointer(struct wl_client *client, struct wl_resource *resource,
 	struct weston_test *test = wl_resource_get_user_data(resource);
 	struct weston_seat *seat = get_seat(test);
 	struct weston_pointer *pointer = weston_seat_get_pointer(seat);
-	struct weston_pointer_motion_event event = { 0 };
+	struct weston_pointer_motion_event event;
 	struct weston_coord_global pos;
+	struct weston_coord rel;
 	struct timespec time;
 
 	pos.c = weston_coord(x, y);
-	event = (struct weston_pointer_motion_event) {
-		.mask = WESTON_POINTER_MOTION_REL,
-		.rel = weston_coord_global_sub(pos, pointer->pos).c,
-	};
-
 	timespec_from_proto(&time, tv_sec_hi, tv_sec_lo, tv_nsec);
+	rel = weston_coord_global_sub(pos, pointer->pos).c;
 
-	notify_motion(seat, &time, &event);
+	weston_pointer_motion_event_init(&event, &time, seat,
+					 WESTON_POINTER_MOTION_REL,
+					 NULL, &rel, NULL);
+	notify_motion(&event);
 
 	notify_pointer_position(test, resource);
 }

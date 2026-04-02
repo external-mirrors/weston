@@ -68,8 +68,7 @@ pointer_move_grab_frame(struct weston_pointer_grab *grab)
 
 static void
 pointer_move_grab_motion(struct weston_pointer_grab *pointer_grab,
-			 const struct timespec *time,
-			 struct weston_pointer_motion_event *event)
+			 const struct weston_pointer_motion_event *event)
 {
 	struct kiosk_shell_grab *shgrab =
 		container_of(pointer_grab, struct kiosk_shell_grab, pointer_grab);

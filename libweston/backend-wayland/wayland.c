@@ -1677,6 +1677,7 @@ input_handle_motion(void *data, struct wl_pointer *pointer,
 	bool want_frame = false;
 	double x, y;
 	struct weston_coord_global pos;
+	struct weston_pointer_motion_event event;
 	struct timespec ts;
 
 	if (!input->output)
@@ -1717,7 +1718,11 @@ input_handle_motion(void *data, struct wl_pointer *pointer,
 
 	if (location == THEME_LOCATION_CLIENT_AREA) {
 		timespec_from_msec(&ts, time);
-		notify_motion_absolute(&input->base, &ts, pos);
+
+		weston_pointer_motion_event_init(&event, &ts, &input->base,
+						 WESTON_POINTER_MOTION_ABS,
+						 &pos, NULL, NULL);
+		notify_motion_absolute(&event);
 		want_frame = true;
 	}
 

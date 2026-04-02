@@ -41,6 +41,7 @@
 #include <linux/input.h>
 
 #include "shared/helpers.h"
+#include "shared/weston-assert.h"
 #include "shared/os-compatibility.h"
 #include "shared/timespec-util.h"
 #include <libweston/libweston.h>
@@ -304,7 +305,7 @@ static void unbind_resource(struct wl_resource *resource)
 
 WL_EXPORT struct weston_coord_global
 weston_pointer_motion_to_abs(struct weston_pointer *pointer,
-			     struct weston_pointer_motion_event *event)
+			     const struct weston_pointer_motion_event *event)
 {
 	struct weston_coord_global pos;
 
@@ -322,7 +323,7 @@ weston_pointer_motion_to_abs(struct weston_pointer *pointer,
 
 static bool
 weston_pointer_motion_to_rel(struct weston_pointer *pointer,
-			     struct weston_pointer_motion_event *event,
+			     const struct weston_pointer_motion_event *event,
 			     struct weston_coord *rel,
 			     struct weston_coord *rel_unaccel)
 {
@@ -546,7 +547,7 @@ weston_pointer_move_to(struct weston_pointer *pointer,
 
 WL_EXPORT void
 weston_pointer_move(struct weston_pointer *pointer,
-		    struct weston_pointer_motion_event *event)
+		    const struct weston_pointer_motion_event *event)
 {
 	struct weston_coord_global pos;
 
@@ -556,8 +557,7 @@ weston_pointer_move(struct weston_pointer *pointer,
 
 static void
 pointer_send_relative_motion(struct weston_pointer *pointer,
-			     const struct timespec *time,
-			     struct weston_pointer_motion_event *event)
+			     const struct weston_pointer_motion_event *event)
 {
 	uint64_t time_usec;
 	struct weston_coord rel, rel_unaccel;
@@ -573,7 +573,7 @@ pointer_send_relative_motion(struct weston_pointer *pointer,
 		return;
 
 	resource_list = &pointer->focus_client->relative_pointer_resources;
-	time_usec = timespec_to_usec(time);
+	time_usec = timespec_to_usec(&event->base.ts);
 
 	wl_resource_for_each(resource, resource_list) {
 		zwp_relative_pointer_v1_send_relative_motion(
@@ -589,7 +589,7 @@ pointer_send_relative_motion(struct weston_pointer *pointer,
 
 static void
 pointer_send_motion(struct weston_pointer *pointer,
-		    const struct timespec *time,
+		    const struct timespec *ts,
 		    wl_fixed_t sx, wl_fixed_t sy)
 {
 	struct wl_list *resource_list;
@@ -600,19 +600,18 @@ pointer_send_motion(struct weston_pointer *pointer,
 		return;
 
 	resource_list = &pointer->focus_client->pointer_resources;
-	msecs = timespec_to_msec(time);
+	msecs = timespec_to_msec(ts);
 	wl_resource_for_each(resource, resource_list) {
 		send_timestamps_for_input_resource(resource,
 		                                   &pointer->timestamps_list,
-		                                   time);
+		                                   ts);
 		wl_pointer_send_motion(resource, msecs, sx, sy);
 	}
 }
 
 WL_EXPORT void
 weston_pointer_send_motion(struct weston_pointer *pointer,
-			   const struct timespec *time,
-			   struct weston_pointer_motion_event *event)
+			   const struct weston_pointer_motion_event *event)
 {
 	wl_fixed_t old_sx;
 	wl_fixed_t old_sy;
@@ -620,7 +619,7 @@ weston_pointer_send_motion(struct weston_pointer *pointer,
 	struct weston_coord_global pos;
 
 	pos = weston_pointer_motion_to_abs(pointer, event);
-	pos = weston_pointer_clamp(pointer,pos);
+	pos = weston_pointer_clamp(pointer, pos);
 
 	if (pointer->focus) {
 		struct weston_coord_surface surf_pos;
@@ -640,19 +639,17 @@ weston_pointer_send_motion(struct weston_pointer *pointer,
 
 	if (pointer->focus && old_focus == pointer->focus &&
 	    (old_sx != pointer->sx || old_sy != pointer->sy)) {
-		pointer_send_motion(pointer, time,
-				    pointer->sx, pointer->sy);
+		pointer_send_motion(pointer, &event->base.ts, pointer->sx, pointer->sy);
 	}
 
-	pointer_send_relative_motion(pointer, time, event);
+	pointer_send_relative_motion(pointer, event);
 }
 
 static void
 default_grab_pointer_motion(struct weston_pointer_grab *grab,
-			    const struct timespec *time,
-			    struct weston_pointer_motion_event *event)
+			    const struct weston_pointer_motion_event *event)
 {
-	weston_pointer_send_motion(grab->pointer, time, event);
+	weston_pointer_send_motion(grab->pointer, event);
 }
 
 /** Check if the pointer has focused resources.
@@ -2241,15 +2238,14 @@ weston_pointer_handle_output_destroy(struct wl_listener *listener, void *data)
 }
 
 WL_EXPORT void
-notify_motion(struct weston_seat *seat,
-	      const struct timespec *time,
-	      struct weston_pointer_motion_event *event)
+notify_motion(const struct weston_pointer_motion_event *event)
 {
+	struct weston_seat *seat = event->base.seat;
 	struct weston_compositor *ec = seat->compositor;
 	struct weston_pointer *pointer = weston_seat_get_pointer(seat);
 
 	weston_compositor_wake(ec);
-	pointer->grab->interface->motion(pointer->grab, time, event);
+	pointer->grab->interface->motion(pointer->grab, event);
 }
 
 static void
@@ -2289,20 +2285,14 @@ run_modifier_bindings(struct weston_seat *seat, uint32_t old, uint32_t new)
 }
 
 WL_EXPORT void
-notify_motion_absolute(struct weston_seat *seat, const struct timespec *time,
-		       struct weston_coord_global pos)
+notify_motion_absolute(const struct weston_pointer_motion_event *event)
 {
+	struct weston_seat *seat = event->base.seat;
 	struct weston_compositor *ec = seat->compositor;
 	struct weston_pointer *pointer = weston_seat_get_pointer(seat);
-	struct weston_pointer_motion_event event = { 0 };
 
 	weston_compositor_wake(ec);
-
-	event = (struct weston_pointer_motion_event) {
-		.mask = WESTON_POINTER_MOTION_ABS,
-		.abs = pos,
-	};
-	pointer->grab->interface->motion(pointer->grab, time, &event);
+	pointer->grab->interface->motion(pointer->grab, event);
 }
 
 static unsigned int
@@ -4733,10 +4723,9 @@ locked_pointer_grab_pointer_focus(struct weston_pointer_grab *grab)
 
 static void
 locked_pointer_grab_pointer_motion(struct weston_pointer_grab *grab,
-				   const struct timespec *time,
-				   struct weston_pointer_motion_event *event)
+				   const struct weston_pointer_motion_event *event)
 {
-	pointer_send_relative_motion(grab->pointer, time, event);
+	pointer_send_relative_motion(grab->pointer, event);
 }
 
 static void
@@ -5537,7 +5526,7 @@ get_motion_directions(struct line *motion)
 
 static struct weston_coord_global
 weston_pointer_clamp_event_to_region(struct weston_pointer *pointer,
-				     struct weston_pointer_motion_event *event,
+				     const struct weston_pointer_motion_event *event,
 				     pixman_region32_t *region)
 {
 	wl_fixed_t old_sx = pointer->sx;
@@ -5704,8 +5693,7 @@ maybe_warp_confined_pointer(struct weston_pointer_constraint *constraint)
 
 static void
 confined_pointer_grab_pointer_motion(struct weston_pointer_grab *grab,
-				     const struct timespec *time,
-				     struct weston_pointer_motion_event *event)
+				     const struct weston_pointer_motion_event *event)
 {
 	struct weston_pointer_constraint *constraint =
 		container_of(grab, struct weston_pointer_constraint, grab);
@@ -5736,11 +5724,10 @@ confined_pointer_grab_pointer_motion(struct weston_pointer_grab *grab,
 	pointer->sy = wl_fixed_from_double(surf_pos.c.y);
 
 	if (old_sx != pointer->sx || old_sy != pointer->sy) {
-		pointer_send_motion(pointer, time,
-				    pointer->sx, pointer->sy);
+		pointer_send_motion(pointer, &event->base.ts, pointer->sx, pointer->sy);
 	}
 
-	pointer_send_relative_motion(pointer, time, event);
+	pointer_send_relative_motion(pointer, event);
 }
 
 static void
@@ -6047,4 +6034,33 @@ weston_key_event_init(struct weston_key_event *event, struct timespec *ts,
 	event->key = key;
 	event->key_state = key_state;
 	event->key_update_state = key_update_state;
+}
+
+WL_EXPORT void
+weston_pointer_motion_event_init(struct weston_pointer_motion_event *event,
+			         struct timespec *ts, struct weston_seat *seat,
+				 uint32_t mask,
+				 const struct weston_coord_global *abs,
+				 const struct weston_coord *rel,
+				 const struct weston_coord *rel_unaccel)
+{
+	weston_input_event_init(&event->base, ts, seat);
+
+	if (mask & WESTON_POINTER_MOTION_ABS) {
+		weston_assert_ptr_not_null(event->base.seat->compositor, abs);
+		event->abs = *abs;
+	}
+
+	if (mask & WESTON_POINTER_MOTION_REL) {
+		weston_assert_ptr_not_null(event->base.seat->compositor, rel);
+		event->rel = *rel;
+	}
+
+	if (mask & WESTON_POINTER_MOTION_REL_UNACCEL) {
+		weston_assert_ptr_not_null(event->base.seat->compositor, rel_unaccel);
+		event->rel_unaccel = *rel_unaccel;
+	}
+
+
+	event->mask = mask;
 }

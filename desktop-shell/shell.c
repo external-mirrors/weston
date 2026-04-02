@@ -911,8 +911,7 @@ constrain_position(struct weston_move_grab *move)
 
 static void
 move_grab_motion(struct weston_pointer_grab *grab,
-		 const struct timespec *time,
-		 struct weston_pointer_motion_event *event)
+		 const struct weston_pointer_motion_event *event)
 {
 	struct weston_move_grab *move = (struct weston_move_grab *) grab;
 	struct weston_pointer *pointer = grab->pointer;
@@ -1141,8 +1140,7 @@ surface_tablet_tool_move(struct shell_surface *shsurf, struct weston_tablet_tool
 
 static void
 resize_grab_motion(struct weston_pointer_grab *grab,
-		   const struct timespec *time,
-		   struct weston_pointer_motion_event *event)
+		   const struct weston_pointer_motion_event *event)
 {
 	struct weston_resize_grab *resize = (struct weston_resize_grab *) grab;
 	struct weston_pointer *pointer = grab->pointer;
@@ -1311,8 +1309,7 @@ busy_cursor_grab_focus(struct weston_pointer_grab *base)
 
 static void
 busy_cursor_grab_motion(struct weston_pointer_grab *grab,
-			const struct timespec *time,
-			struct weston_pointer_motion_event *event)
+			const struct weston_pointer_motion_event *event)
 {
 	weston_pointer_move(grab->pointer, event);
 }
@@ -3220,8 +3217,7 @@ terminate_binding(struct weston_keyboard *keyboard, const struct timespec *time,
 
 static void
 rotate_grab_motion(struct weston_pointer_grab *grab,
-		   const struct timespec *time,
-		   struct weston_pointer_motion_event *event)
+		   const struct weston_pointer_motion_event *event)
 {
 	struct rotate_grab *rotate =
 		container_of(grab, struct rotate_grab, base.grab);
