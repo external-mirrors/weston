@@ -222,6 +222,24 @@ weston_timeline_subscription_surface_ensure(struct weston_timeline_subscription 
 	return sub_obj;
 }
 
+static struct weston_timeline_subscription_object *
+weston_timeline_subscription_seat_ensure(struct weston_timeline_subscription *tl_sub,
+					 struct weston_seat *seat)
+{
+	struct weston_timeline_subscription_object *sub_obj;
+
+	sub_obj = weston_timeline_subscription_search(tl_sub, seat);
+	if (!sub_obj) {
+		sub_obj = weston_timeline_subscription_object_create(seat, tl_sub);
+
+		sub_obj->destroy_listener.notify =
+			weston_timeline_destroy_subscription_object_notify;
+		wl_signal_add(&seat->destroy_signal,
+			      &sub_obj->destroy_listener);
+	}
+	return sub_obj;
+}
+
 static void
 fprint_quoted_string(struct weston_log_subscription *sub, const char *str)
 {
@@ -265,6 +283,36 @@ emit_weston_output(struct timeline_emit_context *ctx, void *obj)
 	return 1;
 }
 
+static void
+emit_weston_seat_print_id(struct weston_log_subscription *sub,
+			    struct weston_timeline_subscription_object *sub_obj,
+			    const char *name)
+{
+	if (!weston_timeline_check_object_refresh(sub_obj))
+		return;
+
+	weston_log_subscription_printf(sub, "{ \"id\":%u, "
+			"\"type\":\"weston_seat\", \"name\":", sub_obj->id);
+	fprint_quoted_string(sub, name);
+	weston_log_subscription_printf(sub, " }\n");
+}
+
+static int
+common_emit_seat(struct timeline_emit_context *ctx, struct weston_seat *seat)
+{
+	struct weston_log_subscription *sub = ctx->subscription;
+	struct weston_timeline_subscription_object *sub_obj;
+	struct weston_timeline_subscription *tl_sub;
+
+	tl_sub = weston_log_subscription_get_data(sub);
+	sub_obj = weston_timeline_subscription_seat_ensure(tl_sub, seat);
+	emit_weston_seat_print_id(sub, sub_obj, seat->seat_name);
+
+	assert(sub_obj->id != 0);
+	fprintf(ctx->cur, "\"seat\":%u", sub_obj->id);
+
+	return 1;
+}
 
 static struct weston_timeline_subscription_object *
 check_weston_surface_description(struct weston_log_subscription *sub,
@@ -342,6 +390,21 @@ emit_gpu_timestamp(struct timeline_emit_context *ctx, void *obj)
 	return 1;
 }
 
+static int
+emit_input_event(struct timeline_emit_context *ctx, void *obj)
+{
+	struct weston_input_event *ievent = obj;
+	struct timespec ts = ievent->ts;
+	struct weston_seat *seat = ievent->seat;
+
+	common_emit_seat(ctx, seat);
+
+	fprintf(ctx->cur, ", \"event ts\":[%" PRId64 ", %ld]",
+		(int64_t)ts.tv_sec, ts.tv_nsec);
+
+	return 1;
+}
+
 static struct weston_timeline_subscription_object *
 weston_timeline_get_subscription_object(struct weston_log_subscription *sub,
 		void *object)
@@ -392,6 +455,7 @@ static const type_func type_dispatch[] = {
 	[TLT_SURFACE] = emit_weston_surface,
 	[TLT_VBLANK] = emit_vblank_timestamp,
 	[TLT_GPU] = emit_gpu_timestamp,
+	[TLT_INPUT_EVENT] = emit_input_event,
 };
 
 static const char *
@@ -420,6 +484,8 @@ tlp_to_string(enum timeline_point_name tlp)
 		return "renderer_gpu_begin";
 	case TLP_RENDERER_GPU_END:
 		return "renderer_gpu_end";
+	case TLP_INPUT_KERNEL_TS:
+		return "event ts";
 	}
 	assert(!"not reached");
 }

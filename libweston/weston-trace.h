@@ -152,6 +152,12 @@
 #define _WESTON_TRACE_ANNOTATE_PAIR(pair) _WESTON_TRACE_ANNOTATE_ADD_GENERIC pair
 
 /* end of helper section */
+#define _WESTON_TRACE_INSTANT_TIMESTAMP(name, track_id, id, clock, timestamp) \
+	do {                                                                  \
+		if (unlikely(util_perfetto_is_tracing_enabled()))             \
+			_weston_trace_instant_timestamp(name, track_id, id,   \
+							clock, timestamp);    \
+	} while (0)
 
 #if __has_attribute(cleanup) && __has_attribute(unused)
 
@@ -255,6 +261,15 @@ _weston_trace_annotate_func_begin_flow(const char *name, uint64_t *id,
 	return 0;
 }
 
+static inline int
+_weston_trace_instant_timestamp(const char *name, uint64_t track_id, uint64_t id,
+				clock_t clock, uint64_t ts)
+{
+	weston_assert_u64_gt(NULL, id, 0);
+	util_perfetto_trace_instant_timestamp(name, track_id, id, clock, ts);
+	return 0;
+}
+
 static inline void
 _weston_trace_scope_end(int *scope)
 {
@@ -276,6 +291,7 @@ _weston_trace_scope_end(int *scope)
 #define _WESTON_TRACE_SET_COUNTER(name, value)
 #define _WESTON_TRACE_TIMESTAMP_BEGIN(name, track_id, flow_id, clock, timestamp)
 #define _WESTON_TRACE_TIMESTAMP_END(name, track_id, clock, timestamp)
+#define _WESTON_TRACE_INSTANT_TIMESTAMP(name, track_id, id, clock, timestamp)
 
 #define _WESTON_TRACE_BEGIN_ANNOTATION()
 #define _WESTON_TRACE_COMMIT_ANNOTATION(id, name)
@@ -294,6 +310,9 @@ _weston_trace_scope_end(int *scope)
 	_WESTON_TRACE_TIMESTAMP_BEGIN(name, track_id, flow_id, clock, timestamp)
 #define WESTON_TRACE_TIMESTAMP_END(name, track_id, clock, timestamp) \
 	_WESTON_TRACE_TIMESTAMP_END(name, track_id, clock, timestamp)
+#define WESTON_TRACE_INSTANT_TIMESTAMP(name, track_id, id, clock, timestamp) \
+	_WESTON_TRACE_INSTANT_TIMESTAMP(name, track_id, id, clock, timestamp)
+
 
 #define WESTON_TRACE_BEGIN_ANNOTATION() \
         _WESTON_TRACE_BEGIN_ANNOTATION()

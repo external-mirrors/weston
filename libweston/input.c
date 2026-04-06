@@ -5972,6 +5972,10 @@ weston_input_event_init(struct weston_input_event *ievent, struct timespec *ts,
 {
 	ievent->ts = *ts;
 	ievent->seat = seat;
+	ievent->flow_id = 0;
+
+	WESTON_TRACE_FUNC_FLOW(&ievent->flow_id);
+
 }
 
 WL_EXPORT void

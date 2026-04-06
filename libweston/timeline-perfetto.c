@@ -65,6 +65,14 @@ build_track_name(struct weston_surface *surface, char *name, int size)
 }
 
 static void
+build_seat_track_name(struct weston_seat *seat, char *name, int size)
+{
+	assert(seat->track_id == 0);
+
+	snprintf(name, size, "seat: %s", seat->seat_name);
+}
+
+static void
 weston_perfetto_ensure_surface_id(struct weston_surface *surface)
 {
 	char track_name[600];
@@ -75,6 +83,19 @@ weston_perfetto_ensure_surface_id(struct weston_surface *surface)
 	build_track_name(surface, track_name, sizeof(track_name));
 
 	surface->damage_track_id = util_perfetto_new_track(track_name);
+}
+
+static void
+weston_perfetto_ensure_seat_id(struct weston_seat *seat)
+{
+	char track_name[600];
+
+	if (seat->track_id)
+		return;
+
+	build_seat_track_name(seat, track_name, sizeof(track_name));
+
+	seat->track_id = util_perfetto_new_track(track_name);
 }
 
 /**
@@ -94,9 +115,10 @@ weston_timeline_perfetto(struct weston_log_scope *timeline_scope,
 {
 	struct weston_output *output = NULL;
 	struct weston_surface *surface = NULL;
+	struct weston_input_event *ievent = NULL;
 	struct timespec ts;
 	uint64_t now_ns;
-	uint64_t vblank_ns = 0, gpu_ns = 0;
+	uint64_t vblank_ns = 0, gpu_ns = 0, kernel_input_ts = 0;
 	va_list argp;
 
 	if (!util_perfetto_is_tracing_enabled())
@@ -129,6 +151,11 @@ weston_timeline_perfetto(struct weston_log_scope *timeline_scope,
 			break;
 		case TLT_GPU:
 			gpu_ns = timespec_to_nsec(obj);
+			break;
+		case TLT_INPUT_EVENT:
+			ievent = obj;
+			weston_perfetto_ensure_seat_id(ievent->seat);
+			kernel_input_ts = timespec_to_nsec(&ievent->ts);
 			break;
 		default:
 			assert(!"not reached");
@@ -169,6 +196,9 @@ weston_timeline_perfetto(struct weston_log_scope *timeline_scope,
 		break;
 	case TLP_RENDERER_GPU_END:
 		WESTON_TRACE_TIMESTAMP_END("Active", output->gpu_track_id, CLOCK_MONOTONIC, gpu_ns);
+		break;
+	case TLP_INPUT_KERNEL_TS:
+		WESTON_TRACE_INSTANT_TIMESTAMP("event ts", ievent->seat->track_id, ievent->flow_id, CLOCK_MONOTONIC, kernel_input_ts);
 		break;
 	default:
 		assert(!"not reached");

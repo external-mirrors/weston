@@ -609,6 +609,7 @@ enum weston_pointer_motion_mask {
 struct weston_input_event {
        struct timespec ts;
        struct weston_seat *seat;
+       uint64_t flow_id;
 };
 
 struct weston_pointer_motion_event {
@@ -1247,6 +1248,7 @@ struct weston_seat {
 	struct wl_list tablet_tool_list;
 	struct wl_list tablet_seat_resource_list;
 	struct wl_signal tablet_tool_added_signal;
+	uint64_t track_id;
 };
 
 enum {

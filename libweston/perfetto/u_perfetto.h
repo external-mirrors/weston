@@ -96,6 +96,9 @@ void util_perfetto_trace_commit_annotate_func(const char *name,
 void util_perfetto_trace_commit_annotate_func_flow(uint64_t id, const char *name,
 		struct weston_debug_annotations *annots);
 
+void util_perfetto_trace_instant_timestamp(const char *name, uint64_t track_id,
+		uint64_t id, clockid_t clock, uint64_t ts);
+
 uint64_t util_perfetto_next_id(void);
 
 uint64_t util_perfetto_new_track(const char *name);
@@ -152,6 +155,12 @@ util_perfetto_trace_commit_annotate_func(const char *name,
 static inline void
 util_perfetto_trace_commit_annotate_func_flow(uint64_t id, const char *name,
 					      struct weston_debug_annotations *annots)
+{
+}
+
+static inline void
+util_perfetto_trace_instant_timestamp(const char *name, uint64_t track_id,
+				      clockid_t clock, uint64_t ts)
 {
 }
 

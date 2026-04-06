@@ -145,6 +145,32 @@ util_perfetto_counter_set(const char *name, double value)
 		      perfetto::DynamicString(name), value);
 }
 
+void
+util_perfetto_trace_instant_timestamp(const char *name, uint64_t track_id, uint64_t id, clockid_t clock, uint64_t ts)
+{
+	if (id) {
+		TRACE_EVENT_INSTANT(UTIL_PERFETTO_CATEGORY_DEFAULT_STR,
+				    nullptr,
+				    perfetto::Track(track_id),
+				    perfetto::TraceTimestamp{clockid_to_perfetto_clock(clock), ts},
+				    perfetto::Flow::ProcessScoped(id),
+				    [&](perfetto::EventContext ctx) {
+					ctx.event()->set_name(name);
+					ctx.AddDebugAnnotation(name, ts);
+		});
+		return;
+	}
+
+	TRACE_EVENT_INSTANT(UTIL_PERFETTO_CATEGORY_DEFAULT_STR,
+			    nullptr,
+			    perfetto::Track(track_id),
+			    perfetto::TraceTimestamp{clockid_to_perfetto_clock(clock), ts},
+			    [&](perfetto::EventContext ctx) {
+				ctx.event()->set_name(name);
+				ctx.AddDebugAnnotation(name, ts);
+	});
+}
+
 uint64_t
 util_perfetto_next_id(void)
 {
