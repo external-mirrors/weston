@@ -396,6 +396,15 @@ enum weston_repaint_status {
 	REPAINT_DEFERRED,
 };
 
+/** Output's required framebuffer alpha encoding
+ *
+ * \ingroup output
+ */
+enum weston_output_fb_alpha_encoding {
+	WESTON_OUTPUT_FB_ALPHA_PREMULT = 0,
+	WESTON_OUTPUT_FB_ALPHA_STRAIGHT,
+};
+
 /** Content producer for heads
  *
  * \rst
@@ -598,6 +607,8 @@ struct weston_output {
 	enum weston_vrr_mode vrr_mode;
 
 	enum weston_color_format color_format;
+
+	enum weston_output_fb_alpha_encoding fb_alpha_encoding;
 
 	enum weston_underscan underscan;
 	uint32_t underscan_hborder;

@@ -4846,14 +4846,37 @@ gl_renderer_create_window_surface(struct gl_renderer *gr,
 }
 
 static bool
+gl_renderer_can_render_straight_alpha(struct weston_compositor *wc)
+{
+	const struct weston_testsuite_quirks *quirks = &wc->test_data.test_quirks;
+	struct gl_renderer *gr = get_renderer(wc);
+
+	if (!gl_features_has(gr, FEATURE_SHADER_BLENDING))
+		return false;
+
+	/* In-shader blending is required. */
+	if (quirks->blending_impl == WESTON_BLENDING_IMPL_FF)
+		return false;
+
+	/* This forbids in-shader blending. */
+	if (quirks->gl_force_full_redraw_of_shadow_fb)
+		return false;
+
+	return true;
+}
+
+static bool
 setup_shader_blending_or_shadow(struct gl_renderer *gr,
 				struct weston_output *output,
 				struct gl_output_state *go)
 {
 	struct weston_compositor *wc = output->compositor;
 	const struct weston_testsuite_quirks *quirks = &wc->test_data.test_quirks;
+	enum gl_shader_fb_alpha_encoding fb_alpha_encoding;
 	bool has_blend_to_output;
 	bool needs_shadow;
+	bool needs_shader_blending;
+	bool needs_straight_alpha;
 
 	/**
 	 * has_blend_to_output requires either in-shader blending (our
@@ -4863,33 +4886,42 @@ setup_shader_blending_or_shadow(struct gl_renderer *gr,
 	 */
 
 	needs_shadow = quirks->gl_force_full_redraw_of_shadow_fb;
+	needs_straight_alpha = output->fb_alpha_encoding == WESTON_OUTPUT_FB_ALPHA_STRAIGHT;
+	needs_shader_blending = quirks->blending_impl == WESTON_BLENDING_IMPL_SHADER ||
+				needs_straight_alpha;
 	has_blend_to_output = output->color_outcome->from_blend_to_output &&
 			      !output->from_blend_to_output_by_backend;
 
 	if (has_blend_to_output)
 		weston_assert_true(wc, gl_features_has(gr, FEATURE_COLOR_TRANSFORMS));
 
-	if (!needs_shadow && has_blend_to_output) {
+	if (needs_shader_blending)
+		weston_assert_false(wc, needs_shadow);
+
+	if (!needs_shadow && (has_blend_to_output || needs_shader_blending)) {
 		switch (quirks->blending_impl) {
-		case WESTON_BLENDING_IMPL_AUTO:
-			go->shader_blender = gl_shader_blender_create(gr, output);
-			break;
 		case WESTON_BLENDING_IMPL_FF:
+			weston_assert_false(wc, needs_shader_blending);
 			go->shader_blender = NULL;
 			break;
+		case WESTON_BLENDING_IMPL_AUTO:
 		case WESTON_BLENDING_IMPL_SHADER:
-			go->shader_blender = gl_shader_blender_create(gr, output);
-			if (!go->shader_blender) {
-				/**
-				 * If there's a test quirk to create in-shader blender but we
-				 * can't do that (driver may not support), let's skip the test
-				 * instead of failing.
-				 */
-				weston_log("Error: quirks were used to force in-shader blending, "
-					   "but it's not supported by the GLES implementation.\n"
-					   "Quitting...\n");
-				weston_compositor_exit_with_code(wc, RESULT_SKIP);
-				return true;
+			fb_alpha_encoding = needs_straight_alpha ? SHADER_FB_ALPHA_STRAIGHT :
+								   SHADER_FB_ALPHA_PREMULT;
+			go->shader_blender = gl_shader_blender_create(gr, output, fb_alpha_encoding);
+			if (needs_shader_blending && !go->shader_blender) {
+				weston_log("Error: in-shader blending required but not supported by "
+					   "the GLES implementation.\n");
+				if (quirks->blending_impl == WESTON_BLENDING_IMPL_SHADER) {
+					/**
+					 * If there's a test quirk to create in-shader blender but we
+					 * can't do that (driver may not support), let's skip the test
+					 * instead of failing.
+					 */
+					weston_compositor_exit_with_code(wc, RESULT_SKIP);
+					return true;
+				}
+				return false;
 			}
 			break;
 		}
@@ -5312,6 +5344,7 @@ gl_renderer_display_create(struct weston_compositor *ec,
 	gr->base.surface_copy_content = gl_renderer_surface_copy_content;
 	gr->base.fill_buffer_info = gl_renderer_fill_buffer_info;
 	gr->base.buffer_init = gl_renderer_buffer_init;
+	gr->base.can_render_straight_alpha = gl_renderer_can_render_straight_alpha;
 	gr->base.output_set_border = gl_renderer_output_set_border;
 	gr->base.type = WESTON_RENDERER_GL;
 

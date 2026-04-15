@@ -57,6 +57,12 @@ noop_renderer_flush_damage(struct weston_paint_node *pnode)
 {
 }
 
+static bool
+noop_renderer_can_render_straight_alpha(struct weston_compositor *wc)
+{
+	return true;
+}
+
 static void
 noop_renderer_attach(struct weston_paint_node *pnode)
 {
@@ -135,6 +141,7 @@ noop_renderer_init(struct weston_compositor *ec)
 	renderer->base.flush_damage = noop_renderer_flush_damage;
 	renderer->base.attach = noop_renderer_attach;
 	renderer->base.destroy = noop_renderer_destroy;
+	renderer->base.can_render_straight_alpha = noop_renderer_can_render_straight_alpha;
 	renderer->base.type = WESTON_RENDERER_NOOP;
 	ec->renderer = &renderer->base;
 	ec->capabilities |=

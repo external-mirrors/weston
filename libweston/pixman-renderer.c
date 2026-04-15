@@ -948,6 +948,12 @@ pixman_renderer_destroy_renderbuffer(weston_renderbuffer_t renderbuffer)
 }
 
 static bool
+pixman_renderer_can_render_straight_alpha(struct weston_compositor *wc)
+{
+	return false;
+}
+
+static bool
 pixman_renderer_discard_renderbuffers(struct pixman_output_state *po,
 				      bool destroy)
 {
@@ -1080,6 +1086,8 @@ pixman_renderer_init(struct weston_compositor *ec)
 	renderer->base.create_renderbuffer_dmabuf = NULL;
 	renderer->base.destroy_renderbuffer =
 		pixman_renderer_destroy_renderbuffer;
+	renderer->base.can_render_straight_alpha =
+		pixman_renderer_can_render_straight_alpha;
 	renderer->base.type = WESTON_RENDERER_PIXMAN;
 	renderer->base.pixman = &pixman_renderer_interface;
 	ec->renderer = &renderer->base;
@@ -1161,6 +1169,13 @@ pixman_renderer_output_create(struct weston_output *output,
 	};
 
 	assert(!get_output_state(output));
+
+	if (output->fb_alpha_encoding == WESTON_OUTPUT_FB_ALPHA_STRAIGHT &&
+	    !pixman_renderer_can_render_straight_alpha(output->compositor)) {
+		weston_log("Error: straight alpha framebuffers required for output '%s' but\n"
+			   "Pixman-renderer does not support that.", output->name);
+		return -1;
+	}
 
 	po = zalloc(sizeof *po);
 	if (po == NULL)

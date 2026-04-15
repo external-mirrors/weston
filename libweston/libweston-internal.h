@@ -201,6 +201,14 @@ struct weston_renderer {
 					uint32_t format,
 					const uint64_t *modifiers, unsigned int count);
 
+	/** Checks if renderer is able to produce fb's with straight alpha
+	 * encoding (i.e. not pre-multiplied by alpha).
+	 *
+	 * \param wc The Weston compositor instance.
+	 * \return True if renderer is capable, false otherwise.
+	 */
+	bool (*can_render_straight_alpha)(struct weston_compositor *wc);
+
 	enum weston_renderer_type type;
 	const struct gl_renderer_interface *gl;
 	const struct vulkan_renderer_interface *vulkan;

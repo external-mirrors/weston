@@ -252,6 +252,12 @@ enum gl_shader_color_mapping {
 	SHADER_COLOR_MAPPING_MATRIX,
 };
 
+/* Keep the following in sync with fragment.glsl. */
+enum gl_shader_fb_alpha_encoding {
+	SHADER_FB_ALPHA_PREMULT = 0,
+	SHADER_FB_ALPHA_STRAIGHT,
+};
+
 enum gl_shader_attrib_loc {
 	SHADER_ATTRIB_LOC_POSITION = 0,
 	SHADER_ATTRIB_LOC_TEXCOORD,
@@ -314,6 +320,7 @@ struct gl_shader_requirements
 	unsigned color_post_curve:3; /* enum gl_shader_color_curve */
 
 	bool shader_blending:1;
+	unsigned fb_alpha_encoding:1;  /* enum gl_shader_fb_alpha_encoding */
 	unsigned fb_fetch_curve:3; /* enum gl_shader_color_curve */
 	unsigned fb_store_curve:3; /* enum gl_shader_color_curve */
 
@@ -321,7 +328,7 @@ struct gl_shader_requirements
 	 * The total size of all bitfields plus pad_bits_ must fill up exactly
 	 * how many bytes the compiler allocates for them together.
 	 */
-	unsigned pad_bits_:6;
+	unsigned pad_bits_:5;
 };
 static_assert(sizeof(struct gl_shader_requirements) ==
 	      4 /* total bitfield size in bytes */,
@@ -788,7 +795,8 @@ void
 gl_shader_blender_destroy(struct gl_shader_blender *shader_blender);
 
 struct gl_shader_blender *
-gl_shader_blender_create(struct gl_renderer *gr, struct weston_output *output);
+gl_shader_blender_create(struct gl_renderer *gr, struct weston_output *output,
+			 enum gl_shader_fb_alpha_encoding fb_alpha_encoding);
 
 void
 gl_shader_config_set_blender(struct gl_renderer *gr,

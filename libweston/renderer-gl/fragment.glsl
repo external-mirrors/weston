@@ -60,6 +60,10 @@
 #define SHADER_COLOR_MAPPING_3DLUT 1
 #define SHADER_COLOR_MAPPING_MATRIX 2
 
+/* enum gl_shader_fb_alpha_encoding */
+#define SHADER_FB_ALPHA_PREMULT 0
+#define SHADER_FB_ALPHA_STRAIGHT 1
+
 #if DEF_VARIANT == SHADER_VARIANT_EXTERNAL
 #extension GL_OES_EGL_image_external : require
 #endif
@@ -91,6 +95,7 @@ compile_const int c_color_post_curve = DEF_COLOR_POST_CURVE;
 compile_const int c_fb_fetch_curve = DEF_FB_FETCH_CURVE;
 compile_const int c_fb_store_curve = DEF_FB_STORE_CURVE;
 compile_const int c_color_effect = DEF_COLOR_EFFECT;
+compile_const int c_fb_alpha_encoding = DEF_FB_ALPHA_ENCODING;
 
 compile_const bool c_need_swizzle_idx = DEF_NEED_SWIZZLE_IDX;
 compile_const bool c_input_is_premult = DEF_INPUT_IS_PREMULT;
@@ -573,15 +578,30 @@ main()
 	vec4 src;
 	vec4 dst;
 
+	/* Always alpha pre-multiplied. */
 	src = fragment_input_color_premult();
 
-	/* Framebuffer must have straight alpha. */
+	/**
+	* Framebuffer content is pre-multiplied in decoded (usually optical)
+	* space if c_fb_alpha_encoding == SHADER_FB_ALPHA_PREMULT, straight
+	* alpha otherwise.
+	 */
 	dst = gl_LastFragData[0];
 	dst.rgb = color_curve(c_fb_fetch_curve, fb_fetch_curve_lut,
 			      fb_fetch_curve_par, dst.rgb);
 
-	/* glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA); */
-	dst = src + (1.0 - src.a) * dst;
+	if (c_fb_alpha_encoding == SHADER_FB_ALPHA_PREMULT) {
+		/* glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA); */
+		dst = src + (1.0 - src.a) * dst;
+	} else {
+		/* SHADER_FB_ALPHA_STRAIGHT; same formula here, but
+		 * dst is not alpha pre-mult. */
+		dst.rgb = src.rgb + (1.0 - src.a) * dst.rgb * dst.a;
+		dst.a = src.a + (1.0 - src.a) * dst.a;
+		/* Leave the fb as straight alpha */
+		if (dst.a > 0.0)
+			dst.rgb /= dst.a;
+	}
 
 	dst.rgb = color_curve(c_fb_store_curve, fb_store_curve_lut,
 			      fb_store_curve_par, dst.rgb);

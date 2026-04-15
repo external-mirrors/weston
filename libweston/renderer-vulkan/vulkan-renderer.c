@@ -3173,6 +3173,12 @@ vulkan_renderer_buffer_init(struct weston_compositor *ec,
 	wl_signal_add(&buffer->destroy_signal, &vb->destroy_listener);
 }
 
+static bool
+vulkan_renderer_can_render_straight_alpha(struct weston_compositor *wc)
+{
+	return false;
+}
+
 static void
 vulkan_renderer_output_destroy_border(struct weston_output *output,
 				      enum weston_renderer_border_side side)
@@ -3515,6 +3521,13 @@ vulkan_renderer_create_output_state(struct weston_output *output,
 {
 	struct vulkan_output_state *vo;
 
+	if (output->fb_alpha_encoding == WESTON_OUTPUT_FB_ALPHA_STRAIGHT &&
+	    !vulkan_renderer_can_render_straight_alpha(output->compositor)) {
+		weston_log("Error: straight alpha framebuffers required for output '%s' but\n"
+			   "Vulkan-renderer does not support that.", output->name);
+		return -1;
+	}
+
 	vo = xzalloc(sizeof(*vo));
 
 	wl_list_init(&vo->renderbuffer_list);
@@ -3627,7 +3640,8 @@ vulkan_renderer_output_surface_create(struct weston_output *output,
 	const struct pixel_format_info *pixel_format = options->formats[0];
 
 	ret = vulkan_renderer_create_output_state(output, fb_size, area);
-	assert(ret == 0);
+	if (ret < 0)
+		return -1;
 
 	struct vulkan_output_state *vo = get_output_state(output);
 	vo->output_type = VULKAN_OUTPUT_SWAPCHAIN;
@@ -3670,7 +3684,8 @@ vulkan_renderer_output_surfaceless_create(struct weston_output *output,
 	const struct weston_geometry *area = &options->area;
 
 	ret = vulkan_renderer_create_output_state(output, &options->fb_size, &options->area);
-	assert(ret == 0);
+	if (ret < 0)
+		return -1;
 
 	struct vulkan_output_state *vo = get_output_state(output);
 	vo->output_type = VULKAN_OUTPUT_HEADLESS;
@@ -4371,6 +4386,7 @@ vulkan_renderer_display_create(struct weston_compositor *ec,
 	vr->base.attach = vulkan_renderer_attach;
 	vr->base.destroy = vulkan_renderer_destroy;
 	vr->base.buffer_init = vulkan_renderer_buffer_init;
+	vr->base.can_render_straight_alpha = vulkan_renderer_can_render_straight_alpha;
 	vr->base.output_set_border = vulkan_renderer_output_set_border,
 	vr->base.type = WESTON_RENDERER_VULKAN;
 

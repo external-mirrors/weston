@@ -106,6 +106,7 @@ drm_output_check_plane_has_view_assigned(struct drm_plane *plane,
 
 enum blend_mode_error {
 	BLEND_MODE_ERROR_INCOMPATIBLE_WITH_CONTENT = 0,
+	BLEND_MODE_ERROR_NON_OPAQUE_COVERAGE_ALPHA,
 };
 
 static const char *
@@ -115,6 +116,8 @@ blend_mode_error_get_description(struct weston_compositor *wc,
 	switch (err_blend_mode) {
 	case BLEND_MODE_ERROR_INCOMPATIBLE_WITH_CONTENT:
 		return "blend modes supported by plane aren't compatible with content";
+	case BLEND_MODE_ERROR_NON_OPAQUE_COVERAGE_ALPHA:
+		return "BLEND_COVERAGE necessary but not supported for non-opaque content";
 	}
 
 	weston_assert_not_reached(wc, "unknown blend mode error");
@@ -142,7 +145,20 @@ select_plane_blend_mode(struct drm_plane_state *state, struct drm_fb *fb,
 		return true;
 	}
 
-	/* TODO: BLEND_COVERAGE still unsupported. */
+	/**
+	 * TODO: for now we don't support coverage alpha from the color
+	 * representation protocol. With that we'd be able to place non-opaque
+	 * straight alpha content in planes that only support coverage blend
+	 * mode.
+	 */
+	if (drm_plane_supports_blend_mode(plane, WDRM_PLANE_BLEND_COVERAGE)) {
+		if (!fully_opaque) {
+			*err_blend_mode = BLEND_MODE_ERROR_NON_OPAQUE_COVERAGE_ALPHA;
+			return false;
+		}
+		state->blend_mode = WDRM_PLANE_BLEND_COVERAGE;
+		return true;
+	}
 
 	*err_blend_mode = BLEND_MODE_ERROR_INCOMPATIBLE_WITH_CONTENT;
 	return false;

@@ -8548,6 +8548,7 @@ weston_output_init(struct weston_output *output,
 	output->allow_protection = true;
 	output->power_state = WESTON_OUTPUT_POWER_NORMAL;
 	output->repaint_only_on_capture = false;
+	output->fb_alpha_encoding = WESTON_OUTPUT_FB_ALPHA_PREMULT;
 
 	wl_list_init(&output->head_list);
 

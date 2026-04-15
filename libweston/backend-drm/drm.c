@@ -556,12 +556,25 @@ drm_output_render(struct drm_output_state *state)
 	struct drm_property_info *damage_info =
 		&scanout_plane->props[WDRM_PLANE_FB_DAMAGE_CLIPS];
 	struct drm_fb *fb;
+	enum wdrm_plane_blend blend_mode = WDRM_PLANE_BLEND__COUNT;
 	pixman_region32_t damage, scanout_damage;
 	pixman_box32_t *rects;
 	int n_rects;
 
 	scanout_state = drm_output_state_get_plane(state, scanout_plane);
 	weston_assert_ptr_null(c, scanout_state->fb);
+
+	switch (output->base.fb_alpha_encoding) {
+	case WESTON_OUTPUT_FB_ALPHA_PREMULT:
+		blend_mode = WDRM_PLANE_BLEND_PREMULT;
+		break;
+	case WESTON_OUTPUT_FB_ALPHA_STRAIGHT:
+		blend_mode = WDRM_PLANE_BLEND_COVERAGE;
+		break;
+	}
+	weston_assert_enum_ne(c, blend_mode, WDRM_PLANE_BLEND__COUNT);
+	weston_assert_true(c, drm_plane_supports_blend_mode(scanout_plane, blend_mode));
+	scanout_state->blend_mode = blend_mode;
 
 	pixman_region32_init(&damage);
 
@@ -2611,6 +2624,7 @@ static int
 drm_output_init_planes(struct drm_output *output)
 {
 	struct drm_device *device = output->device;
+	struct weston_compositor *wc = output->base.compositor;
 	struct drm_plane *plane, *scanout_plane, *cursor_plane;
 	struct drm_plane_handle *handle;
 	uint64_t primary_plane_zpos_min;
@@ -2623,6 +2637,19 @@ drm_output_init_planes(struct drm_output *output)
 		return -1;
 	}
 	primary_plane_zpos_min = scanout_plane->zpos_min;
+
+	/**
+	 * If only coverage blend mode supported by primary plane, renderers
+	 * should produce straight alpha fb's.
+	 */
+	if (!drm_plane_supports_blend_mode(scanout_plane, WDRM_PLANE_BLEND_PREMULT)) {
+		if (!drm_plane_supports_blend_mode(scanout_plane, WDRM_PLANE_BLEND_COVERAGE)) {
+			weston_log("Error: primary plane must support either premult "
+				   "or coverage alpha blend mode.\n");
+			return -1;
+		}
+		output->base.fb_alpha_encoding = WESTON_OUTPUT_FB_ALPHA_STRAIGHT;
+	}
 
 	/* Failing to find a cursor plane is not fatal, as we'll fall back
 	 * to software cursor. */
@@ -2669,6 +2696,23 @@ drm_output_init_planes(struct drm_output *output)
 			handle->subtype = PLANE_SUBTYPE_OVERLAY_ONLY;
 		}
 
+	}
+
+	/**
+	 * Depending on what the hardware supports, we must feed the primary
+	 * plane with straight alpha fb's. If renderer can't do that, we can
+	 * still support straight alpha outputs by disabling underlays (as the
+	 * primary plane won't get blended with something below it).
+	 */
+	if (output->base.fb_alpha_encoding == WESTON_OUTPUT_FB_ALPHA_STRAIGHT &&
+	    !wc->renderer->can_render_straight_alpha(wc) &&
+	    output->has_underlay) {
+		weston_log("Disabling underlay planes for output '%s': the primary plane does not support\n" \
+			   "framebuffers with pre-multiplied alpha and the chosen renderer cannot produce\n" \
+			   "straight alpha on this system.\n",
+			   output->base.name);
+		output->has_underlay = false;
+		output->base.fb_alpha_encoding = WESTON_OUTPUT_FB_ALPHA_PREMULT;
 	}
 
 	return 0;

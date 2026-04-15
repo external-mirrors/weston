@@ -192,6 +192,18 @@ gl_shader_color_mapping_to_string(enum gl_shader_color_mapping kind)
 	return gl_shader_enum_map_get(gl_shader_color_mapping_mapping, kind);
 }
 
+static const struct gl_shader_enum_map gl_shader_fb_alpha_encoding_mapping[] = {
+	ENUMVAL(SHADER_FB_ALPHA_PREMULT, "pre-mult"),
+	ENUMVAL(SHADER_FB_ALPHA_STRAIGHT, "straight"),
+};
+
+static const struct gl_shader_enum_map *
+gl_shader_fb_alpha_encoding_to_string(enum gl_shader_fb_alpha_encoding kind)
+{
+	return gl_shader_enum_map_get(gl_shader_fb_alpha_encoding_mapping, kind);
+}
+
+
 static void
 dump_program_with_line_numbers(int count, const char **sources)
 {
@@ -257,7 +269,7 @@ create_shader_description_string(const struct gl_shader_requirements *req)
 	int size;
 	char *str;
 
-	size = asprintf(&str, "%s tc, %s tex, %s effect, CP{ %s, %s, %s }, %cswz %cpremult_in %ctint %cshader_blending (%s, %s)",
+	size = asprintf(&str, "%s tc, %s tex, %s effect, CP{ %s, %s, %s }, %cswz %cpremult_in %ctint %cshader_blending (%s, %s) fb_alpha_encoding %s",
 			gl_shader_texcoord_input_to_string(req->texcoord_input)->desc,
 			gl_shader_texture_variant_to_string(req->variant)->desc,
 			gl_shader_color_effect_to_string(req->color_effect)->desc,
@@ -269,7 +281,8 @@ create_shader_description_string(const struct gl_shader_requirements *req)
 			req->tint ? '+' : '-',
 			req->shader_blending ? '+' : '-',
 			gl_shader_color_curve_to_string(req->fb_fetch_curve)->desc,
-			gl_shader_color_curve_to_string(req->fb_store_curve)->desc);
+			gl_shader_color_curve_to_string(req->fb_store_curve)->desc,
+			gl_shader_fb_alpha_encoding_to_string(req->fb_alpha_encoding)->desc);
 	if (size < 0)
 		return NULL;
 	return str;
@@ -308,6 +321,7 @@ create_fragment_shader_config_string(const struct gl_shader_requirements *req)
 			"#define DEF_COLOR_MAPPING %s\n"
 			"#define DEF_COLOR_POST_CURVE %s\n"
 			"#define DEF_SHADER_BLENDING %s\n"
+			"#define DEF_FB_ALPHA_ENCODING %s\n"
 			"#define DEF_FB_FETCH_CURVE %s\n"
 			"#define DEF_FB_STORE_CURVE %s\n"
 			"#define DEF_COLOR_EFFECT %s\n"
@@ -321,6 +335,7 @@ create_fragment_shader_config_string(const struct gl_shader_requirements *req)
 			gl_shader_color_mapping_to_string(req->color_mapping)->symbol,
 			gl_shader_color_curve_to_string(req->color_post_curve)->symbol,
 			req->shader_blending ? "1" : "0",
+			gl_shader_fb_alpha_encoding_to_string(req->fb_alpha_encoding)->symbol,
 			gl_shader_color_curve_to_string(req->fb_fetch_curve)->symbol,
 			gl_shader_color_curve_to_string(req->fb_store_curve)->symbol,
 			gl_shader_color_effect_to_string(req->color_effect)->symbol,

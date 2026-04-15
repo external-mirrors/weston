@@ -67,6 +67,7 @@ struct gl_renderer_color_effect {
 
 /** for in-shader blending */
 struct gl_shader_blender {
+	enum gl_shader_fb_alpha_encoding fb_alpha_encoding;
 	struct gl_renderer_color_curve fb_fetch_curve;
 	struct gl_renderer_color_curve fb_store_curve;
 };
@@ -587,40 +588,51 @@ gl_shader_blender_destroy(struct gl_shader_blender *shader_blender)
 }
 
 struct gl_shader_blender *
-gl_shader_blender_create(struct gl_renderer *gr, struct weston_output *output)
+gl_shader_blender_create(struct gl_renderer *gr, struct weston_output *output,
+			 enum gl_shader_fb_alpha_encoding fb_alpha_encoding)
 {
 	struct gl_shader_blender *shader_blender;
 	struct weston_color_curve *fb_fetch;
 	const struct weston_color_curve *fb_store;
 	const struct weston_color_transform *xform;
+	const struct weston_color_curve identity_curve = {
+		.type = WESTON_COLOR_CURVE_TYPE_IDENTITY,
+	};
 	bool ok;
 
 	if (!gl_features_has(gr, FEATURE_SHADER_BLENDING))
 		return NULL;
 
-	xform = output->color_outcome->from_blend_to_output;
-	if (!xform)
-		return NULL;
-
-	fb_store = weston_color_transform_as_single_curve(xform);
-	if (!fb_store)
-		return NULL;
-
-	fb_fetch = weston_color_curve_create_inverse(fb_store);
-	if (!fb_fetch)
-		return NULL;
-
 	shader_blender = xzalloc(sizeof *shader_blender);
-	ok = gl_color_curve_init(gr, &shader_blender->fb_store_curve, fb_store, NULL) &&
-	     gl_color_curve_init(gr, &shader_blender->fb_fetch_curve, fb_fetch, NULL);
-	free(fb_fetch);
+	shader_blender->fb_alpha_encoding = fb_alpha_encoding;
 
-	if (!ok) {
-		free(shader_blender);
-		return NULL;
+	xform = output->color_outcome->from_blend_to_output;
+	if (xform) {
+		fb_store = weston_color_transform_as_single_curve(xform);
+		if (!fb_store)
+			goto fail;
+
+		fb_fetch = weston_color_curve_create_inverse(fb_store);
+		if (!fb_fetch)
+			goto fail;
+
+		ok = gl_color_curve_init(gr, &shader_blender->fb_store_curve, fb_store, NULL) &&
+		     gl_color_curve_init(gr, &shader_blender->fb_fetch_curve, fb_fetch, NULL);
+
+		free(fb_fetch);
+	} else {
+		ok = gl_color_curve_init(gr, &shader_blender->fb_store_curve, &identity_curve, NULL) &&
+		     gl_color_curve_init(gr, &shader_blender->fb_fetch_curve, &identity_curve, NULL);
 	}
 
+	if (!ok)
+		goto fail;
+
 	return shader_blender;
+
+fail:
+	free(shader_blender);
+	return NULL;
 }
 
 void
@@ -636,9 +648,12 @@ gl_shader_config_set_blender(struct gl_renderer *gr,
 
 		sconf->req.fb_store_curve = shader_blender->fb_store_curve.type;
 		sconf->fb_store_curve = shader_blender->fb_store_curve.u;
+
+		sconf->req.fb_alpha_encoding = shader_blender->fb_alpha_encoding;
 	} else {
 		sconf->req.shader_blending = false;
 		sconf->req.fb_fetch_curve = SHADER_COLOR_CURVE_IDENTITY;
 		sconf->req.fb_store_curve = SHADER_COLOR_CURVE_IDENTITY;
+		sconf->req.fb_alpha_encoding = SHADER_FB_ALPHA_PREMULT;
 	}
 }
