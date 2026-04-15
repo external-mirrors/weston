@@ -109,6 +109,18 @@ struct drm_property_enum_info plane_color_range_enums[] = {
 	},
 };
 
+struct drm_property_enum_info plane_blend_enums[] = {
+	[WDRM_PLANE_BLEND_NONE] = {
+		.name = "None",
+	},
+	[WDRM_PLANE_BLEND_PREMULT] = {
+		.name = "Pre-multiplied",
+	},
+	[WDRM_PLANE_BLEND_COVERAGE] = {
+		.name = "Coverage",
+	},
+};
+
 const struct drm_property_info plane_props[] = {
 	[WDRM_PLANE_TYPE] = {
 		.name = "type",
@@ -135,6 +147,11 @@ const struct drm_property_info plane_props[] = {
 		.num_enum_values = WDRM_PLANE_ROTATION__COUNT,
 	},
 	[WDRM_PLANE_ALPHA] = { .name = "alpha" },
+	[WDRM_PLANE_BLEND] = {
+		.name = "pixel blend mode",
+		.enum_values = plane_blend_enums,
+		.num_enum_values = WDRM_PLANE_BLEND__COUNT,
+	},
 	[WDRM_PLANE_COLOR_ENCODING] = {
 		.name = "COLOR_ENCODING",
 		.enum_values = plane_color_encoding_enums,
@@ -811,6 +828,31 @@ drm_plane_supports_color_range(struct drm_plane *plane,
 
 	info = &plane->props[WDRM_PLANE_COLOR_RANGE];
 	enum_info = &info->enum_values[range];
+
+	return enum_info->valid;
+}
+
+/**
+ * Check if a blend mode is supported by a KMS plane
+ *
+ * If the blend mode property is not supported by the plane, this assumes that
+ * the blend mode is unsupported if different from WDRM_PLANE_BLEND_DEFAULT.
+ *
+ * @param plane The KMS plane
+ * @param blend_mode The blend mode to check
+ * @return True if supported, false otherwise
+ */
+bool
+drm_plane_supports_blend_mode(struct drm_plane *plane,
+			      enum wdrm_plane_blend blend_mode)
+{
+	const struct drm_property_info *info = &plane->props[WDRM_PLANE_BLEND];
+	const struct drm_property_enum_info *enum_info;
+
+	if (info->prop_id == 0)
+		return blend_mode == WDRM_PLANE_BLEND_DEFAULT;
+
+	enum_info = &info->enum_values[blend_mode];
 
 	return enum_info->valid;
 }
@@ -1603,6 +1645,28 @@ drm_plane_set_color_range(struct drm_plane *plane,
 				   color_range);
 }
 
+static int
+drm_plane_set_blend_mode(struct drm_plane *plane,
+			 enum wdrm_plane_blend blend_mode,
+			 drmModeAtomicReq *req)
+{
+	struct weston_compositor *wc = plane->base.compositor;
+
+	weston_assert_s32_ge(wc, blend_mode, 0);
+	weston_assert_s32_lt(wc, blend_mode, WDRM_PLANE_BLEND__COUNT);
+
+	if (plane->props[WDRM_PLANE_BLEND].prop_id == 0) {
+		if (blend_mode == WDRM_PLANE_BLEND_DEFAULT)
+			return 0;
+
+		return -1;
+	}
+
+	weston_assert_true(wc, drm_plane_supports_blend_mode(plane, blend_mode));
+
+	return plane_add_prop_enum(req, plane, WDRM_PLANE_BLEND, blend_mode);
+}
+
 static bool
 colorop_enforce(drmModeAtomicReq *req, const struct drm_colorop *colorop,
 		char **err_msg)
@@ -1951,6 +2015,10 @@ drm_output_apply_state_atomic(struct drm_output_state *state,
 			ret |= plane_add_prop(req, plane,
 					      WDRM_PLANE_ALPHA,
 					      plane_state->alpha);
+
+		ret |= drm_plane_set_blend_mode(plane,
+						plane_state->blend_mode,
+						req);
 
 		ret |= drm_plane_set_color_encoding(plane,
 						    plane_state->color_encoding,

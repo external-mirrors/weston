@@ -461,6 +461,8 @@ struct drm_plane_state {
 	uint64_t zpos;
 	uint16_t alpha;
 
+	enum wdrm_plane_blend blend_mode;
+
 	enum wdrm_plane_color_encoding color_encoding;
 	enum wdrm_plane_color_range color_range;
 
@@ -1040,6 +1042,10 @@ drm_plane_supports_color_encoding(struct drm_plane *plane,
 bool
 drm_plane_supports_color_range(struct drm_plane *plane,
 			       enum wdrm_plane_color_range range);
+
+bool
+drm_plane_supports_blend_mode(struct drm_plane *plane,
+			      enum wdrm_plane_blend blend_mode);
 
 void
 drm_output_render(struct drm_output_state *state);

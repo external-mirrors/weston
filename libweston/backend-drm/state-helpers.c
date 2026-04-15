@@ -59,6 +59,8 @@ drm_plane_state_alloc(struct drm_output_state *state_output,
 	state->alpha = (plane->alpha_max < DRM_PLANE_ALPHA_OPAQUE) ?
 		       plane->alpha_max : DRM_PLANE_ALPHA_OPAQUE;
 
+	state->blend_mode = WDRM_PLANE_BLEND_DEFAULT;
+
 	state->color_encoding = WDRM_PLANE_COLOR_ENCODING_DEFAULT;
 	state->color_range = WDRM_PLANE_COLOR_RANGE_DEFAULT;
 
