@@ -53,7 +53,7 @@ enum error_point {
 	ERROR_POINT_GRACEFUL_FAILURE,
 };
 
-struct test_case {
+struct parametric_case {
 	int32_t primaries_named;
 	const struct weston_color_gamut *primaries;
 	int32_t tf_named;
@@ -94,7 +94,7 @@ static const struct weston_color_gamut color_gamut_invalid_white_point = {
 	.white_point = { 1.0, 1.0 },
 };
 
-static const struct test_case test_cases[] = {
+static const struct parametric_case parametric_cases[] = {
 
 	/******** Successful cases *******/
 
@@ -789,12 +789,12 @@ TEST(set_surface_image_description)
 	return RESULT_OK;
 }
 
-TEST_P(create_parametric_image_description, test_cases)
+TEST_P(create_parametric_image_description, parametric_cases)
 {
 	struct client *client;
 	struct color_manager_client *cm;
 	struct wp_image_description_creator_params_v1 *image_desc_creator_param = NULL;
-	const struct test_case *args = data;
+	const struct parametric_case *args = data;
 	struct image_description *image_desc = NULL;
 
 	client = create_client();
