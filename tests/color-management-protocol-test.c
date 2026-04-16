@@ -423,6 +423,34 @@ set_failed_image_description(struct wet_testsuite_data *suite_data)
 }
 
 static enum test_result_code
+failed_image_description_get_info(struct wet_testsuite_data *suite_data)
+{
+	struct client *client;
+	struct color_manager_client *cm;
+	struct image_description *image_descr;
+	struct wp_image_description_info_v1 *proxy;
+
+	client = create_client_and_test_surface(100, 100, 100, 100);
+	cm = color_manager_get(client);
+
+	/*
+	 * Create a soft-failed image description. Getting its information
+	 * must fail.
+	 */
+	image_descr = image_description_create_soft_fail(cm);
+
+	proxy = wp_image_description_v1_get_information(image_descr->proxy);
+	expect_protocol_error(client, &wp_image_description_v1_interface,
+			      WP_IMAGE_DESCRIPTION_V1_ERROR_NOT_READY);
+
+	wp_image_description_info_v1_destroy(proxy);
+	image_description_destroy(image_descr);
+	client_destroy(client);
+
+	return RESULT_OK;
+}
+
+static enum test_result_code
 get_surface_twice_bad(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
@@ -1441,6 +1469,7 @@ DECLARE_TEST_LIST(
 	TESTFN(create_icc_image_description_no_info),
 	TESTFN(create_image_description_soft_fail),
 	TESTFN(set_failed_image_description),
+	TESTFN(failed_image_description_get_info),
 	TESTFN(get_surface_twice_bad),
 	TESTFN(get_surface_twice_good),
 	TESTFN(set_surface_image_description),
