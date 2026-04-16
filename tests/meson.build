@@ -187,12 +187,7 @@ if get_option('color-management-lcms')
 			'link_with': plugin_color_lcms,
 			'dep_objs': [ dep_lcms_util ]
 		},
-		{	'name': 'color-management-parametric',
-			'sources': [
-				'color-management-parametric-test.c',
-				color_management_v1_client_protocol_h,
-				color_management_v1_protocol_c,
-			],
+		{	'name': 'color-management-protocol',
 			'dep_objs': [ dep_lcms_util ]
 		},
 		{	'name': 'image-description-query',
