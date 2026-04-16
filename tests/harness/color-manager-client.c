@@ -290,15 +290,49 @@ image_description_create_for_icc(struct color_manager_client *cm,
 	return image_description_from_proxy(proxy);
 }
 
-void
-image_description_wait_until_ready(struct client *client,
-				   struct image_description *image_descr)
+/** Create an image description that gets rejected gracefully
+ *
+ * Passing a file descriptor referring to any directory as an ICC profile
+ * will cause Weston to fail the image description without triggering a
+ * protocol error.
+ */
+struct image_description *
+image_description_create_soft_fail(struct color_manager_client *cm)
+{
+	struct wp_image_description_creator_icc_v1 *creator;
+	struct wp_image_description_v1 *proxy;
+	int fd;
+
+	fd = open("/", O_RDONLY);
+	test_assert_int_ge(fd, 0);
+
+	creator = wp_color_manager_v1_create_icc_creator(cm->manager_proxy);
+	wp_image_description_creator_icc_v1_set_icc_file(creator, fd, 0, 1);
+	close(fd);
+	proxy = wp_image_description_creator_icc_v1_create(creator);
+
+	return image_description_from_proxy(proxy);
+}
+
+enum image_description_status
+image_description_wait(struct client *client, struct image_description *image_descr)
 {
 	while (image_descr->status == CM_IMAGE_DESC_NOT_CREATED)
 		if (!test_assert_int_ge(wl_display_dispatch(client->wl_display), 0))
 			break;
 
-	test_assert_enum(image_descr->status, CM_IMAGE_DESC_READY);
+	return image_descr->status;
+}
+
+void
+image_description_wait_until_ready(struct client *client,
+				   struct image_description *image_descr)
+{
+	enum image_description_status status;
+
+	status = image_description_wait(client, image_descr);
+
+	test_assert_enum(status, CM_IMAGE_DESC_READY);
 }
 
 static void

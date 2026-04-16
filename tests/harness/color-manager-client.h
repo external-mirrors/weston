@@ -93,6 +93,12 @@ struct image_description *
 image_description_create_for_preferred(struct color_manager_client *cm,
 				       struct surface *surface);
 
+struct image_description *
+image_description_create_soft_fail(struct color_manager_client *cm);
+
+enum image_description_status
+image_description_wait(struct client *client, struct image_description *image_descr);
+
 void
 image_description_wait_until_ready(struct client *client,
 				   struct image_description *image_descr);

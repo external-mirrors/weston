@@ -333,6 +333,26 @@ TEST(create_icc_image_description_no_info)
 	return RESULT_OK;
 }
 
+TEST(create_image_description_soft_fail)
+{
+	struct client *client;
+	struct color_manager_client *cm;
+	struct image_description *image_descr;
+	enum image_description_status status;
+
+	client = create_client_and_test_surface(100, 100, 100, 100);
+	cm = color_manager_get(client);
+
+	image_descr = image_description_create_soft_fail(cm);
+	status = image_description_wait(client, image_descr);
+	test_assert_enum(status, CM_IMAGE_DESC_FAILED);
+
+	image_description_destroy(image_descr);
+	client_destroy(client);
+
+	return RESULT_OK;
+}
+
 TEST(get_surface_twice_bad)
 {
 	struct client *client;
