@@ -485,6 +485,35 @@ TEST(set_inert_surface_image_description)
 	return RESULT_OK;
 }
 
+TEST(set_bad_rendering_intent)
+{
+	struct client *client;
+	struct color_manager_client *cm;
+	struct image_description *image_descr;
+	struct wp_color_management_surface_v1 *cm_surface;
+
+	client = create_client_and_test_surface(100, 100, 100, 100);
+	cm = color_manager_get(client);
+
+	/* Get guaranteed good image description. */
+	image_descr = image_description_create_for_preferred(cm, client->surface);
+	image_description_wait_until_ready(client, image_descr);
+
+	cm_surface = wp_color_manager_v1_get_surface(cm->manager_proxy, client->surface->wl_surface);
+
+	wp_color_management_surface_v1_set_image_description(cm_surface,
+							     image_descr->proxy,
+							     9999);
+	expect_protocol_error(client, &wp_color_management_surface_v1_interface,
+			      WP_COLOR_MANAGEMENT_SURFACE_V1_ERROR_RENDER_INTENT);
+
+	wp_color_management_surface_v1_destroy(cm_surface);
+	image_description_destroy(image_descr);
+	client_destroy(client);
+
+	return RESULT_OK;
+}
+
 #define NOT_SET -99
 #define BAD_ENUM 99999
 
