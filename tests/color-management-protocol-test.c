@@ -716,6 +716,47 @@ TEST(create_icc_image_description_no_info)
 	return RESULT_OK;
 }
 
+TEST(get_surface_twice_bad)
+{
+	struct client *client;
+	struct color_manager_client *cm;
+	struct wp_color_management_surface_v1 *cm_surface[2];
+
+	client = create_client_and_test_surface(100, 100, 100, 100);
+	cm = color_manager_get(client);
+
+	cm_surface[0] = wp_color_manager_v1_get_surface(cm->manager_proxy, client->surface->wl_surface);
+	cm_surface[1] = wp_color_manager_v1_get_surface(cm->manager_proxy, client->surface->wl_surface);
+
+	expect_protocol_error(client, &wp_color_manager_v1_interface,
+			      WP_COLOR_MANAGER_V1_ERROR_SURFACE_EXISTS);
+
+	wp_color_management_surface_v1_destroy(cm_surface[1]);
+	wp_color_management_surface_v1_destroy(cm_surface[0]);
+	client_destroy(client);
+
+	return RESULT_OK;
+}
+
+TEST(get_surface_twice_good)
+{
+	struct client *client;
+	struct color_manager_client *cm;
+	struct wp_color_management_surface_v1 *cm_surface;
+
+	client = create_client_and_test_surface(100, 100, 100, 100);
+	cm = color_manager_get(client);
+
+	cm_surface = wp_color_manager_v1_get_surface(cm->manager_proxy, client->surface->wl_surface);
+	wp_color_management_surface_v1_destroy(cm_surface);
+	cm_surface = wp_color_manager_v1_get_surface(cm->manager_proxy, client->surface->wl_surface);
+	wp_color_management_surface_v1_destroy(cm_surface);
+	client_roundtrip(client);
+	client_destroy(client);
+
+	return RESULT_OK;
+}
+
 TEST(set_surface_image_description)
 {
 	struct client *client;
