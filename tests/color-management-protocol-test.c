@@ -514,6 +514,33 @@ TEST(set_bad_rendering_intent)
 	return RESULT_OK;
 }
 
+TEST(inert_get_preferred_image_description)
+{
+	struct client *client;
+	struct color_manager_client *cm;
+	struct wp_image_description_v1 *proxy;
+	struct wp_color_management_surface_feedback_v1 *cm_feedback;
+
+	client = create_client_and_test_surface(100, 100, 100, 100);
+	cm = color_manager_get(client);
+
+	cm_feedback = wp_color_manager_v1_get_surface_feedback(cm->manager_proxy,
+							       client->surface->wl_surface);
+
+	surface_destroy(client->surface);
+	client->surface = NULL;
+
+	proxy = wp_color_management_surface_feedback_v1_get_preferred(cm_feedback);
+	expect_protocol_error(client, &wp_color_management_surface_feedback_v1_interface,
+			      WP_COLOR_MANAGEMENT_SURFACE_FEEDBACK_V1_ERROR_INERT);
+
+	wp_image_description_v1_destroy(proxy);
+	wp_color_management_surface_feedback_v1_destroy(cm_feedback);
+	client_destroy(client);
+
+	return RESULT_OK;
+}
+
 #define NOT_SET -99
 #define BAD_ENUM 99999
 
