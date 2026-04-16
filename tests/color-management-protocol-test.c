@@ -213,6 +213,42 @@ set_unreadable_icc_fd(struct wet_testsuite_data *suite_data)
 }
 
 static enum test_result_code
+set_too_short_icc_fd(struct wet_testsuite_data *suite_data)
+{
+	struct client *client;
+	struct color_manager_client *cm;
+	struct wp_image_description_creator_icc_v1 *image_descr_creator_icc;
+	struct wp_image_description_v1 *proxy;
+	int32_t icc_fd;
+	struct stat st;
+
+	client = create_client_and_test_surface(100, 100, 100, 100);
+	cm = color_manager_get(client);
+
+	image_descr_creator_icc =
+		wp_color_manager_v1_create_icc_creator(cm->manager_proxy);
+
+	icc_fd = open(srgb_icc_profile_path, O_RDONLY);
+	test_assert_s32_ge(icc_fd, 0);
+	test_assert_int_eq(fstat(icc_fd, &st), 0);
+
+	/* Claim the ICC file has 10 more bytes than it actually does. */
+	wp_image_description_creator_icc_v1_set_icc_file(image_descr_creator_icc,
+							 icc_fd, 0, st.st_size + 10);
+	client_roundtrip(client);
+
+	proxy = wp_image_description_creator_icc_v1_create(image_descr_creator_icc);
+	expect_protocol_error(client, NULL,
+			      WP_IMAGE_DESCRIPTION_CREATOR_ICC_V1_ERROR_OUT_OF_FILE);
+
+	close(icc_fd);
+	wp_image_description_v1_destroy(proxy);
+	client_destroy(client);
+
+	return RESULT_OK;
+}
+
+static enum test_result_code
 set_bad_icc_size_zero(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
@@ -1398,6 +1434,7 @@ set_max_fall_twice(struct wet_testsuite_data *suite_data)
 DECLARE_TEST_LIST(
 	TESTFN(create_image_description_before_setting_icc_file),
 	TESTFN(set_unreadable_icc_fd),
+	TESTFN(set_too_short_icc_fd),
 	TESTFN(set_bad_icc_size_zero),
 	TESTFN(set_bad_icc_non_seekable),
 	TESTFN(set_icc_twice),
