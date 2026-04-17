@@ -384,13 +384,6 @@ image_description_get_information(struct wl_client *client,
 		return;
 	}
 
-	if (!cm_image_desc->cprof) {
-		wl_resource_post_error(cm_image_desc_res,
-				       WP_IMAGE_DESCRIPTION_V1_ERROR_NOT_READY,
-				       "image description not ready yet");
-		return;
-	}
-
 	if (!cm_image_desc->supports_get_info) {
 		wl_resource_post_error(cm_image_desc_res,
 				       WP_IMAGE_DESCRIPTION_V1_ERROR_NO_INFORMATION,
@@ -709,14 +702,6 @@ cm_surface_set_image_description(struct wl_client *client,
 		wl_resource_post_error(cm_surface_res,
 				       WP_COLOR_MANAGEMENT_SURFACE_V1_ERROR_IMAGE_DESCRIPTION,
 				       "we gracefully failed to create this image description");
-		return;
-	}
-
-	/* Invalid image description for this request, as it isn't ready yet. */
-	if (!cm_image_desc->cprof) {
-		wl_resource_post_error(cm_surface_res,
-				       WP_COLOR_MANAGEMENT_SURFACE_V1_ERROR_IMAGE_DESCRIPTION,
-				       "the image description is not ready");
 		return;
 	}
 
