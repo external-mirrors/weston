@@ -314,12 +314,10 @@ handle_pointer_axis(struct libinput_device *libinput_device,
 		vert_discrete = get_axis_discrete(pointer_event, axis);
 		vert = normalize_scroll(pointer_event, axis);
 
-		weston_event.axis = WL_POINTER_AXIS_VERTICAL_SCROLL;
-		weston_event.value = vert;
-		weston_event.discrete = vert_discrete;
-		weston_event.has_discrete = (vert_discrete != 0);
-
-		notify_axis(device->seat, &time, &weston_event);
+		weston_pointer_axis_event_init(&weston_event, &time, device->seat,
+					       WL_POINTER_AXIS_VERTICAL_SCROLL,
+					       vert, (vert_discrete != 0), vert_discrete);
+		notify_axis(&weston_event);
 	}
 
 	if (has_horiz) {
@@ -327,12 +325,10 @@ handle_pointer_axis(struct libinput_device *libinput_device,
 		horiz_discrete = get_axis_discrete(pointer_event, axis);
 		horiz = normalize_scroll(pointer_event, axis);
 
-		weston_event.axis = WL_POINTER_AXIS_HORIZONTAL_SCROLL;
-		weston_event.value = horiz;
-		weston_event.discrete = horiz_discrete;
-		weston_event.has_discrete = (horiz_discrete != 0);
-
-		notify_axis(device->seat, &time, &weston_event);
+		weston_pointer_axis_event_init(&weston_event, &time, device->seat,
+					       WL_POINTER_AXIS_HORIZONTAL_SCROLL,
+					       horiz, (horiz_discrete != 0), horiz_discrete);
+		notify_axis(&weston_event);
 	}
 
 	return true;

@@ -492,17 +492,18 @@ vnc_pointer_event(struct nvnc_client *client, uint16_t x, uint16_t y,
 	if ((button_mask & NVNC_SCROLL_UP) ||
 	    (button_mask & NVNC_SCROLL_DOWN)) {
 		struct weston_pointer_axis_event weston_event;
-
-		weston_event.axis = WL_POINTER_AXIS_VERTICAL_SCROLL;
+		double value = 0;
 
 		/* DEFAULT_AXIS_STEP_DISTANCE is stolen from compositor-x11.c */
 		if (button_mask & NVNC_SCROLL_UP)
-			weston_event.value = -DEFAULT_AXIS_STEP_DISTANCE;
+			value = -DEFAULT_AXIS_STEP_DISTANCE;
 		if (button_mask & NVNC_SCROLL_DOWN)
-			weston_event.value = DEFAULT_AXIS_STEP_DISTANCE;
-		weston_event.has_discrete = false;
+			value = DEFAULT_AXIS_STEP_DISTANCE;
 
-		notify_axis(peer->seat, &time, &weston_event);
+		weston_pointer_axis_event_init(&weston_event, &time, peer->seat,
+					       WL_POINTER_AXIS_VERTICAL_SCROLL,
+					       value, false, 0);
+		notify_axis(&weston_event);
 	}
 
 	peer->last_button_mask = button_mask;

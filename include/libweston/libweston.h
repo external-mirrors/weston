@@ -626,6 +626,7 @@ struct weston_pointer_button_event {
 };
 
 struct weston_pointer_axis_event {
+	struct weston_input_event base;
 	uint32_t axis;
 	double value;
 	bool has_discrete;
@@ -648,8 +649,7 @@ struct weston_pointer_grab_interface {
 	void (*button)(struct weston_pointer_grab *grab,
 		       const struct weston_pointer_button_event *button_event);
 	void (*axis)(struct weston_pointer_grab *grab,
-		     const struct timespec *time,
-		     struct weston_pointer_axis_event *event);
+		     const struct weston_pointer_axis_event *event);
 	void (*axis_source)(struct weston_pointer_grab *grab, uint32_t source);
 	void (*frame)(struct weston_pointer_grab *grab);
 	void (*cancel)(struct weston_pointer_grab *grab);
@@ -983,8 +983,7 @@ weston_pointer_send_button(struct weston_pointer *pointer,
 			   const struct weston_pointer_button_event *button_event);
 void
 weston_pointer_send_axis(struct weston_pointer *pointer,
-			 const struct timespec *time,
-			 struct weston_pointer_axis_event *event);
+			 const struct weston_pointer_axis_event *event);
 void
 weston_pointer_send_axis_source(struct weston_pointer *pointer,
 				enum wl_pointer_axis_source source);
@@ -1046,6 +1045,12 @@ void
 weston_pointer_button_event_init(struct weston_pointer_button_event *event,
 				 struct timespec *ts, struct weston_seat *seat,
 				 uint32_t button, enum wl_pointer_button_state button_state);
+
+void
+weston_pointer_axis_event_init(struct weston_pointer_axis_event *event,
+			       struct timespec *ts, struct weston_seat *seat,
+			       uint32_t axis, double value, bool has_value,
+			       int32_t discrete);
 
 void
 weston_keyboard_send_modifiers(struct weston_keyboard *keyboard,
@@ -2331,7 +2336,7 @@ weston_compositor_add_tablet_tool_binding(struct weston_compositor *compositor,
 
 typedef void (*weston_axis_binding_handler_t)(struct weston_pointer *pointer,
 					      const struct timespec *time,
-					      struct weston_pointer_axis_event *event,
+					      const struct weston_pointer_axis_event *event,
 					      void *data);
 struct weston_binding *
 weston_compositor_add_axis_binding(struct weston_compositor *compositor,

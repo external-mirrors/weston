@@ -854,8 +854,7 @@ noop_grab_focus(struct weston_pointer_grab *grab)
 
 static void
 noop_grab_axis(struct weston_pointer_grab *grab,
-	       const struct timespec *time,
-	       struct weston_pointer_axis_event *event)
+	       const struct weston_pointer_axis_event *event)
 {
 }
 
@@ -3182,7 +3181,7 @@ resize_binding(struct weston_pointer *pointer, const struct timespec *time,
 static void
 surface_opacity_binding(struct weston_pointer *pointer,
 			const struct timespec *time,
-			struct weston_pointer_axis_event *event,
+			const struct weston_pointer_axis_event *event,
 			void *data)
 {
 	float step = 0.005;

@@ -232,8 +232,7 @@ weston_output_finish_frame_from_timer(struct weston_output *output);
 /* weston_seat */
 
 void
-notify_axis(struct weston_seat *seat, const struct timespec *time,
-	    struct weston_pointer_axis_event *event);
+notify_axis(const struct weston_pointer_axis_event *event);
 void
 notify_axis_source(struct weston_seat *seat, uint32_t source);
 

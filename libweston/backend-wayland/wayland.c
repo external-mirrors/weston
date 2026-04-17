@@ -1799,26 +1799,27 @@ input_handle_axis(void *data, struct wl_pointer *pointer,
 	struct wayland_input *input = data;
 	struct weston_pointer_axis_event weston_event;
 	struct timespec ts;
-
-	weston_event.axis = axis;
-	weston_event.value = wl_fixed_to_double(value);
-	weston_event.has_discrete = false;
+	bool has_discrete = false;
+	int32_t discrete = 0;
 
 	if (axis == WL_POINTER_AXIS_VERTICAL_SCROLL &&
 	    input->vert.has_discrete) {
-		weston_event.has_discrete = true;
-		weston_event.discrete = input->vert.discrete;
+		has_discrete = true;
+		discrete = input->vert.discrete;
 		input->vert.has_discrete = false;
 	} else if (axis == WL_POINTER_AXIS_HORIZONTAL_SCROLL &&
 		   input->horiz.has_discrete) {
-		weston_event.has_discrete = true;
-		weston_event.discrete = input->horiz.discrete;
+		has_discrete = true;
+		discrete = input->horiz.discrete;
 		input->horiz.has_discrete = false;
 	}
 
 	timespec_from_msec(&ts, time);
 
-	notify_axis(&input->base, &ts, &weston_event);
+	weston_pointer_axis_event_init(&weston_event, &ts, &input->base,
+				       axis, wl_fixed_to_double(value),
+				       has_discrete, discrete);
+	notify_axis(&weston_event);
 
 	if (input->seat_version < WL_POINTER_FRAME_SINCE_VERSION)
 		notify_pointer_frame(&input->base);
@@ -1849,12 +1850,11 @@ input_handle_axis_stop(void *data, struct wl_pointer *pointer,
 	struct weston_pointer_axis_event weston_event;
 	struct timespec ts;
 
-	weston_event.axis = axis;
-	weston_event.value = 0;
-
 	timespec_from_msec(&ts, time);
 
-	notify_axis(&input->base, &ts, &weston_event);
+	weston_pointer_axis_event_init(&weston_event, &ts, &input->base,
+				       axis, 0, false, 0);
+	notify_axis(&weston_event);
 }
 
 static void

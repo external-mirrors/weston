@@ -341,7 +341,7 @@ int
 weston_compositor_run_axis_binding(struct weston_compositor *compositor,
 				   struct weston_pointer *pointer,
 				   const struct timespec *time,
-				   struct weston_pointer_axis_event *event);
+				   const struct weston_pointer_axis_event *event);
 void
 weston_compositor_run_button_binding(struct weston_compositor *compositor,
 				     struct weston_pointer *pointer,

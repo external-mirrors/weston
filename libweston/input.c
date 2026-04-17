@@ -728,7 +728,6 @@ default_grab_pointer_button(struct weston_pointer_grab *grab,
 /** Send wl_pointer.axis events to focused resources.
  *
  * \param pointer The pointer where the axis events originates from.
- * \param time The timestamp of the event
  * \param event The axis value of the event
  *
  * For every resource that is currently in focus, send a wl_pointer.axis event
@@ -737,8 +736,7 @@ default_grab_pointer_button(struct weston_pointer_grab *grab,
  */
 WL_EXPORT void
 weston_pointer_send_axis(struct weston_pointer *pointer,
-			 const struct timespec *time,
-			 struct weston_pointer_axis_event *event)
+			 const struct weston_pointer_axis_event *event)
 {
 	struct wl_resource *resource;
 	struct wl_list *resource_list;
@@ -748,7 +746,7 @@ weston_pointer_send_axis(struct weston_pointer *pointer,
 		return;
 
 	resource_list = &pointer->focus_client->pointer_resources;
-	msecs = timespec_to_msec(time);
+	msecs = timespec_to_msec(&event->base.ts);
 	wl_resource_for_each(resource, resource_list) {
 		if (event->has_discrete &&
 		    wl_resource_get_version(resource) >=
@@ -759,7 +757,7 @@ weston_pointer_send_axis(struct weston_pointer *pointer,
 		if (event->value) {
 			send_timestamps_for_input_resource(resource,
 							   &pointer->timestamps_list,
-							   time);
+							   &event->base.ts);
 			wl_pointer_send_axis(resource, msecs,
 					     event->axis,
 					     wl_fixed_from_double(event->value));
@@ -767,7 +765,7 @@ weston_pointer_send_axis(struct weston_pointer *pointer,
 			 WL_POINTER_AXIS_STOP_SINCE_VERSION) {
 			send_timestamps_for_input_resource(resource,
 							   &pointer->timestamps_list,
-							   time);
+							   &event->base.ts);
 			wl_pointer_send_axis_stop(resource, msecs,
 						  event->axis);
 		}
@@ -835,10 +833,9 @@ weston_pointer_send_frame(struct weston_pointer *pointer)
 
 static void
 default_grab_pointer_axis(struct weston_pointer_grab *grab,
-			  const struct timespec *time,
-			  struct weston_pointer_axis_event *event)
+			  const struct weston_pointer_axis_event *event)
 {
-	weston_pointer_send_axis(grab->pointer, time, event);
+	weston_pointer_send_axis(grab->pointer, event);
 }
 
 static void
@@ -2354,19 +2351,18 @@ notify_button(const struct weston_pointer_button_event *event)
 }
 
 WL_EXPORT void
-notify_axis(struct weston_seat *seat, const struct timespec *time,
-	    struct weston_pointer_axis_event *event)
+notify_axis(const struct weston_pointer_axis_event *event)
 {
+	struct weston_seat *seat = event->base.seat;
 	struct weston_compositor *compositor = seat->compositor;
 	struct weston_pointer *pointer = weston_seat_get_pointer(seat);
 
 	weston_compositor_wake(compositor);
 
-	if (weston_compositor_run_axis_binding(compositor, pointer,
-					       time, event))
+	if (weston_compositor_run_axis_binding(compositor, pointer, &event->base.ts, event))
 		return;
 
-	pointer->grab->interface->axis(pointer->grab, time, event);
+	pointer->grab->interface->axis(pointer->grab, event);
 }
 
 WL_EXPORT void
@@ -4726,10 +4722,9 @@ locked_pointer_grab_pointer_button(struct weston_pointer_grab *grab,
 
 static void
 locked_pointer_grab_pointer_axis(struct weston_pointer_grab *grab,
-				 const struct timespec *time,
-				 struct weston_pointer_axis_event *event)
+				 const struct weston_pointer_axis_event *event)
 {
-	weston_pointer_send_axis(grab->pointer, time, event);
+	weston_pointer_send_axis(grab->pointer, event);
 }
 
 static void
@@ -5726,10 +5721,9 @@ confined_pointer_grab_pointer_button(struct weston_pointer_grab *grab,
 
 static void
 confined_pointer_grab_pointer_axis(struct weston_pointer_grab *grab,
-				   const struct timespec *time,
-				   struct weston_pointer_axis_event *event)
+				   const struct weston_pointer_axis_event *event)
 {
-	weston_pointer_send_axis(grab->pointer, time, event);
+	weston_pointer_send_axis(grab->pointer, event);
 }
 
 static void
@@ -6059,4 +6053,18 @@ weston_pointer_button_event_init(struct weston_pointer_button_event *event,
 
 	event->button = button;
 	event->button_state = button_state;
+}
+
+WL_EXPORT void
+weston_pointer_axis_event_init(struct weston_pointer_axis_event *event,
+			       struct timespec *ts, struct weston_seat *seat,
+			       uint32_t axis, double value, bool has_discrete,
+			       int32_t discrete)
+{
+	weston_input_event_init(&event->base, ts, seat);
+
+	event->axis = axis;
+	event->value = value;
+	event->has_discrete = has_discrete;
+	event->discrete = discrete;
 }

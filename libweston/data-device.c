@@ -693,8 +693,7 @@ drag_grab_button(struct weston_pointer_grab *grab,
 
 static void
 drag_grab_axis(struct weston_pointer_grab *grab,
-	       const struct timespec *time,
-	       struct weston_pointer_axis_event *event)
+	       const struct weston_pointer_axis_event *event)
 {
 }
 

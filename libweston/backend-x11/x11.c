@@ -1456,49 +1456,45 @@ x11_backend_deliver_button_event(struct x11_backend *b,
 		/* Axis are measured in pixels, but the xcb events are discrete
 		 * steps. Therefore move the axis by some pixels every step. */
 		if (is_button_pressed) {
-			weston_event.value = -DEFAULT_AXIS_STEP_DISTANCE;
-			weston_event.discrete = -1;
-			weston_event.has_discrete = true;
-			weston_event.axis =
-				WL_POINTER_AXIS_VERTICAL_SCROLL;
 			weston_compositor_get_time(&time);
-			notify_axis(&b->core_seat, &time, &weston_event);
+
+			weston_pointer_axis_event_init(&weston_event, &time, &b->core_seat,
+						       WL_POINTER_AXIS_VERTICAL_SCROLL,
+						       -DEFAULT_AXIS_STEP_DISTANCE, true, -1);
+			notify_axis(&weston_event);
 			notify_pointer_frame(&b->core_seat);
 		}
 		return;
 	case 5:
 		if (is_button_pressed) {
-			weston_event.value = DEFAULT_AXIS_STEP_DISTANCE;
-			weston_event.discrete = 1;
-			weston_event.has_discrete = true;
-			weston_event.axis =
-				WL_POINTER_AXIS_VERTICAL_SCROLL;
 			weston_compositor_get_time(&time);
-			notify_axis(&b->core_seat, &time, &weston_event);
+
+			weston_pointer_axis_event_init(&weston_event, &time, &b->core_seat,
+						       WL_POINTER_AXIS_VERTICAL_SCROLL,
+						       DEFAULT_AXIS_STEP_DISTANCE, true, 1);
+			notify_axis(&weston_event);
 			notify_pointer_frame(&b->core_seat);
 		}
 		return;
 	case 6:
 		if (is_button_pressed) {
-			weston_event.value = -DEFAULT_AXIS_STEP_DISTANCE;
-			weston_event.discrete = -1;
-			weston_event.has_discrete = true;
-			weston_event.axis =
-				WL_POINTER_AXIS_HORIZONTAL_SCROLL;
 			weston_compositor_get_time(&time);
-			notify_axis(&b->core_seat, &time, &weston_event);
+
+			weston_pointer_axis_event_init(&weston_event, &time, &b->core_seat,
+						       WL_POINTER_AXIS_HORIZONTAL_SCROLL,
+						       -DEFAULT_AXIS_STEP_DISTANCE, true, -1);
+			notify_axis(&weston_event);
 			notify_pointer_frame(&b->core_seat);
 		}
 		return;
 	case 7:
 		if (is_button_pressed) {
-			weston_event.value = DEFAULT_AXIS_STEP_DISTANCE;
-			weston_event.discrete = 1;
-			weston_event.has_discrete = true;
-			weston_event.axis =
-				WL_POINTER_AXIS_HORIZONTAL_SCROLL;
 			weston_compositor_get_time(&time);
-			notify_axis(&b->core_seat, &time, &weston_event);
+
+			weston_pointer_axis_event_init(&weston_event, &time, &b->core_seat,
+						       WL_POINTER_AXIS_HORIZONTAL_SCROLL,
+						       DEFAULT_AXIS_STEP_DISTANCE, true, 1);
+			notify_axis(&weston_event);
 			notify_pointer_frame(&b->core_seat);
 		}
 		return;

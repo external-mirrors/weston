@@ -1364,7 +1364,6 @@ rdp_notify_wheel_scroll(RdpPeerContext *peerContext, UINT16 flags, uint32_t axis
 	struct weston_pointer_axis_event weston_event;
 	struct rdp_backend *b = peerContext->rdpBackend;
 	int ivalue;
-	double value;
 	struct timespec time;
 	int *accumWheelRotationPrecise;
 	int *accumWheelRotationDiscrete;
@@ -1408,19 +1407,17 @@ rdp_notify_wheel_scroll(RdpPeerContext *peerContext, UINT16 flags, uint32_t axis
 			  ivalue, *accumWheelRotationPrecise, *accumWheelRotationDiscrete);
 
 	if (abs(*accumWheelRotationPrecise) >= 12) {
-		value = (double)(*accumWheelRotationPrecise / 12);
+		weston_compositor_get_time(&time);
 
-		weston_event.axis = axis;
-		weston_event.value = value;
-		weston_event.discrete = *accumWheelRotationDiscrete / 120;
-		weston_event.has_discrete = true;
+		weston_pointer_axis_event_init(&weston_event,
+					       &time, peerContext->item.seat,
+					       axis, (double) *accumWheelRotationPrecise / 12,
+					       true, *accumWheelRotationDiscrete / 120);
 
 		rdp_debug_verbose(b, "wheel: value:%f discrete:%d\n",
 				  weston_event.value, weston_event.discrete);
 
-		weston_compositor_get_time(&time);
-
-		notify_axis(peerContext->item.seat, &time, &weston_event);
+		notify_axis(&weston_event);
 
 		*accumWheelRotationPrecise %= 12;
 		*accumWheelRotationDiscrete %= 120;
