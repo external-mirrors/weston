@@ -18,12 +18,9 @@ run_target(
 	command: [
 		prog_gcovr,
 		'--root', '@SOURCE_ROOT@',
+		'--config', files('gcovr.cfg'),
 		'--cobertura', meson.current_build_dir() / 'cobertura.xml',
 		'--html', meson.current_build_dir() / 'index.html',
-		'--html-nested',
-		'--html-theme', 'github.green',
-		'--html-title', 'Weston test suite coverage',
-		'--print-summary',
 		meson.project_build_root(),
 	],
 )
