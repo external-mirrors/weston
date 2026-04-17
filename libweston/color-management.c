@@ -423,9 +423,6 @@ image_description_destroy(struct wl_client *client,
 	wl_resource_destroy(cm_image_desc_res);
 }
 
-static void
-cm_image_desc_destroy(struct cm_image_desc *cm_image_desc);
-
 /**
  * Resource destruction function for the image description. Destroys the image
  * description backing object.
@@ -441,7 +438,8 @@ image_description_resource_destroy(struct wl_resource *cm_image_desc_res)
 	if (!cm_image_desc)
 		return;
 
-	cm_image_desc_destroy(cm_image_desc);
+	weston_color_profile_unref(cm_image_desc->cprof);
+	free(cm_image_desc);
 }
 
 static const struct wp_image_description_v1_interface
@@ -497,16 +495,6 @@ link_image_description_resource(struct weston_color_manager *cm,
 
 	wp_image_description_v1_send_ready(cm_image_desc->owner,
 					   cm_image_desc->cprof->id);
-}
-
-/**
- * Destroy an image description object.
- */
-static void
-cm_image_desc_destroy(struct cm_image_desc *cm_image_desc)
-{
-	weston_color_profile_unref(cm_image_desc->cprof);
-	free(cm_image_desc);
 }
 
 /**
