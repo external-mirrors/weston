@@ -4845,22 +4845,63 @@ gl_renderer_create_window_surface(struct gl_renderer *gr,
 	return egl_surface;
 }
 
+static bool
+setup_shader_blending_or_shadow(struct gl_renderer *gr,
+				struct weston_output *output,
+				struct gl_output_state *go)
+{
+	struct weston_compositor *wc = output->compositor;
+	const struct weston_testsuite_quirks *quirks = &wc->test_data.test_quirks;
+	bool needs_fb_curves;
+	bool needs_shadow;
+
+	needs_shadow = quirks->gl_force_full_redraw_of_shadow_fb;
+	needs_fb_curves = output->color_outcome->from_blend_to_output &&
+			  !output->from_blend_to_output_by_backend;
+
+	if (needs_fb_curves)
+		weston_assert_true(wc, gl_features_has(gr, FEATURE_COLOR_TRANSFORMS));
+
+	if (!needs_shadow && needs_fb_curves) {
+		switch (quirks->blending_impl) {
+		case WESTON_BLENDING_IMPL_AUTO:
+			go->shader_blender = gl_shader_blender_create(gr, output);
+			break;
+		case WESTON_BLENDING_IMPL_FF:
+			go->shader_blender = NULL;
+			break;
+		case WESTON_BLENDING_IMPL_SHADER:
+			go->shader_blender = gl_shader_blender_create(gr, output);
+			if (!go->shader_blender) {
+				weston_log("Error: quirks were used to force in-shader blending, "
+					   "but it's not supported by the GLES implementation.\n"
+					   "Quitting...\n");
+				weston_compositor_exit_with_code(wc, RESULT_SKIP);
+			}
+			break;
+		}
+
+		if (!go->shader_blender)
+			needs_shadow = true;
+	}
+
+	if (needs_shadow)
+		go->shadow_format = pixel_format_get_info(DRM_FORMAT_ABGR16161616F);
+
+	return true;
+}
+
 static int
 gl_renderer_output_create(struct weston_output *output,
 			  EGLSurface surface,
 			  const struct weston_size *fb_size,
 			  const struct weston_geometry *area)
 {
-	struct gl_output_state *go;
 	struct gl_renderer *gr = get_renderer(output->compositor);
-	const struct weston_testsuite_quirks *quirks;
-	bool needs_fb_curves;
-	bool needs_shadow;
+	struct gl_output_state *go;
 	int i;
 
 	assert(!get_output_state(output));
-
-	quirks = &output->compositor->test_data.test_quirks;
 
 	go = zalloc(sizeof *go);
 	if (go == NULL)
@@ -4868,6 +4909,11 @@ gl_renderer_output_create(struct weston_output *output,
 
 	go->egl_surface = surface;
 	go->y_flip = surface == EGL_NO_SURFACE ? 1.0f : -1.0f;
+
+	if (!setup_shader_blending_or_shadow(gr, output, go)) {
+		free(go);
+		return -1;
+	}
 
 	go->border_status = BORDER_ALL_DIRTY;
 	for (i = 0; i < 4; i++) {
@@ -4884,41 +4930,6 @@ gl_renderer_output_create(struct weston_output *output,
 
 	go->render_sync = EGL_NO_SYNC_KHR;
 
-	needs_shadow = quirks->gl_force_full_redraw_of_shadow_fb;
-	needs_fb_curves = output->color_outcome->from_blend_to_output &&
-			  !output->from_blend_to_output_by_backend;
-
-	if (needs_fb_curves)
-		weston_assert_true(gr->compositor, gl_features_has(gr, FEATURE_COLOR_TRANSFORMS));
-
-	if (!needs_shadow && needs_fb_curves) {
-		switch (quirks->blending_impl) {
-		case WESTON_BLENDING_IMPL_AUTO:
-			go->shader_blender = gl_shader_blender_create(gr, output);
-			break;
-		case WESTON_BLENDING_IMPL_FF:
-			go->shader_blender = NULL;
-			break;
-		case WESTON_BLENDING_IMPL_SHADER:
-			go->shader_blender = gl_shader_blender_create(gr, output);
-			if (!go->shader_blender) {
-				weston_log("Error: quirks were used to force in-shader blending, "
-					   "but it's not supported by the GLES implementation.\n"
-					   "Quitting...\n");
-				weston_compositor_exit_with_code(gr->compositor, RESULT_SKIP);
-			}
-			break;
-		}
-
-		if (go->shader_blender)
-			weston_log("Output %s uses in-shader blending.\n", output->name);
-		else
-			needs_shadow = true;
-	}
-
-	if (needs_shadow)
-		go->shadow_format = pixel_format_get_info(DRM_FORMAT_ABGR16161616F);
-
 	wl_list_init(&go->renderbuffer_list);
 
 	output->renderer_state = go;
@@ -4932,6 +4943,9 @@ gl_renderer_output_create(struct weston_output *output,
 	if (shadow_exists(go)) {
 		weston_log("Output %s uses %s shadow.\n",
 			   output->name, go->shadow_format->drm_format_name);
+	} else if (go->shader_blender) {
+		weston_log("Output %s uses in-shader blending.\n",
+			   output->name);
 	}
 
 	return 0;
