@@ -1536,8 +1536,10 @@ drm_plane_set_color_encoding(struct drm_plane *plane,
 			     enum wdrm_plane_color_encoding color_encoding,
 			     drmModeAtomicReq *req)
 {
-	if (color_encoding == WDRM_PLANE_COLOR_ENCODING__COUNT)
-		return 0;
+	struct weston_compositor *wc = plane->base.compositor;
+
+	weston_assert_s32_ge(wc, color_encoding, 0);
+	weston_assert_s32_lt(wc, color_encoding, WDRM_PLANE_COLOR_ENCODING__COUNT);
 
 	if (plane->props[WDRM_PLANE_COLOR_ENCODING].prop_id == 0) {
 		if (color_encoding == WDRM_PLANE_COLOR_ENCODING_DEFAULT)
@@ -1546,7 +1548,7 @@ drm_plane_set_color_encoding(struct drm_plane *plane,
 		return -1;
 	}
 
-	assert(drm_plane_supports_color_encoding(plane, color_encoding));
+	weston_assert_true(wc, drm_plane_supports_color_encoding(plane, color_encoding));
 
 	return plane_add_prop_enum(req, plane, WDRM_PLANE_COLOR_ENCODING,
 				   color_encoding);
@@ -1583,8 +1585,10 @@ drm_plane_set_color_range(struct drm_plane *plane,
 			  enum wdrm_plane_color_range color_range,
 			  drmModeAtomicReq *req)
 {
-	if (color_range == WDRM_PLANE_COLOR_RANGE__COUNT)
-		return 0;
+	struct weston_compositor *wc = plane->base.compositor;
+
+	weston_assert_s32_ge(wc, color_range, 0);
+	weston_assert_s32_lt(wc, color_range, WDRM_PLANE_COLOR_RANGE__COUNT);
 
 	if (plane->props[WDRM_PLANE_COLOR_RANGE].prop_id == 0) {
 		if (color_range == WDRM_PLANE_COLOR_RANGE_DEFAULT)
@@ -1593,7 +1597,7 @@ drm_plane_set_color_range(struct drm_plane *plane,
 		return -1;
 	}
 
-	assert(drm_plane_supports_color_range(plane, color_range));
+	weston_assert_true(wc, drm_plane_supports_color_range(plane, color_range));
 
 	return plane_add_prop_enum(req, plane, WDRM_PLANE_COLOR_RANGE,
 				   color_range);
