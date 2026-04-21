@@ -254,9 +254,6 @@ void
 notify_motion(const struct weston_pointer_motion_event *event);
 
 void
-notify_motion_absolute(const struct weston_pointer_motion_event *event);
-
-void
 notify_modifiers(struct weston_seat *seat, uint32_t serial);
 
 void

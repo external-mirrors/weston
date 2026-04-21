@@ -455,7 +455,7 @@ vnc_pointer_event(struct nvnc_client *client, uint16_t x, uint16_t y,
 		weston_pointer_motion_event_init(&event, &time, peer->seat,
 						 WESTON_POINTER_MOTION_ABS,
 						 &pos, NULL, NULL);
-		notify_motion_absolute(&event);
+		notify_motion(&event);
 	}
 
 	changed_button_mask = peer->last_button_mask ^ button_mask;

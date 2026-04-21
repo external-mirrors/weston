@@ -2284,17 +2284,6 @@ run_modifier_bindings(struct weston_seat *seat, uint32_t old, uint32_t new)
 	}
 }
 
-WL_EXPORT void
-notify_motion_absolute(const struct weston_pointer_motion_event *event)
-{
-	struct weston_seat *seat = event->base.seat;
-	struct weston_compositor *ec = seat->compositor;
-	struct weston_pointer *pointer = weston_seat_get_pointer(seat);
-
-	weston_compositor_wake(ec);
-	pointer->grab->interface->motion(pointer->grab, event);
-}
-
 static unsigned int
 peek_next_activate_serial(struct weston_compositor *c)
 {

@@ -1291,7 +1291,7 @@ rdp_translate_and_notify_mouse_position(RdpPeerContext *peerContext, UINT16 x, U
 						 peerContext->item.seat,
 						 WESTON_POINTER_MOTION_ABS,
 						 &pos, NULL, NULL);
-		notify_motion_absolute(&event);
+		notify_motion(&event);
 		return TRUE;
 	}
 	return FALSE;
@@ -1530,7 +1530,7 @@ xf_extendedMouseEvent(rdpInput *input, UINT16 flags, UINT16 x, UINT16 y)
 		weston_pointer_motion_event_init(&event, &time, peerContext->item.seat,
 						 WESTON_POINTER_MOTION_ABS,
 						 &pos, NULL, NULL);
-		notify_motion_absolute(&event);
+		notify_motion(&event);
 		need_frame = true;
 	}
 

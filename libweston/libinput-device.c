@@ -178,7 +178,7 @@ handle_pointer_motion_absolute(
 	weston_pointer_motion_event_init(&event, &time, device->seat,
 					 WESTON_POINTER_MOTION_ABS,
 					 &pos, NULL, NULL);
-	notify_motion_absolute(&event);
+	notify_motion(&event);
 
 	return true;
 }
