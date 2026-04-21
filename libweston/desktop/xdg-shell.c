@@ -619,6 +619,13 @@ weston_desktop_xdg_positioner_protocol_set_anchor(struct wl_client *wl_client,
 	struct weston_desktop_xdg_positioner *positioner =
 		wl_resource_get_user_data(resource);
 
+	if (anchor > XDG_POSITIONER_ANCHOR_BOTTOM_RIGHT) {
+		wl_resource_post_error(resource,
+				       XDG_POSITIONER_ERROR_INVALID_INPUT,
+				       "anchor must be in the anchor enum");
+		return;
+	}
+
 	positioner->anchor = anchor;
 }
 
@@ -629,6 +636,13 @@ weston_desktop_xdg_positioner_protocol_set_gravity(struct wl_client *wl_client,
 {
 	struct weston_desktop_xdg_positioner *positioner =
 		wl_resource_get_user_data(resource);
+
+	if (gravity > XDG_POSITIONER_GRAVITY_BOTTOM_RIGHT) {
+		wl_resource_post_error(resource,
+				       XDG_POSITIONER_ERROR_INVALID_INPUT,
+				       "gravity must be in the gravity enum");
+		return;
+	}
 
 	positioner->gravity = gravity;
 }
