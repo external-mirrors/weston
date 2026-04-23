@@ -52,6 +52,7 @@
 #include "pointer-constraints-unstable-v1-server-protocol.h"
 #include "input-timestamps-unstable-v1-server-protocol.h"
 #include "tablet-unstable-v2-server-protocol.h"
+#include "timeline.h"
 
 enum pointer_constraint_type {
 	POINTER_CONSTRAINT_TYPE_LOCK,
@@ -5976,6 +5977,7 @@ weston_input_event_init(struct weston_input_event *ievent, struct timespec *ts,
 
 	WESTON_TRACE_FUNC_FLOW(&ievent->flow_id);
 
+	TL_POINT(seat->compositor, TLP_INPUT_KERNEL_TS, TLP_INPUT_EVENT(ievent), TLP_END);
 }
 
 WL_EXPORT void
