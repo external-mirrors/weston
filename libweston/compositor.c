@@ -204,7 +204,7 @@ get_placeholder_color(struct weston_paint_node *pnode,
 static void
 paint_node_update_early(struct weston_paint_node *pnode)
 {
-	WESTON_TRACE_FUNC_FLOW(&pnode->surface->flow_id);
+	WESTON_TRACE_FUNC_FLOW(&pnode->flow_id);
 	struct weston_matrix *mat = &pnode->buffer_to_output_matrix;
 	struct weston_output *output = pnode->output;
 	struct weston_surface *surface = pnode->surface;
@@ -326,7 +326,7 @@ paint_node_validate_ready(struct weston_paint_node *pnode)
 static void
 paint_node_update_late(struct weston_paint_node *pnode)
 {
-	WESTON_TRACE_FUNC_FLOW(&pnode->surface->flow_id);
+	WESTON_TRACE_FUNC_FLOW(&pnode->flow_id);
 	struct weston_surface *surf = pnode->surface;
 	struct weston_buffer *buffer = surf->buffer_ref.buffer;
 	struct weston_view *view = pnode->view;
@@ -3295,7 +3295,7 @@ weston_output_damage(struct weston_output *output)
 static void
 paint_node_add_damage(struct weston_paint_node *node)
 {
-	WESTON_TRACE_FUNC_FLOW(&node->surface->flow_id);
+	WESTON_TRACE_FUNC_FLOW(&node->flow_id);
 	struct weston_view *view = node->view;
 	pixman_region32_t damage;
 
@@ -3324,7 +3324,7 @@ paint_node_add_damage(struct weston_paint_node *node)
 static void
 paint_node_flush_surface_damage(struct weston_paint_node *pnode)
 {
-	WESTON_TRACE_FUNC_FLOW(&pnode->surface->flow_id);
+	WESTON_TRACE_FUNC_FLOW(&pnode->flow_id);
 	struct weston_output *output = pnode->output;
 	struct weston_surface *surface = pnode->surface;
 	struct weston_buffer *buffer = surface->buffer_ref.buffer;
@@ -3351,6 +3351,9 @@ paint_node_flush_surface_damage(struct weston_paint_node *pnode)
 		 TLP_SURFACE(surface), TLP_OUTPUT(output), TLP_END);
 
 out:
+	/* We've flushed the surface's damage for *all* of its paint
+	 * nodes, so we can reset the surface flow_id here.
+	 */
 	surface->flow_id = 0;
 }
 
@@ -3817,6 +3820,9 @@ weston_output_repaint(struct weston_output *output)
 			 z_order_link) {
 		assert(pnode->view->output_mask & (1u << pnode->output->id));
 		assert(pnode->output == output);
+
+		/* Reset paint node perfetto flows at start of repaint */
+		pnode->flow_id = 0;
 	}
 
 	/* Find the highest protection desired for an output */

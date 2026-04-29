@@ -678,6 +678,8 @@ enum try_view_on_plane_failure_reasons {
  * A generic data structure unique for surface-view-output combination.
  */
 struct weston_paint_node {
+	uint64_t flow_id; /* Perfetto flow id */
+
 	/* Immutable members: */
 
 	/* struct weston_surface::paint_node_list */
