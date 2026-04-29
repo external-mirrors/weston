@@ -143,7 +143,7 @@ weston_timeline_perfetto(struct weston_log_scope *timeline_scope,
 		break;
 	case TLP_CORE_FLUSH_DAMAGE:
 		WESTON_TRACE_TIMESTAMP_END("Damaged", surface->damage_track_id, CLOCK_MONOTONIC, now_ns);
-		WESTON_TRACE_TIMESTAMP_BEGIN("Clean", surface->damage_track_id, surface->flow_id, CLOCK_MONOTONIC, now_ns);
+		WESTON_TRACE_TIMESTAMP_BEGIN("Clean", surface->damage_track_id, 0, CLOCK_MONOTONIC, now_ns);
 		break;
 	case TLP_CORE_REPAINT_BEGIN:
 		WESTON_TRACE_TIMESTAMP_END("Scheduled", output->paint_track_id, CLOCK_MONOTONIC, now_ns);
@@ -162,7 +162,7 @@ weston_timeline_perfetto(struct weston_log_scope *timeline_scope,
 	case TLP_CORE_COMMIT_DAMAGE:
 		WESTON_TRACE_TIMESTAMP_END("Clean", surface->damage_track_id, CLOCK_MONOTONIC, now_ns);
 		WESTON_TRACE_TIMESTAMP_END("Damaged", surface->damage_track_id, CLOCK_MONOTONIC, now_ns);
-		WESTON_TRACE_TIMESTAMP_BEGIN("Damaged", surface->damage_track_id, 0, CLOCK_MONOTONIC, now_ns);
+		WESTON_TRACE_TIMESTAMP_BEGIN("Damaged", surface->damage_track_id, surface->flow_id, CLOCK_MONOTONIC, now_ns);
 		break;
 	case TLP_RENDERER_GPU_BEGIN:
 		WESTON_TRACE_TIMESTAMP_BEGIN("Active", output->gpu_track_id, 0, CLOCK_MONOTONIC, gpu_ns);
