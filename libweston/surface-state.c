@@ -154,6 +154,8 @@ weston_surface_state_init(struct weston_surface *surface,
 	state->desired_protection = WESTON_HDCP_DISABLE;
 	state->protection_mode = WESTON_SURFACE_PROTECTION_MODE_RELAXED;
 
+	state->alpha_modifier = 1.0f;
+
 	state->color_profile = NULL;
 	state->render_intent = NULL;
 
@@ -457,12 +459,14 @@ weston_surface_apply_state(struct weston_surface *surface,
 	pixman_region32_clear(&state->damage_buffer);
 	pixman_region32_clear(&state->damage_surface);
 
-	/* wl_surface.set_opaque_region */
+	/* wl_surface.set_opaque_region and wp_alpha_modifier_surface_v1 */
 	if (status & (WESTON_SURFACE_DIRTY_SIZE |
 		      WESTON_SURFACE_DIRTY_BUFFER_PARAMS)) {
+		surface->alpha_modifier = state->alpha_modifier;
 		surface->is_opaque =
 			surface->buffer_ref.buffer &&
-			pixel_format_is_opaque(surface->buffer_ref.buffer->pixel_format);
+			pixel_format_is_opaque(surface->buffer_ref.buffer->pixel_format) &&
+			surface->alpha_modifier == 1.0f;
 
 		if (surface->is_opaque) {
 			/* Opaque region hint ignored, as whole surface is opaque. */
@@ -470,7 +474,14 @@ weston_surface_apply_state(struct weston_surface *surface,
 			pixman_region32_init_rect(&surface->opaque,
 						  0, 0,
 						  surface->width, surface->height);
-		} else {
+		} else if (surface->alpha_modifier == 1.0f) {
+			/**
+			 * Surface not fully opaque, but at least alpha modifier
+			 * is. So we are safe to use the opaque region hint. If
+			 * alpha modifier isn't fully opaque, the whole surface
+			 * has transparency and we'd have to ignore the opaque
+			 * region hint.
+			 */
 			pixman_region32_intersect_rect(&surface->opaque, &state->opaque,
 						       0, 0,
 						       surface->width, surface->height);
@@ -710,6 +721,8 @@ weston_surface_state_merge_from(struct weston_surface_state *dst,
 
 	dst->update_time = src->update_time;
 	weston_commit_timing_clear_target(&src->update_time);
+
+	dst->alpha_modifier = src->alpha_modifier;
 
 	dst->status |= src->status;
 	src->status = WESTON_SURFACE_CLEAN;

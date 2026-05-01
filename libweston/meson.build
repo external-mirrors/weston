@@ -11,6 +11,7 @@ deps_libweston = [
 ]
 srcs_libweston = [
 	git_version_h,
+	'alpha-modifier.c',
 	'animation.c',
 	'auth.c',
 	'bindings.c',
@@ -47,6 +48,8 @@ srcs_libweston = [
 	'weston-log-flight-rec.c',
 	'weston-log.c',
 	'weston-direct-display.c',
+	alpha_modifier_v1_protocol_c,
+	alpha_modifier_v1_server_protocol_h,
 	color_management_v1_protocol_c,
 	color_management_v1_server_protocol_h,
 	color_representation_v1_protocol_c,

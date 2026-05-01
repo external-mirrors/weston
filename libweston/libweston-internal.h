@@ -741,6 +741,8 @@ struct weston_paint_node {
 	bool is_fully_opaque;
 	bool is_fully_blended;
 	bool on_cursor_layer;
+
+	/* Combined alpha from view and surface. */
 	float alpha;
 
 	/* This node's contents are solid, either from a solid buffer or a

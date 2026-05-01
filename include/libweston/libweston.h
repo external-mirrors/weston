@@ -1955,6 +1955,9 @@ struct weston_surface_state {
 
 	/* commit_timing_v1 */
 	struct weston_commit_timing_target update_time;
+
+	/* wp_alpha_modifier_v1 */
+	float alpha_modifier;
 };
 
 struct weston_surface_activation_data {
@@ -2154,6 +2157,10 @@ struct weston_surface {
 
 	/** commit_timing_v1 */
 	struct weston_commit_timer *commit_timer;
+
+	/** wp_alpha_modifier_v1 */
+	float alpha_modifier;
+	struct weston_alpha_modifier_surface *ams;
 };
 
 struct weston_subsurface {

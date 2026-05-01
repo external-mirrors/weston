@@ -80,6 +80,7 @@
 #include <libweston/version.h>
 #include <libweston/plugin-registry.h>
 #include "pixel-formats.h"
+#include "alpha-modifier.h"
 #include "backend.h"
 #include "libweston-internal.h"
 #include "color.h"
@@ -347,8 +348,12 @@ paint_node_update_early(struct weston_paint_node *pnode)
 			paint_node_update_rectangles(pnode);
 	}
 
+	/**
+	 * The alpha of a paint node is a combination of the view and surface alpha,
+	 * and if one of these change we ensure that the view dirty flag is raised.
+	 */
 	if (view_dirty)
-		pnode->alpha = pnode->view->alpha;
+		pnode->alpha = pnode->view->alpha * pnode->surface->alpha_modifier;
 
 	pnode->draw_solid = false;
 	pnode->censored = false;
@@ -1166,6 +1171,10 @@ weston_surface_create(struct weston_compositor *compositor,
 	 * define these values using the CM&HDR protocol extension. */
 	surface->color_profile = NULL;
 	surface->render_intent = NULL;
+
+	/* Start fully opaque, as no ams exists yet. */
+	surface->alpha_modifier = 1.0f;
+	surface->ams = NULL;
 
 	/* Also part of the CM&HDR protocol extension implementation. */
 	weston_surface_update_preferred_color_profile(surface);
@@ -3280,7 +3289,7 @@ weston_surface_attach_solid(struct weston_surface *surface,
 	weston_surface_set_size(surface, w, h);
 
 	pixman_region32_fini(&surface->opaque);
-	if (buffer->solid.a == 1.0) {
+	if (buffer->solid.a == 1.0f && surface->alpha_modifier == 1.0f) {
 		surface->is_opaque = true;
 		pixman_region32_init_rect(&surface->opaque, 0, 0, w, h);
 	} else {
@@ -9904,6 +9913,9 @@ debug_scene_view_print_paint_node(FILE *fp,
 		fputs("\n", fp);
 	}
 
+	if (pnode->alpha < 1.0f)
+		fprintf(fp, "\t\t\t\tAlpha: %f\n", pnode->alpha);
+
 	if (pnode->try_view_on_plane_failure_reasons) {
 		fputs("\t\t\t\tPlane failure reasons: ", fp);
 		bits_to_str_stream(pnode->try_view_on_plane_failure_reasons,
@@ -9956,8 +9968,10 @@ debug_scene_view_print(FILE *fp, struct weston_view *view)
 			box->x1, box->y1, box->x2, box->y2);
 	}
 
-	if (view->alpha < 1.0)
-		fprintf(fp, "\t\talpha: %f\n", view->alpha);
+	if (view->alpha < 1.0f || view->surface->alpha_modifier < 1.0f) {
+		fprintf(fp, "\t\talpha: view=%f surface=%f\n",
+			    view->alpha, view->surface->alpha_modifier);
+	}
 
 	if (view->output_mask != 0) {
 		fputs("\t\tpaint nodes:\n", fp);
@@ -10427,6 +10441,9 @@ weston_compositor_create(struct wl_display *display,
 		goto fail;
 
 	if (commit_timing_setup(ec) != 0)
+		goto fail;
+
+	if (!weston_compositor_enable_alpha_modifier_protocol(ec))
 		goto fail;
 
 	if (weston_input_init(ec) != 0)

@@ -16,6 +16,7 @@ install_data(
 )
 
 generated_protocols = [
+	[ 'alpha-modifier', 'staging', 'v1' ],
 	[ 'color-management', 'staging', 'v1' ],
 	[ 'color-representation', 'staging', 'v1' ],
 	[ 'commit-timing', 'staging', 'v1' ],
