@@ -547,18 +547,11 @@ create_dmabuf_buffer(struct window *window, struct buffer *buf, uint32_t width,
 	buf->format = format;
 
 	if (count_modifiers > 0) {
-#ifdef HAVE_GBM_BO_CREATE_WITH_MODIFIERS2
 		buf->bo = gbm_bo_create_with_modifiers2(display->gbm_device,
 							buf->width, buf->height,
 							format, modifiers,
 							count_modifiers,
 							bo_flags);
-#else
-		buf->bo = gbm_bo_create_with_modifiers(display->gbm_device,
-						       buf->width, buf->height,
-						       format, modifiers,
-						       count_modifiers);
-#endif
 		if (buf->bo)
 			buf->modifier = gbm_bo_get_modifier(buf->bo);
 	}

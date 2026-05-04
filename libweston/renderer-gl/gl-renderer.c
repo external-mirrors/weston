@@ -4966,16 +4966,11 @@ gl_renderer_dmabuf_alloc(struct weston_renderer *renderer,
 	struct dmabuf_attributes *attributes;
 	struct gbm_bo *bo;
 	int i;
-#ifdef HAVE_GBM_BO_CREATE_WITH_MODIFIERS2
+
 	bo = gbm_bo_create_with_modifiers2(allocator->gbm_device,
 					   width, height, format,
 					   modifiers, count,
 					   GBM_BO_USE_RENDERING);
-#else
-	bo = gbm_bo_create_with_modifiers(allocator->gbm_device,
-					  width, height, format,
-					  modifiers, count);
-#endif
 	if (!bo)
 		bo = gbm_bo_create(allocator->gbm_device,
 				   width, height, format,

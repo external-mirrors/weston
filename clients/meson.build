@@ -42,10 +42,7 @@ dep_toytoolkit = declare_dependency(
 	link_with: lib_toytoolkit,
 	dependencies: deps_toytoolkit,
 )
-dep_gbm = dependency('gbm', required: false, version: '>= 21.1.1')
-if dep_gbm.found() and dep_gbm.version().version_compare('>= 21.3')
-	config_h.set('HAVE_GBM_BO_CREATE_WITH_MODIFIERS2', '1')
-endif
+dep_gbm = dependency('gbm', required: false, version: '>= 21.3')
 
 simple_clients_enabled = get_option('simple-clients')
 simple_build_all = simple_clients_enabled.contains('all')
