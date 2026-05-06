@@ -3112,8 +3112,7 @@ weston_buffer_from_resource(struct weston_compositor *ec,
 		buffer->type = WESTON_BUFFER_DMABUF;
 		buffer->dmabuf = dmabuf;
 		buffer->direct_display = dmabuf->direct_display;
-		/* We have no way to set this yet. */
-		buffer->restriction = WESTON_BUFFER_RESTRICTION_NO;
+		buffer->restriction = dmabuf->restriction;
 		/* If we have no restricted context, all restricted buffers are
 		 * set to direct display, as we can't safely import them.
 		 */
@@ -11272,10 +11271,13 @@ weston_compositor_init_renderer(struct weston_compositor *compositor,
 		ret = -1;
 	}
 
-	if (compositor->renderer->import_dmabuf)
-		if (linux_dmabuf_setup(compositor) < 0)
+	if (compositor->renderer->import_dmabuf) {
+		if (linux_dmabuf_setup(compositor) < 0) {
 			weston_log("Error: dmabuf protocol setup failed.\n");
-
+		} else {
+			weston_restricted_buffer_setup(compositor);
+		}
+	}
 	return ret;
 }
 

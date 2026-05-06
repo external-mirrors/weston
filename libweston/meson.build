@@ -48,6 +48,7 @@ srcs_libweston = [
 	'weston-log-flight-rec.c',
 	'weston-log.c',
 	'weston-direct-display.c',
+	'weston-restricted-buffer.c',
 	alpha_modifier_v1_protocol_c,
 	alpha_modifier_v1_server_protocol_h,
 	color_management_v1_protocol_c,
@@ -94,6 +95,8 @@ srcs_libweston = [
 	weston_direct_display_server_protocol_h,
 	weston_output_capture_protocol_c,
 	weston_output_capture_server_protocol_h,
+	weston_restricted_buffer_protocol_c,
+	weston_restricted_buffer_server_protocol_h,
 	tablet_unstable_v2_protocol_c,
 	tablet_unstable_v2_server_protocol_h,
 ]

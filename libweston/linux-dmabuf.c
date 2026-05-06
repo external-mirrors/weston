@@ -282,6 +282,10 @@ params_create_common(struct wl_client *client,
 		goto avoid_gpu_import;
 	}
 
+	if (buffer->restriction != WESTON_BUFFER_RESTRICTION_NO &&
+	    !buffer->compositor->renderer_restricted_context)
+		goto avoid_gpu_import;
+
 	if (!weston_compositor_import_dmabuf(buffer->compositor, buffer))
 		goto err_failed;
 
@@ -393,6 +397,7 @@ linux_dmabuf_create_params(struct wl_client *client,
 				   &zwp_linux_buffer_params_v1_interface,
 				   version, params_id);
 	buffer->direct_display = false;
+	buffer->restriction = WESTON_BUFFER_RESTRICTION_NO;
 	if (!buffer->params_resource)
 		goto err_dealloc;
 

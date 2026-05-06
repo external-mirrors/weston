@@ -72,6 +72,9 @@ struct linux_dmabuf_buffer {
 
 	/**< marked as scan-out capable, avoids any composition */
 	bool direct_display;
+
+	/**< may be restricted and require special handling */
+	enum weston_buffer_restriction restriction;
 };
 
 enum weston_dmabuf_feedback_tranche_preference {
@@ -149,6 +152,9 @@ linux_dmabuf_setup(struct weston_compositor *compositor);
 
 int
 weston_direct_display_setup(struct weston_compositor *compositor);
+
+int
+weston_restricted_buffer_setup(struct weston_compositor *compositor);
 
 struct linux_dmabuf_buffer *
 linux_dmabuf_buffer_get(struct weston_compositor *compositor,
