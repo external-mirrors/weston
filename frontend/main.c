@@ -2363,10 +2363,32 @@ static void
 allow_content_protection(struct weston_output *output,
 			struct weston_config_section *section)
 {
+	static const struct weston_enum_map restriction_policies[] = {
+		{ "censor", WESTON_OUTPUT_RESTRICTION_POLICY_CENSOR },
+		{ "display", WESTON_OUTPUT_RESTRICTION_POLICY_DISPLAY },
+		{ "hdcp1", WESTON_OUTPUT_RESTRICTION_POLICY_HDCP1 },
+		{ "hdcp2", WESTON_OUTPUT_RESTRICTION_POLICY_HDCP2 },
+	};
+	const struct weston_enum_map *entry;
 	bool allow_hdcp = true;
+	char *policy_str;
+	enum weston_output_restriction_policy policy = WESTON_OUTPUT_RESTRICTION_POLICY_CENSOR;
 
 	weston_config_section_get_bool(section, "allow_hdcp", &allow_hdcp, true);
 	weston_output_allow_protection(output, allow_hdcp);
+
+	weston_config_section_get_string(section, "restriction-policy",
+					 &policy_str, "censor");
+
+	entry = weston_enum_map_find_name(restriction_policies, policy_str);
+	if (entry) {
+		policy = entry->value;
+	} else {
+		weston_log("warning: no such restriction-policy: %s\n",
+			   policy_str);
+	}
+	free(policy_str);
+	weston_output_set_restriction_policy(output, policy);
 }
 
 static int

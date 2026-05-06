@@ -219,6 +219,22 @@ enum weston_hdcp_protection {
 	WESTON_HDCP_ENABLE_TYPE_1
 };
 
+/* enum for output policy for restricted client buffers
+ *
+ * This enum is for selecting the policy for output handling of restricted
+ * content from applications. If the level is CENSOR - the default, all
+ * restricted content will be unconditionally censored.
+ *
+ * Note: Restricted content may be censored even when the policy is set to
+ * allow its display, if the renderer is not using a restricted context.
+ */
+enum weston_output_restriction_policy {
+	WESTON_OUTPUT_RESTRICTION_POLICY_CENSOR = 0,
+	WESTON_OUTPUT_RESTRICTION_POLICY_DISPLAY,
+	WESTON_OUTPUT_RESTRICTION_POLICY_HDCP1,
+	WESTON_OUTPUT_RESTRICTION_POLICY_HDCP2,
+};
+
 /** Weston test suite quirks
  *
  * There are some things that need a specific behavior when we run Weston in the
@@ -625,6 +641,8 @@ struct weston_output {
 
 	/** fifo_v1 - list of surfaces to clear next repaint */
 	struct wl_list fifo_barrier_surfaces;
+
+	enum weston_output_restriction_policy restriction_policy;
 };
 
 enum weston_pointer_motion_mask {
@@ -2867,6 +2885,10 @@ weston_output_get_first_head(struct weston_output *output);
 void
 weston_output_allow_protection(struct weston_output *output,
 			       bool allow_protection);
+
+void
+weston_output_set_restriction_policy(struct weston_output *output,
+				     enum weston_output_restriction_policy policy);
 
 bool
 weston_output_contains_coord(struct weston_output *output,

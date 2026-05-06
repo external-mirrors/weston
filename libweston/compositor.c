@@ -8546,6 +8546,7 @@ weston_output_init(struct weston_output *output,
 	output->color_format = WESTON_COLOR_FORMAT_AUTO;
 	output->desired_protection = WESTON_HDCP_DISABLE;
 	output->allow_protection = true;
+	output->restriction_policy = WESTON_OUTPUT_RESTRICTION_POLICY_CENSOR;
 	output->power_state = WESTON_OUTPUT_POWER_NORMAL;
 	output->repaint_only_on_capture = false;
 	output->fb_alpha_encoding = WESTON_OUTPUT_FB_ALPHA_PREMULT;
@@ -9038,6 +9039,24 @@ weston_output_allow_protection(struct weston_output *output,
 			       bool allow_protection)
 {
 	output->allow_protection = allow_protection;
+}
+
+/** Set the output's policy for handling restricted client content
+ *
+ * When content is provided in restricted buffers, we may have specific
+ * conditions that need to be met before we trust an output to handle them,
+ * or we may not want restricted content displayed on an output at all.
+ *
+ * \param output The output to configure
+ * \param policy The policy governing the handling of restricted content.
+ *
+ * \ingroup output
+ */
+WL_EXPORT void
+weston_output_set_restriction_policy(struct weston_output *output,
+				     enum weston_output_restriction_policy policy)
+{
+	output->restriction_policy = policy;
 }
 
 /** Get supported EOTF modes as a bit mask

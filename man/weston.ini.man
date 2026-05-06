@@ -726,6 +726,26 @@ content-protection can actually be realized, only if the hardware
 (source and sink) support HDCP, and the backend has the implementation
 of content-protection protocol. Currently, HDCP is supported by drm-backend.
 .TP 7
+.BI "restriction-policy=" censor
+The policy that should be used when buffers contain restricted content.
+The policy is set to one of following strings:
+.PP
+.RS 10
+.nf
+.BR  "censor   " "Restricted content is always censored"
+.BR  "display  " "Restricted content is always displayed"
+.BR  "hdcp1    " "Restricted content is shown when the display is using hdcp1 or higher"
+.BR  "hdcp2    " "Restricted content is shown when the display is using hdcp2"
+.fi
+.RE
+.IP
+Defaults to
+.BR censor ".
+Whether the renderer can composite restricted content or not depends on
+.BR core " section key " renderer-restricted-context . If the renderer can not display
+restricted content, it will only be visible when it can be placed on a suitable
+hardware plane and is allowed by policy.
+.TP 7
 .BI "content-type=" content_type
 The type of the content being primarily displayed to this output. Can be "no
 data" (default), "graphics", "photo", "cinema" or "game".
