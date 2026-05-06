@@ -4397,6 +4397,11 @@ vulkan_renderer_display_create(struct weston_compositor *ec,
 	struct vulkan_renderer *vr;
 	VkResult result;
 
+	if (ec->renderer_restricted_context) {
+		weston_log("Vulkan renderer does not support restricted context\n");
+		return -1;
+	}
+
 	vr = xzalloc(sizeof(*vr));
 
 	vr->compositor = ec;

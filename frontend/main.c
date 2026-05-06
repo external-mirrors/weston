@@ -1240,6 +1240,9 @@ weston_compositor_init_config(struct weston_compositor *ec,
 			compositor->use_color_manager = true;
 	}
 
+	weston_config_section_get_bool(s, "renderer-restricted-context",
+				       &ec->renderer_restricted_context, false);
+
 	/* weston.ini [libinput] */
 	s = weston_config_get_section(config, "libinput", NULL, NULL);
 	weston_config_section_get_bool(s, "touchscreen_calibrator", &cal, 0);

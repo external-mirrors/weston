@@ -207,6 +207,15 @@ to select the most appropriate renderer. Available renderers are:
 .RE
 Not all backends support all renderers.
 .TP 7
+.BI "renderer-restricted-context=" false
+Requires the renderer to use a restricted context, allowing for access to
+restricted resources. If this is true, the renderer will always use such
+a context, and if it's false the renderer will censor content that can
+not be read outside of a restricted context.
+
+If the renderer is unable to provide such a context, weston will fail to
+start.
+.TP 7
 .BI "use-pixman=" true
 Deprecated in favour of the
 .BI "renderer="

@@ -1068,6 +1068,11 @@ pixman_renderer_init(struct weston_compositor *ec)
 	const struct pixel_format_info *pixel_info, *info_argb8888, *info_xrgb8888;
 	unsigned int i, num_formats;
 
+	if (ec->renderer_restricted_context) {
+		weston_log("Pixman renderer does not support restricted context\n");
+		return -1;
+	}
+
 	renderer = zalloc(sizeof *renderer);
 	if (renderer == NULL)
 		return -1;

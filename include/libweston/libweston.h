@@ -1657,6 +1657,12 @@ struct weston_compositor {
 	struct wl_listener client_created_listener;
 	uint64_t client_counter;
 	uint64_t internal_id_counter;
+
+	/**
+	 * When set the renderer must support, and must use, a restricted
+	 * context.
+	 */
+	bool renderer_restricted_context;
 };
 
 struct weston_solid_buffer_values {

@@ -5317,6 +5317,11 @@ gl_renderer_display_create(struct weston_compositor *ec,
 	int ret, nformats, i, j;
 	bool supported;
 
+	if (ec->renderer_restricted_context) {
+		weston_log("GL renderer does not support restricted context\n");
+		return -1;
+	}
+
 	gr = zalloc(sizeof *gr);
 	if (gr == NULL)
 		return -1;
