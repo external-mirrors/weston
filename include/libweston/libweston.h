@@ -139,7 +139,8 @@ enum weston_mode_aspect_ratio {
 
 enum weston_surface_protection_mode {
 	WESTON_SURFACE_PROTECTION_MODE_RELAXED,
-	WESTON_SURFACE_PROTECTION_MODE_ENFORCED
+	WESTON_SURFACE_PROTECTION_MODE_ENFORCED,
+	WESTON_SURFACE_PROTECTION_MODE_CENSORED, /* Can never be displayed */
 };
 
 enum weston_output_color_effect_type {
@@ -1694,6 +1695,11 @@ enum weston_buffer_type {
 	WESTON_BUFFER_SOLID,
 };
 
+enum weston_buffer_restriction {
+	WESTON_BUFFER_RESTRICTION_NO = 0,
+	WESTON_BUFFER_RESTRICTION_YES,
+};
+
 struct weston_buffer {
 	struct wl_resource *resource;
 	struct wl_signal destroy_signal;
@@ -1717,6 +1723,7 @@ struct weston_buffer {
 		ORIGIN_BOTTOM_LEFT, /* buffer content starts at (0, height) */
 	} buffer_origin;
 	bool direct_display;
+	enum weston_buffer_restriction restriction;
 
 	void *renderer_private;
 	void *backend_private;

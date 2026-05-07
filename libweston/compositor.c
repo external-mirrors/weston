@@ -324,9 +324,41 @@ static void
 paint_node_update_desired_protection(struct weston_paint_node *pnode)
 {
 	struct weston_surface *surface = pnode->surface;
+	struct weston_buffer *buffer = surface->buffer_ref.buffer;
+	struct weston_output *output = pnode->output;
+	enum weston_hdcp_protection desired_protection = WESTON_HDCP_DISABLE;
+	enum weston_surface_protection_mode protection_mode = surface->protection_mode;
 
-	pnode->desired_protection = surface->desired_protection;
-	pnode->protection_mode = surface->protection_mode;
+	/* For restricted buffers, output policy sets the minimum protection level */
+	if (buffer->type == WESTON_BUFFER_DMABUF &&
+	    buffer->restriction != WESTON_BUFFER_RESTRICTION_NO) {
+		switch (output->restriction_policy) {
+		case WESTON_OUTPUT_RESTRICTION_POLICY_CENSOR:
+			pnode->protection_mode = WESTON_SURFACE_PROTECTION_MODE_CENSORED;
+			/* If we can't show it at all anyway, there's no reason
+			 * force a display into an HDCP mode.
+			 */
+			pnode->desired_protection = WESTON_HDCP_DISABLE;
+			return;
+		case WESTON_OUTPUT_RESTRICTION_POLICY_DISPLAY:
+			/* Other conditions may still prevent display */
+			break;
+		case WESTON_OUTPUT_RESTRICTION_POLICY_HDCP1:
+			protection_mode = WESTON_SURFACE_PROTECTION_MODE_ENFORCED;
+			desired_protection = WESTON_HDCP_ENABLE_TYPE_0;
+			break;
+		case WESTON_OUTPUT_RESTRICTION_POLICY_HDCP2:
+			protection_mode = WESTON_SURFACE_PROTECTION_MODE_ENFORCED;
+			desired_protection = WESTON_HDCP_ENABLE_TYPE_1;
+			break;
+		default:
+			weston_assert_not_reached(output->compositor,
+						  "Invalid restriction policy");
+		}
+	}
+
+	pnode->desired_protection = MAX(desired_protection, surface->desired_protection);
+	pnode->protection_mode = protection_mode;
 }
 
 /* Paint nodes contain filter and transform information that needs to be
@@ -386,9 +418,10 @@ paint_node_update_early(struct weston_paint_node *pnode)
 	 */
 	recording_censor = (output->disable_planes > 0) &&
 			   (pnode->desired_protection > WESTON_HDCP_DISABLE);
-	unprotected_censor = (pnode->desired_protection > output->current_protection);
-	if (pnode->protection_mode ==
-	    WESTON_SURFACE_PROTECTION_MODE_ENFORCED &&
+	unprotected_censor = (pnode->desired_protection > output->current_protection) ||
+			     (pnode->protection_mode == WESTON_SURFACE_PROTECTION_MODE_CENSORED);
+	if (pnode->protection_mode !=
+	    WESTON_SURFACE_PROTECTION_MODE_RELAXED &&
 	    (recording_censor || unprotected_censor)) {
 		pnode->draw_solid = true;
 		pnode->censored = true;
@@ -3079,6 +3112,15 @@ weston_buffer_from_resource(struct weston_compositor *ec,
 		buffer->type = WESTON_BUFFER_DMABUF;
 		buffer->dmabuf = dmabuf;
 		buffer->direct_display = dmabuf->direct_display;
+		/* We have no way to set this yet. */
+		buffer->restriction = WESTON_BUFFER_RESTRICTION_NO;
+		/* If we have no restricted context, all restricted buffers are
+		 * set to direct display, as we can't safely import them.
+		 */
+		if (buffer->restriction != WESTON_BUFFER_RESTRICTION_NO &&
+		    !ec->renderer_restricted_context)
+			buffer->direct_display = true;
+
 		buffer->width = dmabuf->attributes.width;
 		buffer->height = dmabuf->attributes.height;
 		buffer->pixel_format =
