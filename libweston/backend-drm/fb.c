@@ -749,8 +749,8 @@ drm_fb_get_from_paint_node(struct drm_output_state *state,
 	struct drm_fb *fb;
 	struct drm_plane *plane;
 
-	if (surface->protection_mode == WESTON_SURFACE_PROTECTION_MODE_ENFORCED &&
-	    surface->desired_protection > output->base.current_protection) {
+	if (pnode->protection_mode == WESTON_SURFACE_PROTECTION_MODE_ENFORCED &&
+	    pnode->desired_protection > output->base.current_protection) {
 		*try_view_on_plane_failure_reasons |=
 			FAILURE_REASONS_INADEQUATE_CONTENT_PROTECTION;
 		return NULL;

@@ -315,6 +315,20 @@ is_pnode_fully_transparent(struct weston_paint_node *pnode)
 	return (pnode->alpha == 0.0f);
 }
 
+/* Update a paint node's desired content protection - this must be
+ * called *before* early update so it can be used in repaint's
+ * output protection level checks, which happen before early update
+ * can determine if a paint node can be censored or not!
+ */
+static void
+paint_node_update_desired_protection(struct weston_paint_node *pnode)
+{
+	struct weston_surface *surface = pnode->surface;
+
+	pnode->desired_protection = surface->desired_protection;
+	pnode->protection_mode = surface->protection_mode;
+}
+
 /* Paint nodes contain filter and transform information that needs to be
  * up to date before assign_planes() is called. But there are also
  * damage related bits that must be updated after assign_planes()
@@ -371,9 +385,9 @@ paint_node_update_early(struct weston_paint_node *pnode)
 	 *   when displayed on an output which has lower protection capability.
 	 */
 	recording_censor = (output->disable_planes > 0) &&
-			   (surface->desired_protection > WESTON_HDCP_DISABLE);
-	unprotected_censor = (surface->desired_protection > output->current_protection);
-	if (surface->protection_mode ==
+			   (pnode->desired_protection > WESTON_HDCP_DISABLE);
+	unprotected_censor = (pnode->desired_protection > output->current_protection);
+	if (pnode->protection_mode ==
 	    WESTON_SURFACE_PROTECTION_MODE_ENFORCED &&
 	    (recording_censor || unprotected_censor)) {
 		pnode->draw_solid = true;
@@ -3962,14 +3976,16 @@ weston_output_repaint(struct weston_output *output)
 	/* Find the highest protection desired for an output */
 	wl_list_for_each(pnode, &output->paint_node_z_order_list,
 			 z_order_link) {
+		/* Update paint node protection requirements first */
+		paint_node_update_desired_protection(pnode);
 		/*
 		 * The desired_protection of the output should be the
-		 * maximum of the desired_protection of the surfaces,
+		 * maximum of the desired_protection of the paint nodes,
 		 * that are displayed on that output, to avoid
 		 * reducing the protection for existing surfaces.
 		 */
-		if (pnode->surface->desired_protection > highest_requested)
-			highest_requested = pnode->surface->desired_protection;
+		if (pnode->desired_protection > highest_requested)
+			highest_requested = pnode->desired_protection;
 	}
 
 	/* If we're changing our protection characteristics, we need to go

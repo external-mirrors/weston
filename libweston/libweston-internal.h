@@ -791,6 +791,12 @@ struct weston_paint_node {
 	 */
 	bool need_hole;
 	uint32_t psf_flags; /* presentation-feedback flags */
+
+	/* Desired protection may be a combination of surface
+	 * state and other factors.
+	 */
+	enum weston_hdcp_protection desired_protection;
+	enum weston_surface_protection_mode protection_mode;
 };
 
 struct weston_paint_node *
