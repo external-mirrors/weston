@@ -278,6 +278,42 @@ paint_node_update_rectangles(struct weston_paint_node *pnode)
 	pnode->buffer_source_height = sheight;
 }
 
+static bool
+is_pnode_solid_buffer_fully_opaque(struct weston_paint_node *pnode)
+{
+	struct weston_compositor *wc = pnode->surface->compositor;
+
+	weston_assert_true(wc, pnode->draw_solid);
+
+	/**
+	 * pnode->is_fully_opaque is used for optimization purposes, and opaque
+	 * regions cannot be determined reliably with free form transformation
+	 * (even if the content itself is fully opaque).
+	 */
+	if (!pnode->simple_transform)
+		return false;
+
+	return (pnode->view->alpha == 1.0f &&
+	        pnode->solid.a == 1.0f);
+}
+
+static bool
+is_pnode_fully_transparent(struct weston_paint_node *pnode)
+{
+	/**
+	 * This does not depend on having pnode->simple_transform. Any zeroed
+	 * alpha guarantees an invisible paint node, regardless of geometry.
+	 *
+	 * Also, even for pnodes that do not represent a solid buffer, full
+	 * transparency can still be determined.
+	 */
+
+	if (pnode->draw_solid && pnode->solid.a == 0.0f)
+		return true;
+
+	return (pnode->view->alpha == 0.0f);
+}
+
 /* Paint nodes contain filter and transform information that needs to be
  * up to date before assign_planes() is called. But there are also
  * damage related bits that must be updated after assign_planes()
@@ -311,23 +347,14 @@ paint_node_update_early(struct weston_paint_node *pnode)
 			paint_node_update_rectangles(pnode);
 	}
 
-	buffer = pnode->surface->buffer_ref.buffer;
 	pnode->draw_solid = false;
-	pnode->is_fully_transparent = false;
 	pnode->censored = false;
+
+	buffer = pnode->surface->buffer_ref.buffer;
 	if (buffer->type == WESTON_BUFFER_SOLID) {
 		pnode->draw_solid = true;
-		pnode->is_fully_opaque = (pnode->view->alpha == 1.0f &&
-					  buffer->solid.a == 1.0f &&
-					  pnode->simple_transform);
-		pnode->is_fully_blended = !pnode->is_fully_opaque;
 		pnode->solid = buffer->solid;
-		if (pnode->solid.a == 0.0f)
-			pnode->is_fully_transparent = true;
 	}
-
-	if (pnode->view->alpha == 0.0f)
-		pnode->is_fully_transparent = true;
 
 	/* Check for 2 types of censor requirements
 	 * - recording_censor: Censor protected view when a
@@ -343,13 +370,15 @@ paint_node_update_early(struct weston_paint_node *pnode)
 	    (recording_censor || unprotected_censor)) {
 		pnode->draw_solid = true;
 		pnode->censored = true;
-		pnode->is_fully_opaque = (pnode->view->alpha == 1.0f) &&
-					 pnode->simple_transform;
-		pnode->is_fully_blended = !pnode->is_fully_opaque;
 		get_placeholder_color(pnode, &pnode->solid);
 	}
 
-	if (!pnode->draw_solid && (was_solid || view_dirty)) {
+	pnode->is_fully_transparent = is_pnode_fully_transparent(pnode);
+
+	if (pnode->draw_solid) {
+		pnode->is_fully_opaque = is_pnode_solid_buffer_fully_opaque(pnode);
+		pnode->is_fully_blended = !pnode->is_fully_opaque;
+	} else if (was_solid || view_dirty) {
 		pnode->is_fully_opaque = weston_view_is_opaque(pnode->view,
 							       &pnode->view->transform.boundingbox) &&
 							       pnode->simple_transform;
