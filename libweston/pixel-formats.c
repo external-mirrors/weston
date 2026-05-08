@@ -713,6 +713,8 @@ static const struct pixel_format_info pixel_format_table[] = {
 		COLOR_MODEL(YUV),
 		.num_planes = 1,
 		.hsub = 2,
+		VULKAN_FORMAT(VK_FORMAT_G8B8G8R8_422_UNORM),
+		.bpp = 16, /* packed yuv */
 	},
 	{
 		DRM_FORMAT(YVYU),
@@ -727,6 +729,8 @@ static const struct pixel_format_info pixel_format_table[] = {
 		.num_planes = 1,
 		.luma_chroma_order = ORDER_CHROMA_LUMA,
 		.hsub = 2,
+		VULKAN_FORMAT(VK_FORMAT_B8G8R8G8_422_UNORM),
+		.bpp = 16, /* packed yuv */
 	},
 	{
 		DRM_FORMAT(VYUY),
@@ -742,6 +746,7 @@ static const struct pixel_format_info pixel_format_table[] = {
 		.num_planes = 2,
 		.hsub = 2,
 		.vsub = 2,
+		VULKAN_FORMAT(VK_FORMAT_G8_B8R8_2PLANE_420_UNORM),
 	},
 	{
 		DRM_FORMAT(NV15),
@@ -778,6 +783,7 @@ static const struct pixel_format_info pixel_format_table[] = {
 		.num_planes = 2,
 		.hsub = 2,
 		.vsub = 1,
+		VULKAN_FORMAT(VK_FORMAT_G8_B8R8_2PLANE_422_UNORM),
 	},
 	{
 		DRM_FORMAT(NV61),
@@ -791,6 +797,7 @@ static const struct pixel_format_info pixel_format_table[] = {
 		DRM_FORMAT(NV24),
 		COLOR_MODEL(YUV),
 		.num_planes = 2,
+		VULKAN_FORMAT(VK_FORMAT_G8_B8R8_2PLANE_444_UNORM),
 	},
 	{
 		DRM_FORMAT(NV42),
@@ -804,6 +811,7 @@ static const struct pixel_format_info pixel_format_table[] = {
 		.num_planes = 2,
 		.hsub = 2,
 		.vsub = 2,
+		VULKAN_FORMAT(VK_FORMAT_G10X6_B10X6R10X6_2PLANE_420_UNORM_3PACK16),
 	},
 	{
 		DRM_FORMAT(P012),
@@ -811,6 +819,7 @@ static const struct pixel_format_info pixel_format_table[] = {
 		.num_planes = 2,
 		.hsub = 2,
 		.vsub = 2,
+		VULKAN_FORMAT(VK_FORMAT_G12X4_B12X4R12X4_2PLANE_420_UNORM_3PACK16),
 	},
 	{
 		DRM_FORMAT(P016),
@@ -818,6 +827,7 @@ static const struct pixel_format_info pixel_format_table[] = {
 		.num_planes = 2,
 		.hsub = 2,
 		.vsub = 2,
+		VULKAN_FORMAT(VK_FORMAT_G16_B16R16_2PLANE_420_UNORM),
 	},
 	{
 		DRM_FORMAT(P030),
@@ -878,6 +888,7 @@ static const struct pixel_format_info pixel_format_table[] = {
 		.num_planes = 3,
 		.hsub = 2,
 		.vsub = 2,
+		VULKAN_FORMAT(VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM),
 	},
 	{
 		DRM_FORMAT(YVU420),
@@ -893,6 +904,7 @@ static const struct pixel_format_info pixel_format_table[] = {
 		.num_planes = 3,
 		.hsub = 2,
 		.vsub = 1,
+		VULKAN_FORMAT(VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM),
 	},
 	{
 		DRM_FORMAT(YVU422),
@@ -906,6 +918,7 @@ static const struct pixel_format_info pixel_format_table[] = {
 		DRM_FORMAT(YUV444),
 		COLOR_MODEL(YUV),
 		.num_planes = 3,
+		VULKAN_FORMAT(VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM),
 	},
 	{
 		DRM_FORMAT(YVU444),
