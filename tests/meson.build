@@ -5,6 +5,8 @@ tests = [
 		'name': 'alpha-blending',
 		'dep_objs': dep_libm,
 	},
+	{	'name': 'alpha-modifier', },
+	{	'name': 'alpha-modifier-smoke', },
 	{	'name': 'assert', },
 	{	'name': 'bad-buffer', },
 	{	'name': 'buffer-transforms', },

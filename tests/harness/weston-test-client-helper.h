@@ -37,6 +37,7 @@
 #include "color-representation-v1-client-protocol.h"
 #include "linux-dmabuf-unstable-v1-client-protocol.h"
 #include "presentation-time-client-protocol.h"
+#include "alpha-modifier-v1-client-protocol.h"
 #include "shared/client-buffer-util.h"
 #include "single-pixel-buffer-v1-client-protocol.h"
 #include "weston-test-runner.h"
@@ -73,6 +74,7 @@ struct client {
 	struct test *test;
 	struct wp_fifo_manager_v1 *fifo_manager;
 	struct wp_commit_timing_manager_v1 *commit_timing_manager;
+	struct wp_alpha_modifier_v1 *alpha_modifier;
 	/* the seat that is actually used for input events */
 	struct input *input;
 	/* server can have more wl_seats. We need keep them all until we

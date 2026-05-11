@@ -1003,6 +1003,10 @@ handle_global(void *data, struct wl_registry *registry,
 		client->commit_timing_manager =
 			wl_registry_bind(registry, id,
 					 &wp_commit_timing_manager_v1_interface, 1);
+	} else if (strcmp(interface, wp_alpha_modifier_v1_interface.name) == 0) {
+		client->alpha_modifier =
+			wl_registry_bind(registry, id,
+					 &wp_alpha_modifier_v1_interface, 1);
 	}
 }
 
@@ -1278,6 +1282,9 @@ client_destroy(struct client *client)
 
 	if (client->commit_timing_manager)
 		wp_commit_timing_manager_v1_destroy(client->commit_timing_manager);
+
+	if (client->alpha_modifier)
+		wp_alpha_modifier_v1_destroy(client->alpha_modifier);
 
 	if (client->surface)
 		surface_destroy(client->surface);
