@@ -51,20 +51,6 @@ fixture_setup(struct weston_test_harness *harness)
 }
 DECLARE_FIXTURE_SETUP(fixture_setup);
 
-static struct buffer *
-surface_commit_color(struct client *client, struct wl_surface *surface,
-		     pixman_color_t *color, int width, int height)
-{
-	struct buffer *buf;
-
-	buf = create_shm_buffer_solid(client, width, height, color);
-	wl_surface_attach(surface, buf->proxy, 0, 0);
-	wl_surface_damage_buffer(surface, 0, 0, width, height);
-	wl_surface_commit(surface);
-
-	return buf;
-}
-
 #define DECLARE_LIST_ITERATOR(name, parent, list, child, link)			\
 static child *									\
 next_##name(parent *from, child *pos)						\

@@ -86,20 +86,6 @@ check_screen(struct client *client,
 	return match ? 0 : -1;
 }
 
-static struct buffer *
-surface_commit_color(struct client *client, struct wl_surface *surface,
-		     pixman_color_t *color, int width, int height)
-{
-	struct buffer *buf;
-
-	buf = create_shm_buffer_solid(client, width, height, color);
-	wl_surface_attach(surface, buf->proxy, 0, 0);
-	wl_surface_damage_buffer(surface, 0, 0, width, height);
-	wl_surface_commit(surface);
-
-	return buf;
-}
-
 static enum test_result_code
 subsurface_recursive_unmap(struct wet_testsuite_data *suite_data)
 {

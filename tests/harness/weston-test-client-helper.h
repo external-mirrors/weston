@@ -377,6 +377,10 @@ client_buffer_from_image_file(struct client *client,
 			      const char *basename,
 			      int scale);
 
+struct buffer *
+surface_commit_color(struct client *client, struct wl_surface *surface,
+		     pixman_color_t *color, int width, int height);
+
 void *
 bind_to_singleton_global(struct client *client,
 			 const struct wl_interface *iface,

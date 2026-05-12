@@ -86,23 +86,6 @@ send_motion(struct client *client, const struct timespec *time, int x, int y)
 	client_roundtrip(client);
 }
 
-static struct buffer *
-surface_commit_color(struct client *client, struct surface *surface,
-		     pixman_color_t *color, int width, int height)
-{
-	struct buffer *buf;
-
-	buf = create_shm_buffer_solid(client, width, height, color);
-	wl_surface_attach(surface->wl_surface, buf->proxy, 0, 0);
-	wl_surface_damage(surface->wl_surface, 0, 0, width, height);
-	wl_surface_commit(surface->wl_surface);
-
-	test_assert_ptr_null(surface->buffer);
-	surface->buffer = buf;
-
-	return buf;
-}
-
 static enum test_result_code
 pointer_cursor_retains_committed_buffer_after_reenter(struct wet_testsuite_data *suite_data)
 {
@@ -134,14 +117,21 @@ pointer_cursor_retains_committed_buffer_after_reenter(struct wet_testsuite_data 
 	back_cursor_surface = create_test_surface(client);
 
 	/* Commit buffers for cursors. */
-	surface_commit_color(client, main_cursor_surface, &green, 25, 25);
-	surface_commit_color(client, back_cursor_surface, &magenta, 25, 25);
-
+	main_cursor_surface->buffer =
+		surface_commit_color(client, main_cursor_surface->wl_surface,
+				     &green, 25, 25);
+	back_cursor_surface->buffer =
+		surface_commit_color(client, back_cursor_surface->wl_surface,
+				     &magenta, 25, 25);
+	
 	/* We need our own background surface so that we are able to change the cursor
 	 * when the pointer leaves the main surface.
 	 */
-	weston_test_move_surface(client->test->weston_test, back_surface->wl_surface, 0, 0);
-	surface_commit_color(client, back_surface, &gray, 320, 240);
+	weston_test_move_surface(client->test->weston_test,
+				 back_surface->wl_surface, 0, 0);
+	back_surface->buffer =
+		surface_commit_color(client, back_surface->wl_surface,
+				     &gray, 320, 240);
 
 	/* Set up the main surface. */
 	client->surface = main_surface;

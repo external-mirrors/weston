@@ -66,21 +66,6 @@ fixture_setup(struct weston_test_harness *harness, const struct setup_args *arg)
 }
 DECLARE_FIXTURE_SETUP_WITH_ARG(fixture_setup, my_setup_args, meta);
 
-static struct buffer *
-surface_commit_color(struct client *client, struct wl_surface *surface,
-		     pixman_color_t *color, int width, int height)
-{
-	struct buffer *buf;
-
-	buf = create_shm_buffer_a8r8g8b8(client, width, height);
-	fill_image_with_color(buf->image, color);
-	wl_surface_attach(surface, buf->proxy, 0, 0);
-	wl_surface_damage_buffer(surface, 0, 0, width, height);
-	wl_surface_commit(surface);
-
-	return buf;
-}
-
 static enum test_result_code
 screenshot(struct wet_testsuite_data *suite_data)
 {

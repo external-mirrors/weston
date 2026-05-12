@@ -2347,6 +2347,30 @@ client_buffer_from_image_file(struct client *client,
 }
 
 /**
+ * Create a solid color SHM buffer, attach it to the surface and commit.
+ *
+ * \param client The client instance.
+ * \param surface The surface to which the buffer gets committed.
+ * \param color The color of the solid SHM buffer.
+ * \param width The width the buffer should have.
+ * \param height The height the buffer should have.
+ * \return The solid buffer committed. Should be destroyed by caller.
+ */
+struct buffer *
+surface_commit_color(struct client *client, struct wl_surface *surface,
+		     pixman_color_t *color, int width, int height)
+{
+	struct buffer *buf;
+
+	buf = create_shm_buffer_solid(client, width, height, color);
+	wl_surface_attach(surface, buf->proxy, 0, 0);
+	wl_surface_damage(surface, 0, 0, width, height);
+	wl_surface_commit(surface);
+
+	return buf;
+}
+
+/**
  * Bind to a singleton global in wl_registry
  *
  * \param client Client whose registry and globals to use.
