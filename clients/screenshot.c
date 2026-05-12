@@ -94,9 +94,6 @@ struct screenshooter_output {
 
 struct buffer_size {
 	int width, height;
-
-	int min_x, min_y;
-	int max_x, max_y;
 };
 
 static struct screenshooter_buffer *
@@ -500,8 +497,8 @@ screenshot_set_buffer_size(struct buffer_size *buff_size,
 			   struct wl_list *output_list)
 {
 	struct screenshooter_output *output;
-	buff_size->min_x = buff_size->min_y = INT_MAX;
-	buff_size->max_x = buff_size->max_y = INT_MIN;
+	int min_x = INT_MAX, min_y = INT_MAX;
+	int max_x = INT_MIN, max_y = INT_MIN;
 	int position = 0;
 
 	wl_list_for_each_reverse(output, output_list, link) {
@@ -510,20 +507,17 @@ screenshot_set_buffer_size(struct buffer_size *buff_size,
 	}
 
 	wl_list_for_each(output, output_list, link) {
-		buff_size->min_x = MIN(buff_size->min_x, output->offset_x);
-		buff_size->min_y = MIN(buff_size->min_y, output->offset_y);
-		buff_size->max_x =
-			MAX(buff_size->max_x, output->offset_x + output->buffer_width);
-		buff_size->max_y =
-			MAX(buff_size->max_y, output->offset_y + output->buffer_height);
+		min_x = MIN(min_x, output->offset_x);
+		min_y = MIN(min_y, output->offset_y);
+		max_x = MAX(max_x, output->offset_x + output->buffer_width);
+		max_y = MAX(max_y, output->offset_y + output->buffer_height);
 	}
 
-	if (buff_size->max_x <= buff_size->min_x ||
-	    buff_size->max_y <= buff_size->min_y)
+	if (max_x <= min_x || max_y <= min_y)
 		return -1;
 
-	buff_size->width = buff_size->max_x - buff_size->min_x;
-	buff_size->height = buff_size->max_y - buff_size->min_y;
+	buff_size->width = max_x - min_x;
+	buff_size->height = max_y - min_y;
 
 	return 0;
 }
