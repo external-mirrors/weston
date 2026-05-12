@@ -788,8 +788,6 @@ drm_output_pick_writeback_capture_task(struct drm_output *output)
 	}
 
 	buffer = weston_capture_task_get_buffer(ct);
-	assert(buffer->width == width);
-	assert(buffer->height == height);
 
 	wb = drm_output_find_compatible_writeback(output, buffer->pixel_format);
 	if (!wb) {
