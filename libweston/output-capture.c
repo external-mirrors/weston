@@ -366,18 +366,21 @@ buffer_is_compatible(struct weston_buffer *buffer,
 		     struct weston_output_capture_source_info *csi)
 {
 	bool format_supported = false;
+	bool size_supported = true;
 
 	if (csi->pixel_source == WESTON_OUTPUT_CAPTURE_SOURCE_WRITEBACK) {
 		format_supported =
 			weston_drm_format_array_find_format(&csi->writeback_formats,
 							    buffer->pixel_format->format) != NULL;
+		/* All sizes are accepted, because this may lead to hardware scaling */
+		size_supported = true;
 	} else {
 		format_supported = (buffer->pixel_format->format == csi->drm_format);
+		size_supported = buffer->width == csi->width &&
+				 buffer->height == csi->height;
         }
 
-	return buffer->width == csi->width &&
-	       buffer->height == csi->height &&
-	       format_supported &&
+	return format_supported && size_supported &&
 	       buffer->format_modifier == DRM_FORMAT_MOD_LINEAR;
 }
 
