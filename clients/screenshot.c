@@ -67,6 +67,9 @@ struct screenshooter_app {
 	bool retry;
 	bool failed;
 	int waitcount;
+
+	int force_width;
+	int force_height;
 };
 
 struct screenshooter_buffer {
@@ -212,6 +215,7 @@ capture_source_handle_size(void *data,
 			   int32_t width, int32_t height)
 {
 	struct screenshooter_output *output = data;
+	struct screenshooter_app *app = output->app;
 
 	assert(width > 0);
 	assert(height > 0);
@@ -219,8 +223,20 @@ capture_source_handle_size(void *data,
 	output->buffer_width = width;
 	output->buffer_height = height;
 
-	if (output->app->verbose)
+	if (app->force_width)
+		output->buffer_width = app->force_width;
+
+	if (app->force_height)
+		output->buffer_height = app->force_height;
+
+	if (output->app->verbose) {
 		printf("Got size %dx%d\n", width, height);
+
+		if (output->buffer_width != width ||
+		    output->buffer_height != height)
+			printf("\tOverridden with: %dx%d\n",
+			       output->buffer_width, output->buffer_height);
+	}
 }
 
 static void
@@ -575,7 +591,11 @@ print_usage_and_exit(void)
 	       "\n\t\twriteback to use writeback source\n"
 	       "\t'-b,--buffer-type=<>'"
 	       "\n\t\tshm to use a SHM buffer (default), "
-	       "\n\t\tdmabuf to use a DMA buffer\n");
+	       "\n\t\tdmabuf to use a DMA buffer\n"
+	       "\t-W Force all outputs to a specified buffer width\n"
+	       "\t-H Force all outputs to a specified buffer height\n"
+	       "\t\tForced dimensions require writeback source and may not be supported by the driver.\n"
+	       "\t\tThey must be even to avoid problems with subsampled formats.\n");
 	exit(0);
 }
 
@@ -610,7 +630,7 @@ main(int argc, char *argv[])
 		{0, 0, 0, 0}
 	};
 
-	while ((c = getopt_long(argc, argv, "hvf:s:b:",
+	while ((c = getopt_long(argc, argv, "hvf:s:b:W:H:",
 			long_options, &option_index)) != -1) {
 		const struct weston_enum_map *entry;
 
@@ -641,6 +661,12 @@ main(int argc, char *argv[])
 
 			app.buffer_type = entry->value;
 			break;
+		case 'W':
+			app.force_width = atoi(optarg);
+			break;
+		case 'H':
+			app.force_height = atoi(optarg);
+			break;
 		default:
 			print_usage_and_exit();
 		}
@@ -660,6 +686,22 @@ main(int argc, char *argv[])
 
 	/* Process wl_registry advertisements */
 	wl_display_roundtrip(app.display);
+
+	if (app.src_type != WESTON_CAPTURE_V1_SOURCE_WRITEBACK &&
+	    (app.force_width > 0 || app.force_height > 0)) {
+		fprintf(stderr, "Error: forced dimensions only valid with writeback source\n");
+		return -1;
+	}
+
+	if (app.force_width % 2) {
+		fprintf(stderr, "Error: forced width must be an even number\n");
+		return -1;
+	}
+
+	if (app.force_height % 2) {
+		fprintf(stderr, "Error: forced height must be an even number\n");
+		return -1;
+	}
 
 	if (!app.capture_factory) {
 		fprintf(stderr, "Error: display does not support weston_capture_v1\n");
