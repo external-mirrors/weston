@@ -12,6 +12,7 @@
 
 #include "perfetto/annotations.h"
 #include "perfetto/u_perfetto.h"
+#include "shared/weston-assert.h"
 #include <string.h>
 
 #if defined(HAVE_PERFETTO)
@@ -175,7 +176,10 @@
 #define _WESTON_TRACE_SCOPE_FLOW(name, id)                                    \
 	int _WESTON_TRACE_SCOPE_VAR(__LINE__)                                 \
 		__attribute__((cleanup(_weston_trace_scope_end), unused)) =   \
-			_weston_trace_scope_flow_begin(name, id)
+			_Generic((id),                                        \
+				const uint64_t *: _weston_trace_scope_flow_begin_const, \
+				uint64_t *: _weston_trace_scope_flow_begin    \
+			)(name, id)
 
 #define _WESTON_TRACE_ANNOTATE_FUNC(name)                                     \
 	int _WESTON_TRACE_SCOPE_VAR(__LINE__)                                 \
@@ -199,6 +203,14 @@ _weston_trace_scope_flow_begin(const char *name, uint64_t *id)
 {
 	if (*id == 0)
 		*id = util_perfetto_next_id();
+	_WESTON_TRACE_FLOW_BEGIN(name, *id);
+	return 0;
+}
+
+static inline int
+_weston_trace_scope_flow_begin_const(const char *name, const uint64_t *id)
+{
+	weston_assert_u64_gt(NULL, *id, 0);
 	_WESTON_TRACE_FLOW_BEGIN(name, *id);
 	return 0;
 }
