@@ -41,11 +41,13 @@ setting up the Weston compositor for the tests that need it. The array is
 useful for running the compositor with different settings for the same tests,
 e.g. with Pixman-renderer and GL-renderer.
 
-**A test** in a test program is defined with one of the macros :c:func:`TEST`,
-:c:func:`TEST_P`, or :c:func:`PLUGIN_TEST`. :c:func:`TEST` defines a single
-test with no sub-tests. :c:func:`TEST_P` defines a data-driven array of tests:
-a set of sub-tests. :c:func:`PLUGIN_TEST` is used specifically by *plugin
-tests* that require access to :type:`weston_compositor`.
+A test program must contain exactly one invocation of
+:c:func:`DECLARE_TEST_LIST` listing all the tests in the program.
+**A test** in a test program is listed with one of the macros :c:func:`TESTFN`,
+:c:func:`TESTFN_ARG`, or :c:func:`TESTFN_PLUGIN`. :c:func:`TESTFN` defines a
+single test with no sub-tests. :c:func:`TESTFN_ARG` defines a data-driven array
+of tests: a set of sub-tests. :c:func:`TESTFN_PLUGIN` is used specifically by
+*plugin tests* that require access to :type:`weston_compositor`.
 
 All tests and sub-tests are executed serially in a test program. The test
 harness does not ``fork()`` which means that any test that crashes or hits an
@@ -90,18 +92,22 @@ Standalone tests
 Standalone tests do not have a fixture setup function defined in the test
 program or the fixture setup function calls
 :func:`weston_test_harness_execute_standalone` explicitly. All test cases must
-be defined with :c:func:`TEST` or :c:func:`TEST_P`, and each such function must
-return a value from :type:`test_result_code`.
+be listed with :c:func:`TESTFN` or :c:func:`TESTFN_ARG`, and each such function
+must return a value from :type:`test_result_code`.
 
 This is the simplest possible test example:
 
 .. code-block:: c
 
-   TEST(always_success)
+   static enum test_result_code
+   always_success(struct wet_testsuite_data *suite_data)
    {
    	return RESULT_OK;
    }
 
+   DECLARE_TEST_LIST(
+	TESTFN(always_success),
+   );
 
 .. _test-suite-plugin:
 
@@ -110,7 +116,7 @@ Plugin tests
 
 Plugin tests must have a fixture setup function that calls
 :func:`weston_test_harness_execute_as_plugin`. All test cases must be defined
-with :c:func:`PLUGIN_TEST` which declares an implicit function argument
+with :c:func:`TESTFN_PLUGIN` which declares a function argument
 :type:`weston_compositor` ``*compositor``. Each such function must
 return a value from :type:`test_result_code`.
 
@@ -135,22 +141,26 @@ This is an example of a plugin test that just logs a line:
    }
    DECLARE_FIXTURE_SETUP(fixture_setup);
 
-   PLUGIN_TEST(plugin_registry_test)
+   static enum test_result_code
+   plugin_registry_test(struct wet_testsuite_data *suite_data,
+   			struct weston_compositor *compositor)
    {
-   	/* struct weston_compositor *compositor; */
    	testlog("Got compositor %p\n", compositor);
    	return RESULT_OK;
    }
 
+   DECLARE_TEST_LIST(
+	TESTFN_PLUGIN(plugin_registry_test),
+   );
 
 .. _test-suite-client:
 
 Client tests
 ^^^^^^^^^^^^
 
-Plugin tests must have a fixture setup function that calls
+Client tests must have a fixture setup function that calls
 :func:`weston_test_harness_execute_as_client`. All test cases must be
-defined with :c:func:`TEST` or :c:func:`TEST_P`, and each such function must
+listed with :c:func:`TESTFN` or :c:func:`TESTFN_ARG`, and each such function must
 return a value from :type:`test_result_code`.
 
 The compositor fixture manufactures the necessary environment variables and the
@@ -190,9 +200,10 @@ clients:
    	{  5,  6,  -1,  -1 },
    };
 
-   TEST_P(test_viewporter_bad_source_rect, bad_source_rect_args)
+   static enum test_result_code
+   test_viewporter_bad_source_rect(struct wet_testsuite_data *suite_data,
+				   const struct bad_source_rect_args *args)
    {
-   	const struct bad_source_rect_args *args = data;
    	struct client *client;
    	struct wp_viewport *vp;
 
@@ -209,7 +220,8 @@ clients:
    	return RESULT_OK;
    }
 
-   TEST(test_roundtrip)
+   static enum test_result_code
+   test_roundtrip(struct wet_testsuite_data *suite_data)
    {
    	struct client *client;
 
@@ -218,6 +230,10 @@ clients:
    	return RESULT_OK;
    }
 
+   DECLARE_TEST_LIST(
+   	TESTFN_ARG(test_viewporter_bad_source_rect, bad_source_rect_args),
+   	TESTFN(test_roundtrip),
+   );
 
 DRM-backend tests
 -----------------
@@ -255,8 +271,8 @@ Writing tests
 -------------
 
 Test programs do not have a ``main()`` of their own. They all share the
-``main()`` from the test harness and only define test cases and a fixture
-setup.
+``main()`` from the test harness and only define a list of test cases and a
+fixture setup.
 
 It is recommended to have one test program (one ``.c`` file) contain only one
 type of tests to keep the fixture setup simple. See

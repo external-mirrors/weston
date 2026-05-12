@@ -1449,8 +1449,7 @@ output_filename_for_fixture(const char *test_program,
  * \param file_ext The file extension (without '.').
  * \return The ICC filename.
  *
- * This is only usable from code paths inside TEST(), TEST_P(), PLUGIN_TEST()
- * etc. defined functions.
+ * This is only usable from code paths invoked through \c DECLARE_TEST_LIST() .
  */
 char *
 output_filename_for_test_case(const char *suffix, uint32_t seq_number,

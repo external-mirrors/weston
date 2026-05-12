@@ -163,6 +163,110 @@ struct weston_test_entry {
 	};								\
 	TEST_BEGIN(func, struct weston_compositor *compositor)
 
+/** Add a test function with no parameters
+ *
+ * This adds the given function into the list of tests. Must be used
+ * inside the argument list of \c DECLARE_TEST_LIST() .
+ *
+ * This macro is not usable if fixture setup is using
+ * \c weston_test_harness_execute_as_plugin().
+ *
+ * \param func The name of the function, will be also the name of the test.
+ *
+ * The function must have the signature:
+ * \code
+ *
+ *   enum test_result_code func(struct wet_testsuite_data *)
+ *
+ * \endcode
+ *
+ * \ingroup testharness
+ */
+#define TESTFN(func) (struct weston_test_entry) {			\
+	.name = #func,							\
+	.run.plain = func,						\
+	.n_elements = 1,						\
+}
+
+/** Add an array driven test with a parameter
+ *
+ * This adds the given function into the list of tests. Must be used
+ * inside the argument list of \c DECLARE_TEST_LIST() . The function
+ * will be executed once for each element in \c data_array, passing the
+ * element as the second argument to the function.
+ *
+ * This macro is not usable if fixture setup is using
+ * \c weston_test_harness_execute_as_plugin().
+ *
+ * \param func The name of the function, will be also the name of the test.
+ *
+ * The function must have the signature:
+ * \code
+ *
+ *   enum test_result_code func(struct wet_testsuite_data *,
+ *                              const usertype *)
+ *
+ * \endcode
+ * \param data_array A static const array of \c usertype type. The length will be
+ * recorded implicitly. \c usertype can be anything you want.
+ *
+ * \ingroup testharness
+ */
+#define TESTFN_ARG(func, data_array) (struct weston_test_entry) {	\
+	.name = #func,							\
+	.run.arg = (weston_test_run_arg_fn) func,			\
+	.table_data = data_array,					\
+	.element_size = sizeof (data_array[0]),				\
+	.n_elements = ARRAY_LENGTH(data_array) +			\
+			/* verify function argument type vs. array */	\
+			(false && func(NULL, &data_array[0])),		\
+}
+
+/** Add a test with weston_compositor argument
+ *
+ * This adds the given function into the list of tests. Must be used
+ * inside the argument list of \c DECLARE_TEST_LIST() .
+ * The second argument to the function will be the compositor instance.
+ *
+ * This macro is only usable if fixture setup is using
+ * \c weston_test_harness_execute_as_plugin().
+ *
+ * \param func The name of the function, will be also the name of the test.
+ *
+ * The function must have the signature:
+ * \code
+ *
+ *   enum test_result_code func(struct wet_testsuite_data *,
+ *                              struct weston_compositor *)
+ *
+ * \endcode
+ *
+ * \ingroup testharness
+ */
+#define TESTFN_PLUGIN(func) (struct weston_test_entry) {		\
+	.name = #func,							\
+	.run.plugin = func,						\
+	.n_elements = 1,						\
+}
+
+/** Declare the list of tests in a test program
+ *
+ * When the fixture setup is using \c weston_test_harness_execute_standalone()
+ * or \c weston_test_harness_execute_as_client(), the argument list of
+ * \c DECLARE_TEST_LIST() can contain \c TESTFN() and \c TESTFN_ARG().
+ *
+ * When the fixture setup is using \c weston_test_harness_execute_as_plugin(),
+ * the argument list of \c DECLARE_TEST_LIST() can contain \c TESTFN_PLUGIN()
+ * only.
+ *
+ * \ingroup testharness
+ */
+#define DECLARE_TEST_LIST(...)						\
+	__attribute__ ((used, section ("test_section")))		\
+	const struct weston_test_entry test_list[] = {			\
+		__VA_ARGS__						\
+	}
+
 /** Get test suite data structure
  *
  * This returns the shared test suite data structure, to be used in

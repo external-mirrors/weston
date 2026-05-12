@@ -46,7 +46,8 @@ print_mat3(struct weston_mat3f M)
  * Test various ways of accessing the vector elements,
  * make sure they are consistent.
  */
-TEST(vec3_layout)
+static enum test_result_code
+vec3_layout(struct wet_testsuite_data *suite_data)
 {
 	struct weston_vec3f v;
 	unsigned i;
@@ -68,7 +69,8 @@ TEST(vec3_layout)
  * Test various ways of accessing the matrix elements,
  * make sure they are consistent.
  */
-TEST(mat3_layout)
+static enum test_result_code
+mat3_layout(struct wet_testsuite_data *suite_data)
 {
 	struct weston_mat3f M;
 	unsigned row, col, i;
@@ -93,7 +95,8 @@ TEST(mat3_layout)
 	return RESULT_OK;
 }
 
-TEST(mat3_inf_norm)
+static enum test_result_code
+mat3_inf_norm(struct wet_testsuite_data *suite_data)
 {
 	struct weston_mat3f M = WESTON_MAT3F(
 		1, 2, 3,
@@ -196,9 +199,10 @@ static const struct test_matrix3 matrices3[] = {
 	},
 };
 
-TEST_P(mat3_inversion_precision, matrices3)
+static enum test_result_code
+mat3_inversion_precision(struct wet_testsuite_data *suite_data,
+			 const struct test_matrix3 *tm)
 {
-	const struct test_matrix3 *tm = data;
 	struct weston_mat3f rr;
 	double err;
 
@@ -242,7 +246,8 @@ print_mat4(struct weston_mat4f M)
  * Test various ways of accessing the vector elements,
  * make sure they are consistent.
  */
-TEST(vec4_layout)
+static enum test_result_code
+vec4_layout(struct wet_testsuite_data *suite_data)
 {
 	struct weston_vec4f v;
 	unsigned i;
@@ -265,7 +270,8 @@ TEST(vec4_layout)
  * Test various ways of accessing the matrix elements,
  * make sure they are consistent.
  */
-TEST(mat4_layout)
+static enum test_result_code
+mat4_layout(struct wet_testsuite_data *suite_data)
 {
 	struct weston_mat4f M;
 	unsigned row, col, i;
@@ -291,7 +297,8 @@ TEST(mat4_layout)
 	return RESULT_OK;
 }
 
-TEST(mat4_inf_norm)
+static enum test_result_code
+mat4_inf_norm(struct wet_testsuite_data *suite_data)
 {
 	struct weston_mat4f M = WESTON_MAT4F(
 		1, 2, 3, 4,
@@ -441,9 +448,10 @@ static const struct test_matrix4 matrices4[] = {
 	},
 };
 
-TEST_P(mat4_inversion_precision, matrices4)
+static enum test_result_code
+mat4_inversion_precision(struct wet_testsuite_data *suite_data,
+			 const struct test_matrix4 *tm)
 {
-	const struct test_matrix4 *tm = data;
 	struct weston_mat4f rr;
 	float err;
 
@@ -470,3 +478,14 @@ TEST_P(mat4_inversion_precision, matrices4)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(vec3_layout),
+	TESTFN(mat3_layout),
+	TESTFN(mat3_inf_norm),
+	TESTFN_ARG(mat3_inversion_precision, matrices3),
+	TESTFN(vec4_layout),
+	TESTFN(mat4_layout),
+	TESTFN(mat4_inf_norm),
+	TESTFN_ARG(mat4_inversion_precision, matrices4),
+);

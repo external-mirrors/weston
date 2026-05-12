@@ -65,11 +65,10 @@ static int assert_counter_ = 0;
 /** Get the test name string with counter
  *
  * \return The test name with fixture number \c -f%%d added. For an array
- * driven test, e.g. defined with TEST_P(), the name has also a \c -e%%d
+ * driven test listed with \c TESTFN_ARG(), the name has also a \c -e%%d
  * suffix to indicate the array element number.
  *
- * This is only usable from code paths inside TEST(), TEST_P(), PLUGIN_TEST()
- * etc. defined functions.
+ * This is only usable from code paths invoked through \c DECLARE_TEST_LIST() .
  *
  * \ingroup testharness
  */
@@ -84,8 +83,7 @@ get_test_name(void)
  * Returns the current fixture index which can be used directly as an index
  * into the array passed as an argument to DECLARE_FIXTURE_SETUP_WITH_ARG().
  *
- * This is only usable from code paths inside TEST(), TEST_P(), PLUGIN_TEST()
- * etc. defined functions.
+ * This is only usable from code paths invoked through \c DECLARE_TEST_LIST() .
  *
  * \ingroup testharness
  */
