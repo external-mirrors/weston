@@ -366,7 +366,7 @@ draw_node_translated(struct weston_paint_node *pnode,
 	pixman_region32_init_rect(&surface_blend, 0, 0,
 				  surface->width, surface->height);
 
-	if (!(view->alpha < 1.0)) {
+	if (!(pnode->view_alpha < 1.0)) {
 		pixman_region32_subtract(&surface_blend, &surface_blend,
 					 &surface->opaque);
 
