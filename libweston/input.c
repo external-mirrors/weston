@@ -536,7 +536,7 @@ weston_pointer_move_to_preclamped(struct weston_pointer *pointer,
 	wl_signal_emit(&pointer->motion_signal, pointer);
 }
 
-static void
+WL_EXPORT void
 weston_pointer_move_to(struct weston_pointer *pointer,
 		       struct weston_coord_global pos)
 {

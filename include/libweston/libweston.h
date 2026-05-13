@@ -1005,6 +1005,9 @@ void
 weston_pointer_move(struct weston_pointer *pointer,
 		    struct weston_pointer_motion_event *event);
 void
+weston_pointer_move_to(struct weston_pointer *pointer,
+		       struct weston_coord_global pos);
+void
 weston_keyboard_set_focus(struct weston_keyboard *keyboard,
 			  struct weston_surface *surface);
 void

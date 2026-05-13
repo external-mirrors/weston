@@ -8098,7 +8098,7 @@ WL_EXPORT void
 weston_output_set_transform(struct weston_output *output,
 			    uint32_t transform)
 {
-	struct weston_pointer_motion_event ev;
+	struct weston_coord_global pos;
 	struct wl_resource *resource;
 	struct weston_seat *seat;
 	pixman_region32_t old_region;
@@ -8153,8 +8153,7 @@ weston_output_set_transform(struct weston_output *output,
 	mid_x = output->pos.c.x + output->width / 2;
 	mid_y = output->pos.c.y + output->height / 2;
 
-	ev.mask = WESTON_POINTER_MOTION_ABS;
-	ev.abs.c = weston_coord(mid_x, mid_y);
+	pos.c = weston_coord(mid_x, mid_y);
 	wl_list_for_each(seat, &output->compositor->seat_list, link) {
 		struct weston_pointer *pointer = weston_seat_get_pointer(seat);
 
@@ -8162,7 +8161,7 @@ weston_output_set_transform(struct weston_output *output,
 							      pointer->pos.c.x,
 							      pointer->pos.c.y,
 							      NULL))
-			weston_pointer_move(pointer, &ev);
+			weston_pointer_move_to(pointer, pos);
 	}
 }
 
