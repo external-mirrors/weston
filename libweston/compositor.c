@@ -293,7 +293,7 @@ is_pnode_solid_buffer_fully_opaque(struct weston_paint_node *pnode)
 	if (!pnode->simple_transform)
 		return false;
 
-	return (pnode->view_alpha == 1.0f &&
+	return (pnode->alpha == 1.0f &&
 	        pnode->solid.a == 1.0f);
 }
 
@@ -311,7 +311,7 @@ is_pnode_fully_transparent(struct weston_paint_node *pnode)
 	if (pnode->draw_solid && pnode->solid.a == 0.0f)
 		return true;
 
-	return (pnode->view_alpha == 0.0f);
+	return (pnode->alpha == 0.0f);
 }
 
 /* Paint nodes contain filter and transform information that needs to be
@@ -348,7 +348,7 @@ paint_node_update_early(struct weston_paint_node *pnode)
 	}
 
 	if (view_dirty)
-		pnode->view_alpha = pnode->view->alpha;
+		pnode->alpha = pnode->view->alpha;
 
 	pnode->draw_solid = false;
 	pnode->censored = false;
@@ -495,7 +495,7 @@ paint_node_update_late(struct weston_paint_node *pnode)
 		               };
 	} else if (buffer->direct_display && !pnode->censored) {
 		pnode->draw_solid = true;
-		pnode->is_fully_opaque = (pnode->view_alpha == 1.0f) &&
+		pnode->is_fully_opaque = (pnode->alpha == 1.0f) &&
 					 pnode->simple_transform;
 		pnode->is_fully_blended = !pnode->is_fully_opaque;
 		get_placeholder_color(pnode, &pnode->solid);
@@ -3502,7 +3502,7 @@ paint_node_update_visible(struct weston_paint_node *pnode,
 
 	if (pnode->is_fully_opaque)
 		pixman_region32_union(opaque, opaque, &pnode->visible);
-	else if (pnode->view_alpha == 1.0)
+	else if (pnode->alpha == 1.0)
 		pixman_region32_union(opaque, opaque, &view->transform.opaque);
 
 	/* This might not be the only paint node that contributes to this

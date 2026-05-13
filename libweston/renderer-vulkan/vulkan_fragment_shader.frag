@@ -2,7 +2,7 @@
 
 layout(binding = 1) uniform _ubo {
 	uniform vec4 unicolor;
-	uniform float view_alpha;
+	uniform float paint_node_alpha;
 } ubo;
 layout(binding = 2) uniform sampler2D tex;
 
@@ -52,7 +52,7 @@ void main() {
 	if (!c_input_is_premult)
 		color.rgb *= color.a;
 
-	color *= ubo.view_alpha;
+	color *= ubo.paint_node_alpha;
 
 	/* Fragment shader (composition) debug */
 	if (c_green_tint)

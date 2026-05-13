@@ -115,7 +115,7 @@ struct vulkan_pipeline_config {
 
 	struct weston_matrix projection;
 	struct weston_matrix surface_to_buffer;
-	float view_alpha;
+	float paint_node_alpha;
 	float unicolor[4];
 };
 

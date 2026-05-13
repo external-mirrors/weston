@@ -387,7 +387,7 @@ struct gl_shader_config {
 
 	struct weston_matrix projection;
 	struct weston_matrix surface_to_buffer;
-	float view_alpha;
+	float paint_node_alpha;
 	GLfloat unicolor[4];
 	GLfloat tint[4];
 

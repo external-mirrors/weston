@@ -253,12 +253,12 @@ drm_plane_state_coords_for_paint_node(struct drm_plane_state *state,
 	/* apply zpos if available */
 	state->zpos = zpos;
 
-	/* The alpha of the view is normalized to alpha value range
-	 * [min_alpha, max_alpha] that got from drm. The alpha value would
-	 * never exceed max_alpha if pnode->view_alpha <= 1.0.
+	/* The pnode->alpha is normalized to alpha value range [min_alpha,
+	 * max_alpha] that got from drm. The alpha value would never exceed
+	 * max_alpha if pnode->alpha <= 1.0.
 	 */
 	state->alpha = min_alpha +
-		       (uint16_t)round((max_alpha - min_alpha) * pnode->view_alpha);
+		       (uint16_t)round((max_alpha - min_alpha) * pnode->alpha);
 }
 
 /**

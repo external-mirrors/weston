@@ -131,7 +131,7 @@ varying HIGHPRECISION vec3 v_barycentric;
 uniform sampler2D tex1;
 uniform sampler2D tex2;
 uniform sampler2D tex_wireframe;
-uniform float view_alpha;
+uniform float paint_node_alpha;
 uniform vec4 unicolor;
 uniform vec4 tint;
 uniform ivec4 swizzle_idx[3];
@@ -547,7 +547,7 @@ fragment_input_color_premult()
 	if (!c_input_is_premult || (c_input_is_premult && c_need_straight_alpha))
 		color.rgb *= color.a;
 
-	color *= view_alpha;
+	color *= paint_node_alpha;
 
 	if (c_tint)
 		color = color * vec4(1.0 - tint.a) + tint;

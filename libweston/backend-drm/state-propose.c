@@ -592,8 +592,8 @@ pnode_can_use_plane(struct drm_output_state *output_state,
 		return false;
 	}
 
-	/* if view has alpha check if this plane supports plane alpha */
-	if (pnode->view_alpha != 1.0f && plane->alpha_max == plane->alpha_min) {
+	/* if pnode->alpha is not opaque check if this plane supports alpha */
+	if (pnode->alpha != 1.0f && plane->alpha_max == plane->alpha_min) {
 		drm_debug(b, "\t\t\t\t[plane] not trying plane %d:"
 			     "plane-alpha not supported\n",
 			     plane->plane_id);

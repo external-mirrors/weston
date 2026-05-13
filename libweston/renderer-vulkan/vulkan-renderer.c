@@ -261,7 +261,7 @@ struct vs_ubo {
 
 struct fs_ubo {
 	float unicolor[4];
-	float view_alpha;
+	float paint_node_alpha;
 };
 
 struct dmabuf_allocator {
@@ -1500,7 +1500,7 @@ vulkan_pipeline_config_init_for_paint_node(struct vulkan_pipeline_config *pconf,
 		.projection = *pnode->view_transform_matrix,
 		.surface_to_buffer =
 			pnode->surface->surface_to_buffer_matrix,
-		.view_alpha = pnode->view_alpha,
+		.paint_node_alpha = pnode->alpha,
 	};
 
 	weston_matrix_multiply(&pconf->projection, &vo->output_matrix);
@@ -1648,8 +1648,8 @@ repaint_region(struct vulkan_renderer *vr,
 	       pconf->surface_to_buffer.M.colmaj, sizeof(pconf->surface_to_buffer.M.colmaj));
 	memcpy(vb->fs_ubo_map + offsetof(struct fs_ubo, unicolor),
 	       pconf->unicolor, sizeof(pconf->unicolor));
-	memcpy(vb->fs_ubo_map + offsetof(struct fs_ubo, view_alpha),
-	       &pconf->view_alpha, sizeof(pconf->view_alpha));
+	memcpy(vb->fs_ubo_map + offsetof(struct fs_ubo, paint_node_alpha),
+	       &pconf->paint_node_alpha, sizeof(pconf->paint_node_alpha));
 
 	vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
 				pipeline->pipeline_layout, 0, 1, &vb->descriptor_set, 0, NULL);
@@ -1816,7 +1816,7 @@ draw_paint_node(struct weston_paint_node *pnode,
 		if (alt.req.variant == PIPELINE_VARIANT_RGBA)
 			alt.req.variant = PIPELINE_VARIANT_RGBX;
 
-		alt.req.blend = (pnode->view_alpha < 1.0);
+		alt.req.blend = (pnode->alpha < 1.0);
 
 		repaint_region(vr, pnode, &repaint, &surface_opaque, &alt, fr);
 		vs->used_in_output_repaint = true;
@@ -2078,8 +2078,8 @@ draw_output_border_texture(struct vulkan_renderer *vr,
 	       0, sizeof(pconf->surface_to_buffer.M.colmaj));
 	memcpy(border->fs_ubo_map + offsetof(struct fs_ubo, unicolor),
 	       pconf->unicolor, sizeof(pconf->unicolor));
-	memcpy(border->fs_ubo_map + offsetof(struct fs_ubo, view_alpha),
-	       &pconf->view_alpha, sizeof(pconf->view_alpha));
+	memcpy(border->fs_ubo_map + offsetof(struct fs_ubo, paint_node_alpha),
+	       &pconf->paint_node_alpha, sizeof(pconf->paint_node_alpha));
 
 	vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
 				pipeline->pipeline_layout, 0, 1, &border->descriptor_set, 0, NULL);
@@ -2113,7 +2113,7 @@ draw_output_borders(struct weston_output *output,
 			.input_is_premult = true,
 			.green_tint = (vr->debug_mode == DEBUG_MODE_FRAGMENT),
 		},
-		.view_alpha = 1.0f,
+		.paint_node_alpha = 1.0f,
 	};
 
 	if (border_status == BORDER_STATUS_CLEAN)

@@ -89,7 +89,7 @@ struct gl_shader {
 	GLint swizzle_mask[3];
 	GLint swizzle_sub[3];
 	GLint tex_uniform_wireframe;
-	GLint view_alpha_uniform;
+	GLint paint_node_alpha_uniform;
 	GLint color_uniform;
 	GLint tint_uniform;
 	GLint cvd_correction_uniform;
@@ -474,7 +474,8 @@ gl_shader_create(struct gl_renderer *gr,
 		shader->swizzle_sub[1] = glGetUniformLocation(shader->program, "swizzle_sub[1]");
 		shader->swizzle_sub[2] = glGetUniformLocation(shader->program, "swizzle_sub[2]");
 	}
-	shader->view_alpha_uniform = glGetUniformLocation(shader->program, "view_alpha");
+	shader->paint_node_alpha_uniform =
+		glGetUniformLocation(shader->program, "paint_node_alpha");
 	if (requirements->variant == SHADER_VARIANT_SOLID) {
 		shader->color_uniform = glGetUniformLocation(shader->program,
 							     "unicolor");
@@ -890,9 +891,9 @@ gl_shader_load_config(struct gl_renderer *gr, struct weston_paint_node *pnode,
 		glUniform4fv(shader->tint_uniform, 1, sconf->tint);
 	}
 
-	weston_log_scope_printf(gr->paint_node_scope, "\t\talpha: %.2f\n", sconf->view_alpha);
-	WESTON_TRACE_ANNOTATE(("alpha", sconf->view_alpha));
-	glUniform1f(shader->view_alpha_uniform, sconf->view_alpha);
+	weston_log_scope_printf(gr->paint_node_scope, "\t\talpha: %.2f\n", sconf->paint_node_alpha);
+	WESTON_TRACE_ANNOTATE(("alpha", sconf->paint_node_alpha));
+	glUniform1f(shader->paint_node_alpha_uniform, sconf->paint_node_alpha);
 
 	assert(sconf->input_num <= SHADER_INPUT_TEX_MAX);
 	for (i = 0; i < sconf->input_num; i++) {
@@ -1006,7 +1007,7 @@ gl_renderer_use_program(struct gl_renderer *gr, struct weston_paint_node *pnode,
 		shader = gr->fallback_shader;
 		glUseProgram(shader->program);
 		glUniform4fv(shader->color_uniform, 1, fallback_shader_color);
-		glUniform1f(shader->view_alpha_uniform, 1.0f);
+		glUniform1f(shader->paint_node_alpha_uniform, 1.0f);
 		weston_log_scope_printf(gr->paint_node_scope, "\t\tFailed to generate shader program. "
 					"Using the fallback shader\n");
 		return false;

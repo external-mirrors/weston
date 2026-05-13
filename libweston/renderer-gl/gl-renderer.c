@@ -1745,7 +1745,7 @@ prepare_solid_draw(struct gl_shader_config *sconf,
 			.input_is_premult = true,
 		},
 		.projection = *pnode->view_transform_matrix,
-		.view_alpha = pnode->view_alpha,
+		.paint_node_alpha = pnode->alpha,
 		.unicolor = { pnode->solid.r,
 			      pnode->solid.g,
 			      pnode->solid.b,
@@ -1936,7 +1936,7 @@ prepare_textured_draw(struct gl_shader_config *sconf,
 		.projection = *pnode->view_transform_matrix,
 		.surface_to_buffer =
 			pnode->surface->surface_to_buffer_matrix,
-		.view_alpha = pnode->view_alpha,
+		.paint_node_alpha = pnode->alpha,
 	};
 
 	weston_matrix_multiply(&sconf->projection, &go->output_matrix);
@@ -2400,7 +2400,7 @@ draw_mesh(struct gl_renderer *gr,
 
 	assert(nidx > 0);
 
-	set_blend_state(gr, pnode, (!opaque || pnode->view_alpha < 1.0) && !go->shader_blender);
+	set_blend_state(gr, pnode, (!opaque || pnode->alpha < 1.0) && !go->shader_blender);
 
 	/* Prevent translucent surfaces from punching holes through the
 	 * renderbuffer. */
@@ -2990,7 +2990,7 @@ draw_output_borders(struct weston_output *output,
 			.variant = SHADER_VARIANT_RGBA,
 			.input_is_premult = true,
 		},
-		.view_alpha = 1.0f,
+		.paint_node_alpha = 1.0f,
 	};
 	struct weston_color_transform *ctransf;
 	struct gl_output_state *go = get_output_state(output);
@@ -3055,7 +3055,7 @@ blit_shadow_to_output(struct weston_output *output,
 			.type = WESTON_MATRIX_TRANSFORM_SCALE |
 				WESTON_MATRIX_TRANSFORM_TRANSLATE,
 		},
-		.view_alpha = 1.0f,
+		.paint_node_alpha = 1.0f,
 		.input_tex = &go->shadow_tex,
 		.input_param = &go->shadow_param,
 		.input_num = 1,
@@ -4522,7 +4522,7 @@ gl_renderer_surface_copy_content(struct weston_surface *surface,
 		-1.0f,  1.0f, 0.0f, 1.0f
 	};
 	struct gl_shader_config sconf = {
-		.view_alpha = 1.0f,
+		.paint_node_alpha = 1.0f,
 	};
 	const pixman_format_code_t format = PIXMAN_a8b8g8r8;
 	struct gl_renderer *gr = get_renderer(surface->compositor);
