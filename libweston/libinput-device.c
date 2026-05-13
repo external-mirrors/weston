@@ -136,7 +136,6 @@ handle_pointer_motion(struct libinput_device *libinput_device,
 	event = (struct weston_pointer_motion_event) {
 		.mask = WESTON_POINTER_MOTION_REL |
 			WESTON_POINTER_MOTION_REL_UNACCEL,
-		.time = time,
 	};
 	event.rel = weston_coord(libinput_event_pointer_get_dx(pointer_event),
 				 libinput_event_pointer_get_dy(pointer_event));

@@ -573,9 +573,7 @@ pointer_send_relative_motion(struct weston_pointer *pointer,
 		return;
 
 	resource_list = &pointer->focus_client->relative_pointer_resources;
-	time_usec = timespec_to_usec(&event->time);
-	if (time_usec == 0)
-		time_usec = timespec_to_usec(time);
+	time_usec = timespec_to_usec(time);
 
 	wl_resource_for_each(resource, resource_list) {
 		zwp_relative_pointer_v1_send_relative_motion(

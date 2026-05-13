@@ -607,7 +607,6 @@ enum weston_pointer_motion_mask {
 
 struct weston_pointer_motion_event {
 	uint32_t mask;
-	struct timespec time;
 	struct weston_coord_global abs;
 	struct weston_coord rel;
 	struct weston_coord rel_unaccel;
