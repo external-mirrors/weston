@@ -169,7 +169,7 @@ capture_source_handle_complete(void *data,
 	struct capturer *capt = data;
 
 	test_assert_ptr_eq(capt->source, proxy);
-	test_assert_enum(capt->state, CAPTURE_TASK_PENDING);
+	test_assert_enum_eq(capt->state, CAPTURE_TASK_PENDING);
 	capt->state = CAPTURE_TASK_COMPLETE;
 	capt->events.reply = true;
 }
@@ -181,7 +181,7 @@ capture_source_handle_retry(void *data,
 	struct capturer *capt = data;
 
 	test_assert_ptr_eq(capt->source, proxy);
-	test_assert_enum(capt->state, CAPTURE_TASK_PENDING);
+	test_assert_enum_eq(capt->state, CAPTURE_TASK_PENDING);
 	capt->state = CAPTURE_TASK_RETRY;
 	capt->events.reply = true;
 }
@@ -194,7 +194,7 @@ capture_source_handle_failed(void *data,
 	struct capturer *capt = data;
 
 	test_assert_ptr_eq(capt->source, proxy);
-	test_assert_enum(capt->state, CAPTURE_TASK_PENDING);
+	test_assert_enum_eq(capt->state, CAPTURE_TASK_PENDING);
 	capt->state = CAPTURE_TASK_FAILED;
 	capt->events.reply = true;
 
@@ -263,7 +263,7 @@ simple_shot(struct wet_testsuite_data *suite_data)
 	test_assert_true(capt->events.format);
 	test_assert_true(capt->events.formats_done);
 	test_assert_true(capt->events.size);
-	test_assert_enum(capt->state, CAPTURE_TASK_PENDING);
+	test_assert_enum_eq(capt->state, CAPTURE_TASK_PENDING);
 	test_assert_u32_eq(capt->drm_format, fix->expected_drm_format);
 	test_assert_int_gt(capt->width, 0);
 	test_assert_int_gt(capt->height, 0);
@@ -277,7 +277,7 @@ simple_shot(struct wet_testsuite_data *suite_data)
 		if (!test_assert_int_ge(wl_display_dispatch(client->wl_display), 0))
 			return RESULT_FAIL;
 
-	test_assert_enum(capt->state, CAPTURE_TASK_COMPLETE);
+	test_assert_enum_eq(capt->state, CAPTURE_TASK_COMPLETE);
 
 	capturer_destroy(capt);
 	buffer_destroy(buf);
@@ -309,7 +309,7 @@ retry_on_wrong_format(struct wet_testsuite_data *suite_data)
 	test_assert_true(capt->events.format);
 	test_assert_true(capt->events.formats_done);
 	test_assert_true(capt->events.size);
-	test_assert_enum(capt->state, CAPTURE_TASK_PENDING);
+	test_assert_enum_eq(capt->state, CAPTURE_TASK_PENDING);
 
 	/* Fix this test if triggered. */
 	test_assert_u32_ne(capt->drm_format, drm_format);
@@ -326,7 +326,7 @@ retry_on_wrong_format(struct wet_testsuite_data *suite_data)
 		if (!test_assert_int_ge(wl_display_dispatch(client->wl_display), 0))
 			return RESULT_FAIL;
 
-	test_assert_enum(capt->state, CAPTURE_TASK_RETRY);
+	test_assert_enum_eq(capt->state, CAPTURE_TASK_RETRY);
 
 	capturer_destroy(capt);
 	buffer_destroy(buf);
@@ -357,7 +357,7 @@ retry_on_wrong_size(struct wet_testsuite_data *suite_data)
 	test_assert_true(capt->events.format);
 	test_assert_true(capt->events.formats_done);
 	test_assert_true(capt->events.size);
-	test_assert_enum(capt->state, CAPTURE_TASK_PENDING);
+	test_assert_enum_eq(capt->state, CAPTURE_TASK_PENDING);
 	test_assert_int_gt(capt->width, 5);
 	test_assert_int_gt(capt->height, 5);
 	test_assert_false(capt->events.reply);
@@ -370,7 +370,7 @@ retry_on_wrong_size(struct wet_testsuite_data *suite_data)
 		if (!test_assert_int_ge(wl_display_dispatch(client->wl_display), 0))
 			return RESULT_FAIL;
 
-	test_assert_enum(capt->state, CAPTURE_TASK_RETRY);
+	test_assert_enum_eq(capt->state, CAPTURE_TASK_RETRY);
 
 	capturer_destroy(capt);
 	buffer_destroy(buf);
@@ -399,7 +399,7 @@ writeback_on_headless_fails(struct wet_testsuite_data *suite_data)
 	test_assert_false(capt->events.format);
 	test_assert_false(capt->events.formats_done);
 	test_assert_false(capt->events.size);
-	test_assert_enum(capt->state, CAPTURE_TASK_PENDING);
+	test_assert_enum_eq(capt->state, CAPTURE_TASK_PENDING);
 
 	/* Trying pixel source that is not available should fail immediately */
 	weston_capture_source_v1_capture(capt->source, buf->proxy);
@@ -408,7 +408,7 @@ writeback_on_headless_fails(struct wet_testsuite_data *suite_data)
 	test_assert_false(capt->events.format);
 	test_assert_false(capt->events.formats_done);
 	test_assert_false(capt->events.size);
-	test_assert_enum(capt->state, CAPTURE_TASK_FAILED);
+	test_assert_enum_eq(capt->state, CAPTURE_TASK_FAILED);
 	test_assert_str_eq(capt->last_failure, "source unavailable");
 
 	capturer_destroy(capt);

@@ -127,8 +127,8 @@ four_apps_in_a_square(struct wet_testsuite_data *suite_data)
 		struct weston_output *output = head->output;
 		struct weston_paint_node *pnode = NULL;
 
-		test_assert_enum(breakpoint->template_->breakpoint,
-				 WESTON_TEST_BREAKPOINT_POST_REPAINT);
+		test_assert_enum_eq(breakpoint->template_->breakpoint,
+				    WESTON_TEST_BREAKPOINT_POST_REPAINT);
 
 		while ((pnode = next_pnode_from_z(output, pnode)) != NULL && i > -1) {
 			struct weston_view *view = pnode->view;

@@ -62,7 +62,7 @@ static enum test_result_code
 seat_capabilities_test(struct wet_testsuite_data *suite_data)
 {
 	struct client *cl = create_client_and_test_surface(100, 100, 100, 100);
-	test_assert_enum(cl->input->caps, WL_SEAT_CAPABILITY_ALL);
+	test_assert_enum_eq(cl->input->caps, WL_SEAT_CAPABILITY_ALL);
 
 	test_assert_ptr_not_null(cl->input->pointer);
 	weston_test_device_release(cl->test->weston_test, "pointer");
@@ -106,7 +106,7 @@ seat_capabilities_test(struct wet_testsuite_data *suite_data)
 
 	/* we still should have all the capabilities, since the devices
 	 * were doubled */
-	test_assert_enum(cl->input->caps, WL_SEAT_CAPABILITY_ALL);
+	test_assert_enum_eq(cl->input->caps, WL_SEAT_CAPABILITY_ALL);
 
 	test_assert_ptr_not_null(cl->input->pointer);
 	test_assert_ptr_not_null(cl->input->keyboard);
@@ -137,7 +137,7 @@ multiple_device_add_and_remove(struct wet_testsuite_data *suite_data)
 	test_assert_ptr_not_null(cl->input->keyboard);
 	test_assert_ptr_not_null(cl->input->touch);
 
-	test_assert_enum(cl->input->caps, WL_SEAT_CAPABILITY_ALL);
+	test_assert_enum_eq(cl->input->caps, WL_SEAT_CAPABILITY_ALL);
 
 	/* release all new devices */
 	for (i = 0; i < COUNT; ++i) {
@@ -149,7 +149,7 @@ multiple_device_add_and_remove(struct wet_testsuite_data *suite_data)
 	client_roundtrip(cl);
 
 	/* there is still one from each device left */
-	test_assert_enum(cl->input->caps, WL_SEAT_CAPABILITY_ALL);
+	test_assert_enum_eq(cl->input->caps, WL_SEAT_CAPABILITY_ALL);
 
 	test_assert_ptr_not_null(cl->input->pointer);
 	test_assert_ptr_not_null(cl->input->keyboard);
@@ -187,7 +187,7 @@ device_release_before_destroy(void)
 	weston_test_device_release(cl->test->weston_test, "touch");
 	client_roundtrip(cl);
 
-	test_assert_enum(cl->input->caps, 0);
+	test_assert_enum_eq(cl->input->caps, 0);
 
 	/* restore previous state */
 	weston_test_device_add(cl->test->weston_test, "pointer");
@@ -195,7 +195,7 @@ device_release_before_destroy(void)
 	weston_test_device_add(cl->test->weston_test, "touch");
 	client_roundtrip(cl);
 
-	test_assert_enum(cl->input->caps, WL_SEAT_CAPABILITY_ALL);
+	test_assert_enum_eq(cl->input->caps, WL_SEAT_CAPABILITY_ALL);
 
 	client_destroy(cl);
 }
@@ -239,7 +239,7 @@ device_release_after_destroy(void)
 
 	client_roundtrip(cl);
 
-	test_assert_enum(cl->input->caps, 0);
+	test_assert_enum_eq(cl->input->caps, 0);
 
 	/* restore previous state */
 	weston_test_device_add(cl->test->weston_test, "pointer");
@@ -247,7 +247,7 @@ device_release_after_destroy(void)
 	weston_test_device_add(cl->test->weston_test, "touch");
 	client_roundtrip(cl);
 
-	test_assert_enum(cl->input->caps, WL_SEAT_CAPABILITY_ALL);
+	test_assert_enum_eq(cl->input->caps, WL_SEAT_CAPABILITY_ALL);
 
 	client_destroy(cl);
 }
@@ -323,7 +323,7 @@ get_device_after_destroy(void)
 	weston_test_device_add(cl->test->weston_test, "touch");
 	client_roundtrip(cl);
 
-	test_assert_enum(cl->input->caps, WL_SEAT_CAPABILITY_ALL);
+	test_assert_enum_eq(cl->input->caps, WL_SEAT_CAPABILITY_ALL);
 
 	client_destroy(cl);
 }

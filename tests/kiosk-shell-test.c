@@ -75,7 +75,7 @@ assert_surface_is_background(struct wet_testsuite_data *suite_data,
 {
 	test_assert_ptr_null(surface->resource);
 	test_assert_ptr_not_null(surface->buffer_ref.buffer);
-	test_assert_enum(surface->buffer_ref.buffer->type, WESTON_BUFFER_SOLID);
+	test_assert_enum_eq(surface->buffer_ref.buffer->type, WESTON_BUFFER_SOLID);
 	test_assert_ptr_not_null(surface->output);
 	test_assert_s32_eq(surface->width, surface->output->width);
 	test_assert_s32_eq(surface->height, surface->output->height);
@@ -123,8 +123,8 @@ two_surface_switching(struct wet_testsuite_data *suite_data)
 		struct weston_desktop_surface *wds =
 			weston_surface_get_desktop_surface(surface);
 
-		test_assert_enum(breakpoint->template_->breakpoint,
-				 WESTON_TEST_BREAKPOINT_POST_REPAINT);
+		test_assert_enum_eq(breakpoint->template_->breakpoint,
+				    WESTON_TEST_BREAKPOINT_POST_REPAINT);
 		assert_output_matches(suite_data, output,
 				      xdg_client->client->output);
 		test_assert_ptr_not_null(pnode);
@@ -178,8 +178,8 @@ two_surface_switching(struct wet_testsuite_data *suite_data)
 		struct weston_desktop_surface *wds =
 			weston_surface_get_desktop_surface(surface);
 
-		test_assert_enum(breakpoint->template_->breakpoint,
-				 WESTON_TEST_BREAKPOINT_POST_REPAINT);
+		test_assert_enum_eq(breakpoint->template_->breakpoint,
+				    WESTON_TEST_BREAKPOINT_POST_REPAINT);
 		assert_output_matches(suite_data, output,
 				      xdg_client->client->output);
 		test_assert_ptr_not_null(pnode);
@@ -219,8 +219,8 @@ two_surface_switching(struct wet_testsuite_data *suite_data)
 		struct weston_desktop_surface *wds =
 			weston_surface_get_desktop_surface(surface);
 
-		test_assert_enum(breakpoint->template_->breakpoint,
-				 WESTON_TEST_BREAKPOINT_POST_REPAINT);
+		test_assert_enum_eq(breakpoint->template_->breakpoint,
+				    WESTON_TEST_BREAKPOINT_POST_REPAINT);
 		assert_output_matches(suite_data, output,
 				      xdg_client->client->output);
 		test_assert_ptr_not_null(pnode);
@@ -282,8 +282,8 @@ top_surface_present_in_output_repaint(struct wet_testsuite_data *suite_data)
 		struct weston_surface *surface = view->surface;
 		struct weston_buffer *buffer = surface->buffer_ref.buffer;
 
-		test_assert_enum(breakpoint->template_->breakpoint,
-				 WESTON_TEST_BREAKPOINT_POST_REPAINT);
+		test_assert_enum_eq(breakpoint->template_->breakpoint,
+				    WESTON_TEST_BREAKPOINT_POST_REPAINT);
 		assert_output_matches(suite_data, output, xdg_client->client->output);
 		test_assert_ptr_not_null(pnode);
 		test_assert_ptr_not_null(surface);
@@ -338,8 +338,8 @@ test_surface_unmaps_on_null(struct wet_testsuite_data *suite_data)
 		struct weston_surface *surface = view->surface;
 
 		/* Check that our surface is being shown on top */
-		test_assert_enum(breakpoint->template_->breakpoint,
-				 WESTON_TEST_BREAKPOINT_POST_REPAINT);
+		test_assert_enum_eq(breakpoint->template_->breakpoint,
+				    WESTON_TEST_BREAKPOINT_POST_REPAINT);
 		test_assert_ptr_not_null(pnode);
 		test_assert_ptr_not_null(surface);
 		test_assert_ptr_not_null(view);
@@ -366,8 +366,8 @@ test_surface_unmaps_on_null(struct wet_testsuite_data *suite_data)
 		struct weston_surface *surface = view->surface;
 		struct weston_buffer *buffer = surface->buffer_ref.buffer;
 
-		test_assert_enum(breakpoint->template_->breakpoint,
-				 WESTON_TEST_BREAKPOINT_POST_REPAINT);
+		test_assert_enum_eq(breakpoint->template_->breakpoint,
+				    WESTON_TEST_BREAKPOINT_POST_REPAINT);
 
 		/* Check that the background is being shown on top. */
 		test_assert_ptr_not_null(pnode);

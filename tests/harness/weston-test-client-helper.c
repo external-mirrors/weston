@@ -1111,7 +1111,7 @@ expect_protocol_error(struct client *client,
 	test_assert_int_ne(err, 0);
 
 	/* Expected protocol error but got local error. */
-	test_assert_enum(err, EPROTO);
+	test_assert_enum_eq(err, EPROTO);
 
 	errcode = wl_display_get_protocol_error(client->wl_display,
 						&interface, &id);

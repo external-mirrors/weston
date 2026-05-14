@@ -1416,7 +1416,7 @@ xyuv8888_create_buffer(struct client *client,
 	uint8_t cb;
 	uint8_t y0;
 
-	test_assert_enum(drm_format, DRM_FORMAT_XYUV8888);
+	test_assert_enum_eq(drm_format, DRM_FORMAT_XYUV8888);
 
 	buf = client_buffer_create(client, &args);
 	if (!buf)

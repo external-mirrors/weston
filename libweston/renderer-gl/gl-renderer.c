@@ -1251,7 +1251,7 @@ copy_capture_shm(struct gl_capture_task *gl_task)
 	uint8_t *src, *dst;
 	int i;
 
-	weston_assert_enum(compositor, gl_task->buffer_type, WESTON_BUFFER_SHM);
+	weston_assert_enum_eq(compositor, gl_task->buffer_type, WESTON_BUFFER_SHM);
 	weston_assert_ptr_not_null(compositor, shm);
 
 	glBindBuffer(GL_PIXEL_PACK_BUFFER, gl_task->shm_state.pbo);

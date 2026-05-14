@@ -319,7 +319,7 @@ image_description_wait_until_ready(struct client *client,
 
 	status = image_description_wait(client, image_descr);
 
-	test_assert_enum(status, CM_IMAGE_DESC_READY);
+	test_assert_enum_eq(status, CM_IMAGE_DESC_READY);
 }
 
 static void

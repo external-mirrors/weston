@@ -189,8 +189,8 @@ check_fifo_status(struct client *client,
 		struct weston_surface *surface;
 		struct wl_resource *surface_res;
 
-		test_assert_enum(breakpoint->template_->breakpoint,
-				 WESTON_TEST_BREAKPOINT_POST_LATCH);
+		test_assert_enum_eq(breakpoint->template_->breakpoint,
+				    WESTON_TEST_BREAKPOINT_POST_LATCH);
 		surface_res = wl_client_get_object(suite_data->wl_client,
 						   wl_proxy_get_id((struct wl_proxy *)client->surface->wl_surface));
 		surface = wl_resource_get_user_data(surface_res);
@@ -442,8 +442,8 @@ count_barriers(struct client *client,
 			struct weston_surface *surface;
 			struct wl_resource *surface_res;
 
-			test_assert_enum(breakpoint->template_->breakpoint,
-					 WESTON_TEST_BREAKPOINT_POST_LATCH);
+			test_assert_enum_eq(breakpoint->template_->breakpoint,
+					    WESTON_TEST_BREAKPOINT_POST_LATCH);
 			surface_res = wl_client_get_object(suite_data->wl_client,
 							   wl_proxy_get_id((struct wl_proxy *)wlsurface));
 			surface = wl_resource_get_user_data(surface_res);
@@ -470,8 +470,8 @@ get_surface_width(struct client *client,
 		struct weston_surface *surface;
 		struct wl_resource *surface_res;
 
-		test_assert_enum(breakpoint->template_->breakpoint,
-				 WESTON_TEST_BREAKPOINT_POST_LATCH);
+		test_assert_enum_eq(breakpoint->template_->breakpoint,
+				    WESTON_TEST_BREAKPOINT_POST_LATCH);
 		surface_res = wl_client_get_object(suite_data->wl_client,
 						   wl_proxy_get_id((struct wl_proxy *)wlsurface));
 		surface = wl_resource_get_user_data(surface_res);

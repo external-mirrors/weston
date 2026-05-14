@@ -202,7 +202,7 @@ drm_offload_fullscreen(struct wet_testsuite_data *suite_data)
 					      &result);
 	wl_surface_commit(surface);
 	presentation_wait_nofail(client, &result);
-	test_assert_enum(result, FB_PRESENTED_ZERO_COPY);
+	test_assert_enum_eq(result, FB_PRESENTED_ZERO_COPY);
 
 	client_buffer_util_destroy_buffer(buffer);
 	destroy_xdg_surface(xdg_surface);
@@ -280,7 +280,7 @@ drm_offload_fullscreen_transparent_overlay(struct wet_testsuite_data *suite_data
 					      &result);
 	wl_surface_commit(surface);
 	presentation_wait_nofail(client, &result);
-	test_assert_enum(result, FB_PRESENTED_ZERO_COPY);
+	test_assert_enum_eq(result, FB_PRESENTED_ZERO_COPY);
 
 	wp_viewport_destroy(overlay_viewport);
 	wl_subsurface_destroy(overlay_subsurface);
@@ -342,7 +342,7 @@ drm_offload_fullscreen_black_background(struct wet_testsuite_data *suite_data)
 					      &result);
 	wl_surface_commit(surface);
 	presentation_wait_nofail(client, &result);
-	test_assert_enum(result, FB_PRESENTED_ZERO_COPY);
+	test_assert_enum_eq(result, FB_PRESENTED_ZERO_COPY);
 
 	client_buffer_util_destroy_buffer(buffer);
 	destroy_xdg_surface(xdg_surface);
@@ -423,7 +423,7 @@ drm_offload_fullscreen_semi_transparent_black_background(struct wet_testsuite_da
 	wl_surface_commit(overlay_surface);
 	wl_surface_commit(surface);
 	presentation_wait_nofail(client, &result);
-	test_assert_enum(result, FB_PRESENTED_ZERO_COPY);
+	test_assert_enum_eq(result, FB_PRESENTED_ZERO_COPY);
 
 	wp_viewport_destroy(viewport);
 	wl_subsurface_destroy(overlay_subsurface);
@@ -600,7 +600,7 @@ drm_offload_fullscreen_black_background_black_subsurface_underlay(struct wet_tes
 	wl_surface_commit(overlay_surface);
 	wl_surface_commit(surface);
 	presentation_wait_nofail(client, &result);
-	test_assert_enum(result, FB_PRESENTED_ZERO_COPY);
+	test_assert_enum_eq(result, FB_PRESENTED_ZERO_COPY);
 
 	//TODO: check the spb surface for FB_PRESENTED_ZERO_COPY, too (does not yet work).
 
@@ -686,7 +686,7 @@ drm_offload_fullscreen_black_background_black_subsurface_overlay(struct wet_test
 					      &result);
 	wl_surface_commit(surface);
 	presentation_wait_nofail(client, &result);
-	test_assert_enum(result, FB_PRESENTED);
+	test_assert_enum_eq(result, FB_PRESENTED);
 
 	wp_viewport_destroy(overlay_viewport);
 	wl_subsurface_destroy(overlay_subsurface);
@@ -775,7 +775,7 @@ drm_offload_fullscreen_black_background_red_subsurface_underlay(struct wet_tests
 	wl_surface_commit(overlay_surface);
 	wl_surface_commit(surface);
 	presentation_wait_nofail(client, &result);
-	test_assert_enum(result, FB_PRESENTED);
+	test_assert_enum_eq(result, FB_PRESENTED);
 
 	wp_viewport_destroy(viewport);
 	wl_subsurface_destroy(overlay_subsurface);
@@ -899,7 +899,7 @@ drm_offload_windowed_shm(struct wet_testsuite_data *suite_data)
 					      &result);
 	wl_surface_commit(surface);
 	presentation_wait_nofail(client, &result);
-	test_assert_enum(result, FB_PRESENTED);
+	test_assert_enum_eq(result, FB_PRESENTED);
 
 	client_buffer_util_destroy_buffer(buffer);
 	destroy_xdg_surface(xdg_surface);

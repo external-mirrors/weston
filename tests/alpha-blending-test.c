@@ -121,7 +121,7 @@ fill_alpha_pattern(struct buffer *buf)
 	struct image_header ih = image_header_from(buf->image);
 	int y;
 
-	test_assert_enum(ih.pixman_format, PIXMAN_a8r8g8b8);
+	test_assert_enum_eq(ih.pixman_format, PIXMAN_a8r8g8b8);
 	test_assert_int_eq(ih.width, BLOCK_WIDTH * ALPHA_STEPS);
 
 	for (y = 0; y < ih.height; y++) {

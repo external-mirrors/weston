@@ -791,8 +791,8 @@ drm_output_find_plane_for_paint_node(struct drm_output_state *state,
 		uint64_t zpos;
 		bool mm_underlay_only = false;
 
-		weston_assert_enum(b->compositor,
-				   plane->type, WDRM_PLANE_TYPE_OVERLAY);
+		weston_assert_enum_eq(b->compositor,
+				      plane->type, WDRM_PLANE_TYPE_OVERLAY);
 
 		if (possible_plane_mask == 0)
 			break;

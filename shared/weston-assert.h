@@ -259,4 +259,4 @@ do {										\
 			    __FILE__, __LINE__, reason);					\
 } while (0)
 
-#define weston_assert_enum(comp, a, b) weston_assert_u64_eq(comp, a, b)
+#define weston_assert_enum_eq(comp, a, b) weston_assert_u64_eq(comp, a, b)

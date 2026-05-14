@@ -310,7 +310,7 @@ test_color_representation(const struct color_state *color_state,
 	wl_surface_commit(surface);
 	presentation_wait_nofail(client, &result);
 
-	test_assert_enum(result, expected_result);
+	test_assert_enum_eq(result, expected_result);
 
 	screenshot = client_capture_output(client, client->output, src_type,
 					   src_buffer_type);

@@ -387,7 +387,7 @@ create_image_description_soft_fail(struct wet_testsuite_data *suite_data)
 
 	image_descr = image_description_create_soft_fail(cm);
 	status = image_description_wait(client, image_descr);
-	test_assert_enum(status, CM_IMAGE_DESC_FAILED);
+	test_assert_enum_eq(status, CM_IMAGE_DESC_FAILED);
 
 	image_description_destroy(image_descr);
 	client_destroy(client);
@@ -1115,12 +1115,12 @@ create_parametric_image_description(struct wet_testsuite_data *suite_data,
 			return RESULT_FAIL;
 
 	if (args->error_point == ERROR_POINT_NONE) {
-		test_assert_enum(args->expected_error, NOT_SET);
-		test_assert_enum(image_desc->status, CM_IMAGE_DESC_READY);
+		test_assert_enum_eq(args->expected_error, NOT_SET);
+		test_assert_enum_eq(image_desc->status, CM_IMAGE_DESC_READY);
 	} else {
-		test_assert_enum(args->error_point, ERROR_POINT_GRACEFUL_FAILURE);
-		test_assert_enum(image_desc->status, CM_IMAGE_DESC_FAILED);
-		test_assert_enum(image_desc->failure_reason, args->expected_error);
+		test_assert_enum_eq(args->error_point, ERROR_POINT_GRACEFUL_FAILURE);
+		test_assert_enum_eq(image_desc->status, CM_IMAGE_DESC_FAILED);
+		test_assert_enum_eq(image_desc->failure_reason, args->expected_error);
 	}
 
 out:

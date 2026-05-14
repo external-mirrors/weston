@@ -75,7 +75,7 @@ feedback_sync_output(void *data,
 {
 	struct feedback *fb = data;
 
-	test_assert_enum(fb->result, FB_PENDING);
+	test_assert_enum_eq(fb->result, FB_PENDING);
 
 	if (output)
 		fb->sync_output = output;
@@ -94,7 +94,7 @@ feedback_presented(void *data,
 {
 	struct feedback *fb = data;
 
-	test_assert_enum(fb->result, FB_PENDING);
+	test_assert_enum_eq(fb->result, FB_PENDING);
 	fb->result = FB_PRESENTED;
 	fb->seq = u64_from_u32s(seq_hi, seq_lo);
 	timespec_from_proto(&fb->time, tv_sec_hi, tv_sec_lo, tv_nsec);
@@ -108,7 +108,7 @@ feedback_discarded(void *data,
 {
 	struct feedback *fb = data;
 
-	test_assert_enum(fb->result, FB_PENDING);
+	test_assert_enum_eq(fb->result, FB_PENDING);
 	fb->result = FB_DISCARDED;
 }
 

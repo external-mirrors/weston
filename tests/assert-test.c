@@ -225,9 +225,9 @@ asserts_misc(struct wet_testsuite_data *suite_data)
 	struct weston_compositor *compositor = NULL;
 	bool ret;
 
-	ret = weston_assert_enum(compositor, MY_ENUM_A, MY_ENUM_A);
+	ret = weston_assert_enum_eq(compositor, MY_ENUM_A, MY_ENUM_A);
 	abort_if_not(ret);
-	ret = weston_assert_enum(compositor, MY_ENUM_A, MY_ENUM_B);
+	ret = weston_assert_enum_eq(compositor, MY_ENUM_A, MY_ENUM_B);
 	abort_if_not(ret == false);
 
 	/* weston_assert_not_reached is a bit awkward to test, so let's skip */

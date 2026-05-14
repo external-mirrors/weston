@@ -434,14 +434,14 @@ pointer_button_events(struct wet_testsuite_data *suite_data)
 	test_assert_u32_eq(pointer->state, 0);
 
 	send_button(client, &t1, BTN_LEFT, WL_POINTER_BUTTON_STATE_PRESSED);
-	test_assert_enum(pointer->button, BTN_LEFT);
-	test_assert_enum(pointer->state, WL_POINTER_BUTTON_STATE_PRESSED);
+	test_assert_enum_eq(pointer->button, BTN_LEFT);
+	test_assert_enum_eq(pointer->state, WL_POINTER_BUTTON_STATE_PRESSED);
 	test_assert_s64_eq(pointer->button_time_msec, timespec_to_msec(&t1));
 	test_assert_true(timespec_eq(&pointer->button_time_timespec, &t1));
 
 	send_button(client, &t2, BTN_LEFT, WL_POINTER_BUTTON_STATE_RELEASED);
-	test_assert_enum(pointer->button, BTN_LEFT);
-	test_assert_enum(pointer->state, WL_POINTER_BUTTON_STATE_RELEASED);
+	test_assert_enum_eq(pointer->button, BTN_LEFT);
+	test_assert_enum_eq(pointer->state, WL_POINTER_BUTTON_STATE_RELEASED);
 	test_assert_s64_eq(pointer->button_time_msec, timespec_to_msec(&t2));
 	test_assert_true(timespec_eq(&pointer->button_time_timespec, &t2));
 
@@ -489,16 +489,16 @@ pointer_timestamps_stop_after_input_timestamps_object_is_destroyed(struct wet_te
 		input_timestamps_create_for_pointer(client);
 
 	send_button(client, &t1, BTN_LEFT, WL_POINTER_BUTTON_STATE_PRESSED);
-	test_assert_enum(pointer->button, BTN_LEFT);
-	test_assert_enum(pointer->state, WL_POINTER_BUTTON_STATE_PRESSED);
+	test_assert_enum_eq(pointer->button, BTN_LEFT);
+	test_assert_enum_eq(pointer->state, WL_POINTER_BUTTON_STATE_PRESSED);
 	test_assert_s64_eq(pointer->button_time_msec, timespec_to_msec(&t1));
 	test_assert_true(timespec_eq(&pointer->button_time_timespec, &t1));
 
 	input_timestamps_destroy(input_ts);
 
 	send_button(client, &t2, BTN_LEFT, WL_POINTER_BUTTON_STATE_RELEASED);
-	test_assert_enum(pointer->button, BTN_LEFT);
-	test_assert_enum(pointer->state, WL_POINTER_BUTTON_STATE_RELEASED);
+	test_assert_enum_eq(pointer->button, BTN_LEFT);
+	test_assert_enum_eq(pointer->state, WL_POINTER_BUTTON_STATE_RELEASED);
 	test_assert_s64_eq(pointer->button_time_msec, timespec_to_msec(&t2));
 	test_assert_true(timespec_is_zero(&pointer->button_time_timespec));
 
