@@ -74,6 +74,33 @@ perfetto_annotate_int(struct weston_debug_annotations *annots,
 }
 
 static void
+do_annotate_bool(struct weston_debug_annotations *annots,
+		unsigned char parent,
+		const char *key,
+		unsigned char key_size, bool value)
+{
+	weston_assert_u8_gt(NULL, WESTON_MAX_DEBUG_ANNOTS, annots->count);
+	struct weston_debug_annotation *annot = &annots->annots[annots->count];
+
+	annot->type = WESTON_DEBUG_ANNOTATION_STR_VAL;
+	annot->svalue = value ? " true" : "false";
+	annot->parent = parent;
+	annot->key = key;
+	annot->key_size = key_size;
+
+	annots->count++;
+}
+
+WL_EXPORT void
+perfetto_annotate_bool(struct weston_debug_annotations *annots,
+		      const char *key,
+		      unsigned char key_size,
+		      bool value)
+{
+	do_annotate_bool(annots, annots->count, key, key_size, value);
+}
+
+static void
 do_annotate_float(struct weston_debug_annotations *annots,
 		  unsigned char parent,
 		  const char *key,
@@ -101,6 +128,30 @@ perfetto_annotate_float(struct weston_debug_annotations *annots,
 	do_annotate_float(annots, annots->count, key, key_size, value);
 }
 
+static void
+do_annotate_double(struct weston_debug_annotations *annots,
+		   unsigned char parent, const char *key,
+		   unsigned char key_size, double value)
+{
+	weston_assert_u8_gt(NULL, WESTON_MAX_DEBUG_ANNOTS, annots->count);
+	struct weston_debug_annotation *annot = &annots->annots[annots->count];
+
+	annot->type = WESTON_DEBUG_ANNOTATION_DOUBLE_VAL;
+	annot->fvalue = value;
+	annot->parent = parent;
+	annot->key = key;
+	annot->key_size = key_size;
+
+	annots->count++;
+}
+
+WL_EXPORT void
+perfetto_annotate_double(struct weston_debug_annotations *annots,
+			const char *key, unsigned char key_size,
+			double value)
+{
+	do_annotate_double(annots, annots->count, key, key_size, value);
+}
 static void
 do_annotate_string(struct weston_debug_annotations *annots,
 		   unsigned char parent,

@@ -53,6 +53,7 @@
 #include "input-timestamps-unstable-v1-server-protocol.h"
 #include "tablet-unstable-v2-server-protocol.h"
 #include "timeline.h"
+#include "weston-trace.h"
 
 enum pointer_constraint_type {
 	POINTER_CONSTRAINT_TYPE_LOCK,
@@ -565,13 +566,34 @@ pointer_send_relative_motion(struct weston_pointer *pointer,
 	struct wl_list *resource_list;
 	struct wl_resource *resource;
 
-	if (!pointer->focus_client)
+	if (!pointer->focus_client) {
+		WESTON_TRACE_ANNOTATE_FUNC_FLOW(event->base.flow_id,
+						("discard relative pointer motion",
+						 "missing focus client"),
+						("internal_name", pointer->focus->internal_name),
+						("label", pointer->focus->surface->label),
+						("pointer sx", pointer->sx),
+						("pointer sy", pointer->sy));
 		return;
+	}
 
-	if (!weston_pointer_motion_to_rel(pointer, event,
-					  &rel,
-					  &rel_unaccel))
+	if (!weston_pointer_motion_to_rel(pointer, event, &rel, &rel_unaccel)) {
+		WESTON_TRACE_ANNOTATE_FUNC_FLOW(event->base.flow_id,
+						("discard relative pointer motion",
+						 "invalid relative data"),
+						("internal_name", pointer->focus->internal_name),
+						("label", pointer->focus->surface->label),
+						("pointer sx", pointer->sx),
+						("pointer sy", pointer->sy));
 		return;
+	}
+
+	WESTON_TRACE_ANNOTATE_FUNC_FLOW(event->base.flow_id,
+					("send", "relative pointer motion"),
+					("internal_name", pointer->focus->internal_name),
+					("label", pointer->focus->surface->label),
+					("pointer sx", pointer->sx),
+					("pointer sy", pointer->sy));
 
 	resource_list = &pointer->focus_client->relative_pointer_resources;
 	time_usec = timespec_to_usec(&event->base.ts);
@@ -589,9 +611,8 @@ pointer_send_relative_motion(struct weston_pointer *pointer,
 }
 
 static void
-pointer_send_motion(struct weston_pointer *pointer,
-		    const struct timespec *ts,
-		    wl_fixed_t sx, wl_fixed_t sy)
+pointer_send_motion(struct weston_pointer *pointer, wl_fixed_t sx, wl_fixed_t sy,
+		    const struct weston_pointer_motion_event *event)
 {
 	struct wl_list *resource_list;
 	struct wl_resource *resource;
@@ -600,12 +621,19 @@ pointer_send_motion(struct weston_pointer *pointer,
 	if (!pointer->focus_client)
 		return;
 
+	WESTON_TRACE_ANNOTATE_FUNC_FLOW(event->base.flow_id,
+					("send", "relative pointer motion"),
+					("internal_name", pointer->focus->internal_name),
+					("label", pointer->focus->surface->label),
+					("pointer sx", sx),
+					("pointer sy", sy));
+
 	resource_list = &pointer->focus_client->pointer_resources;
-	msecs = timespec_to_msec(ts);
+	msecs = timespec_to_msec(&event->base.ts);
 	wl_resource_for_each(resource, resource_list) {
 		send_timestamps_for_input_resource(resource,
 		                                   &pointer->timestamps_list,
-		                                   ts);
+		                                   &event->base.ts);
 		wl_pointer_send_motion(resource, msecs, sx, sy);
 	}
 }
@@ -614,6 +642,8 @@ WL_EXPORT void
 weston_pointer_send_motion(struct weston_pointer *pointer,
 			   const struct weston_pointer_motion_event *event)
 {
+	WESTON_TRACE_FUNC_FLOW(&event->base.flow_id);
+
 	wl_fixed_t old_sx;
 	wl_fixed_t old_sy;
 	struct weston_view *old_focus = pointer->focus;
@@ -640,7 +670,7 @@ weston_pointer_send_motion(struct weston_pointer *pointer,
 
 	if (pointer->focus && old_focus == pointer->focus &&
 	    (old_sx != pointer->sx || old_sy != pointer->sy)) {
-		pointer_send_motion(pointer, &event->base.ts, pointer->sx, pointer->sy);
+		pointer_send_motion(pointer, pointer->sx, pointer->sy, event);
 	}
 
 	pointer_send_relative_motion(pointer, event);
@@ -692,8 +722,20 @@ weston_pointer_send_button(struct weston_pointer *pointer,
 	uint32_t button = button_event->button;
 	enum wl_pointer_button_state state = button_event->button_state;
 
-	if (!weston_pointer_has_focus_resource(pointer))
+	if (!weston_pointer_has_focus_resource(pointer)) {
+		WESTON_TRACE_ANNOTATE_FUNC_FLOW(button_event->base.flow_id,
+						("discard button", "missing focus resource"),
+						("state", button_event->button_state),
+						("button", button_event->button));
 		return;
+	}
+
+	WESTON_TRACE_ANNOTATE_FUNC_FLOW(button_event->base.flow_id,
+					("send", "button"),
+					("internal_name", pointer->focus->internal_name),
+					("label", pointer->focus->surface->label),
+					("state", button_event->button_state),
+					("button", button_event->button));
 
 	resource_list = &pointer->focus_client->pointer_resources;
 	serial = wl_display_next_serial(display);
@@ -743,8 +785,24 @@ weston_pointer_send_axis(struct weston_pointer *pointer,
 	struct wl_list *resource_list;
 	uint32_t msecs;
 
-	if (!weston_pointer_has_focus_resource(pointer))
+	if (!weston_pointer_has_focus_resource(pointer)) {
+		WESTON_TRACE_ANNOTATE_FUNC_FLOW(event->base.flow_id,
+						("discard axis", "missing focus resource"),
+						("axis", event->axis),
+						("value", event->value),
+						("has_discrete", event->has_discrete),
+						("discrete", event->discrete));
 		return;
+	}
+
+	WESTON_TRACE_ANNOTATE_FUNC_FLOW(event->base.flow_id,
+					("send", "axis"),
+					("internal_name", pointer->focus->internal_name),
+					("label", pointer->focus->surface->label),
+					("axis", event->axis),
+					("value", event->value),
+					("has_discrete", event->has_discrete),
+					("discrete", event->discrete));
 
 	resource_list = &pointer->focus_client->pointer_resources;
 	msecs = timespec_to_msec(&event->base.ts);
@@ -904,11 +962,27 @@ weston_touch_send_down(const struct weston_touch_event *event)
 	struct weston_coord_surface surf_pos;
 	uint32_t msecs;
 
-	if (!weston_touch_has_focus_resource(touch))
+	if (!weston_touch_has_focus_resource(touch)) {
+		WESTON_TRACE_ANNOTATE_FUNC_FLOW(event->base.flow_id,
+						("discard touch down", "missing focus resource"),
+						("touch pos x", event->pos.c.x),
+						("touch pos y", event->pos.c.y),
+						("touch id", event->touch_id));
 		return;
+	}
 
 	surf_pos = weston_coord_global_to_surface(touch->focus, event->pos);
 	weston_view_update_transform(touch->focus);
+
+	WESTON_TRACE_ANNOTATE_FUNC_FLOW(event->base.flow_id,
+					("send", "touch down"),
+					("internal_name", touch->focus->internal_name),
+					("label", touch->focus->surface->label),
+					("touch pos x", event->pos.c.x),
+					("touch pos y", event->pos.c.y),
+					("surface pos x", surf_pos.c.x),
+					("surface pos y", surf_pos.c.y),
+					("touch id", event->touch_id));
 
 	resource_list = &touch->focus_resource_list;
 	serial = wl_display_next_serial(display);
@@ -949,8 +1023,18 @@ weston_touch_send_up(const struct weston_touch_event *event)
 	struct wl_list *resource_list;
 	uint32_t msecs;
 
-	if (!weston_touch_has_focus_resource(touch))
+	if (!weston_touch_has_focus_resource(touch)) {
+		WESTON_TRACE_ANNOTATE_FUNC_FLOW(event->base.flow_id,
+						("discard touch up", "missing focus resource"),
+						("touch id", event->touch_id));
 		return;
+	}
+
+	WESTON_TRACE_ANNOTATE_FUNC_FLOW(event->base.flow_id,
+					("send", "touch up"),
+					("internal_name", touch->focus->internal_name),
+					("label", touch->focus->surface->label),
+					("touch id", event->touch_id));
 
 	resource_list = &touch->focus_resource_list;
 	serial = wl_display_next_serial(display);
@@ -986,11 +1070,25 @@ weston_touch_send_motion(const struct weston_touch_event *event)
 	struct weston_coord_surface surf_pos;
 	struct weston_touch *touch = event->base.seat->touch_state;
 
-	if (!weston_touch_has_focus_resource(touch))
+	if (!weston_touch_has_focus_resource(touch)) {
+		WESTON_TRACE_ANNOTATE_FUNC_FLOW(event->base.flow_id,
+						("discard touch motion", "missing focus resource"),
+						("touch pos x", event->pos.c.x),
+						("touch pos y", event->pos.c.y),
+						("touch id", event->touch_id));
 		return;
+	}
 
 	surf_pos = weston_coord_global_to_surface(touch->focus, event->pos);
 	weston_view_update_transform(touch->focus);
+
+	WESTON_TRACE_ANNOTATE_FUNC_FLOW(event->base.flow_id,
+					("send", "touch motion"),
+					("internal_name", touch->focus->internal_name),
+					("label", touch->focus->surface->label),
+					("touch pos x", event->pos.c.x),
+					("touch pos y", event->pos.c.y),
+					("touch id", event->touch_id));
 
 	resource_list = &touch->focus_resource_list;
 	msecs = timespec_to_msec(&event->base.ts);
@@ -1089,12 +1187,27 @@ weston_keyboard_send_key(struct weston_keyboard *keyboard,
 	uint32_t key = key_event->key;
 	enum wl_keyboard_key_state state = key_event->key_state;
 
-	if (!weston_keyboard_has_focus_resource(keyboard))
+	if (!weston_keyboard_has_focus_resource(keyboard)) {
+		WESTON_TRACE_ANNOTATE_FUNC_FLOW(key_event->base.flow_id,
+						("discard send key", "missing touch resource"),
+						("key", key),
+						("state", state),
+						("update state", key_event->key_update_state));
 		return;
+	}
 
 	resource_list = &keyboard->focus_resource_list;
 	serial = wl_display_next_serial(display);
 	msecs = timespec_to_msec(&time);
+
+	WESTON_TRACE_ANNOTATE_FUNC_FLOW(key_event->base.flow_id,
+					("send", "key"),
+					("internal_name", keyboard->focus->internal_name),
+					("label", keyboard->focus->label),
+					("key", key),
+					("state", state),
+					("update state", key_event->key_update_state));
+
 	wl_resource_for_each(resource, resource_list) {
 		send_timestamps_for_input_resource(resource,
 						   &keyboard->timestamps_list,
@@ -5650,6 +5763,8 @@ static void
 confined_pointer_grab_pointer_motion(struct weston_pointer_grab *grab,
 				     const struct weston_pointer_motion_event *event)
 {
+	WESTON_TRACE_FUNC_FLOW(&event->base.flow_id);
+
 	struct weston_pointer_constraint *constraint =
 		container_of(grab, struct weston_pointer_constraint, grab);
 	struct weston_pointer *pointer = grab->pointer;
@@ -5679,7 +5794,7 @@ confined_pointer_grab_pointer_motion(struct weston_pointer_grab *grab,
 	pointer->sy = wl_fixed_from_double(surf_pos.c.y);
 
 	if (old_sx != pointer->sx || old_sy != pointer->sy) {
-		pointer_send_motion(pointer, &event->base.ts, pointer->sx, pointer->sy);
+		pointer_send_motion(pointer, pointer->sx, pointer->sy, event);
 	}
 
 	pointer_send_relative_motion(pointer, event);

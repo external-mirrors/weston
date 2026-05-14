@@ -35,7 +35,7 @@
 #define WESTON_MAX_DEBUG_ANNOTS      128
 
 /* maximum key length */
-#define WESTON_TRACE_MAX_KEY_LENGTH  30
+#define WESTON_TRACE_MAX_KEY_LENGTH  40
 
 /* note that util_perfetto_is_tracing_enabled always returns false until
  * util_perfetto_init is called
@@ -90,8 +90,10 @@
 		static_assert(sizeof(k) < WESTON_TRACE_MAX_KEY_LENGTH);                   \
 		_Generic((v),                                                             \
 			int: perfetto_annotate_int,                                       \
+			bool: perfetto_annotate_bool,                                     \
 			unsigned int: perfetto_annotate_int,                              \
 			float: perfetto_annotate_float,                                   \
+			double: perfetto_annotate_double,                                 \
 			char *: perfetto_annotate_string,                                 \
 			const char *: perfetto_annotate_string,                           \
 			struct weston_buffer *: perfetto_annotate_buffer,                 \
@@ -190,10 +192,13 @@
 		__attribute__((cleanup(_weston_trace_scope_end), unused)) =   \
 			_weston_trace_annotate_func_begin(name, &__pd_annots)
 
-#define _WESTON_TRACE_ANNOTATE_FUNC_FLOW(id, name)                            \
-	int _WESTON_TRACE_SCOPE_VAR(__LINE__)                                 \
-		__attribute__((cleanup(_weston_trace_scope_end), unused)) =   \
-			_weston_trace_annotate_func_begin_flow(name, id, &__pd_annots)
+#define _WESTON_TRACE_ANNOTATE_FUNC_FLOW(id, name)                                        \
+	int _WESTON_TRACE_SCOPE_VAR(__LINE__)                                             \
+		__attribute__((cleanup(_weston_trace_scope_end), unused)) =               \
+			_Generic((id),                                                    \
+				uint64_t *: _weston_trace_annotate_func_begin_flow,       \
+				uint64_t  : _weston_trace_annotate_func_begin_const_flow  \
+			)(name, id, &__pd_annots)
 
 static inline int
 _weston_trace_scope_begin(const char *name)
@@ -269,6 +274,18 @@ _weston_trace_instant_timestamp(const char *name, uint64_t track_id, uint64_t id
 	util_perfetto_trace_instant_timestamp(name, track_id, id, clock, ts);
 	return 0;
 }
+
+static inline int
+_weston_trace_annotate_func_begin_const_flow(const char *name, uint64_t id,
+					     struct weston_debug_annotations *annots)
+{
+	weston_assert_u64_gt(NULL, id, 0);
+	_WESTON_TRACE_ANNOTATE_FUNC_BEGIN_FLOW(name, id, annots);
+
+	annots->count = 0;
+	return 0;
+}
+
 
 static inline void
 _weston_trace_scope_end(int *scope)

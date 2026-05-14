@@ -36,10 +36,21 @@ perfetto_annotate_int(struct weston_debug_annotations *annots,
 		      int value);
 
 void
+perfetto_annotate_bool(struct weston_debug_annotations *annots,
+		      const char *key,
+		      unsigned char key_size,
+		      bool value);
+
+void
 perfetto_annotate_float(struct weston_debug_annotations *annots,
 			const char *key,
 			unsigned char key_size,
 			float value);
+void
+perfetto_annotate_double(struct weston_debug_annotations *annots,
+			const char *key,
+			unsigned char key_size,
+			double value);
 
 void
 perfetto_annotate_string(struct weston_debug_annotations *annots,

@@ -241,6 +241,12 @@ util_perfetto_flush_debug_annotation(perfetto::EventContext *ctx,
 			else
 				ctx->AddDebugAnnotation(key, annot->fvalue);
 			break;
+		case WESTON_DEBUG_ANNOTATION_DOUBLE_VAL:
+			if (use_built_key)
+				ctx->AddDebugAnnotation(perfetto::DynamicString(key), annot->dvalue);
+			else
+				ctx->AddDebugAnnotation(key, annot->dvalue);
+			break;
 		case WESTON_DEBUG_ANNOTATION_STR_VAL:
 			if (use_built_key)
 				ctx->AddDebugAnnotation(perfetto::DynamicString(key), annot->svalue);

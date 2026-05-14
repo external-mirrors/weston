@@ -40,9 +40,10 @@ extern "C" {
 #endif
 
 enum weston_debug_annotation_type {
-        WESTON_DEBUG_ANNOTATION_INT_VAL,
-        WESTON_DEBUG_ANNOTATION_FLOAT_VAL,
-        WESTON_DEBUG_ANNOTATION_STR_VAL,
+	WESTON_DEBUG_ANNOTATION_INT_VAL,
+	WESTON_DEBUG_ANNOTATION_FLOAT_VAL,
+	WESTON_DEBUG_ANNOTATION_DOUBLE_VAL,
+	WESTON_DEBUG_ANNOTATION_STR_VAL,
 	WESTON_DEBUG_ANNOTATION_CONTAINER,
 };
 
@@ -51,6 +52,7 @@ struct weston_debug_annotation {
 	union {
 		int ivalue;
 		float fvalue;
+		double dvalue;
 		const char *svalue;
 	};
 	unsigned char type;
