@@ -260,3 +260,4 @@ do {										\
 } while (0)
 
 #define weston_assert_enum_eq(comp, a, b) weston_assert_u64_eq(comp, a, b)
+#define weston_assert_enum_ne(comp, a, b) weston_assert_u64_ne(comp, a, b)

@@ -230,6 +230,11 @@ asserts_misc(struct wet_testsuite_data *suite_data)
 	ret = weston_assert_enum_eq(compositor, MY_ENUM_A, MY_ENUM_B);
 	abort_if_not(ret == false);
 
+	ret = weston_assert_enum_ne(compositor, MY_ENUM_A, MY_ENUM_B);
+	abort_if_not(ret);
+	ret = weston_assert_enum_ne(compositor, MY_ENUM_A, MY_ENUM_A);
+	abort_if_not(ret == false);
+
 	/* weston_assert_not_reached is a bit awkward to test, so let's skip */
 
 	/* If we reach that point, it's a success so reset the assert counter
