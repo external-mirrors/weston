@@ -277,6 +277,12 @@ struct drm_property_enum_info colorspace_enums[] = {
 	[WDRM_COLORSPACE_BT601_YCC] = { .name = "BT601_YCC", },
 };
 
+struct drm_property_enum_info underscan_enums[] = {
+	[WDRM_UNDERSCAN_OFF] = { .name = "off", },
+	[WDRM_UNDERSCAN_ON] = { .name = "on", },
+	[WDRM_UNDERSCAN_AUTO] = { .name = "auto", },
+};
+
 const struct drm_property_info connector_props[] = {
 	[WDRM_CONNECTOR_EDID] = { .name = "EDID" },
 	[WDRM_CONNECTOR_DPMS] = {
@@ -320,6 +326,17 @@ const struct drm_property_info connector_props[] = {
 	},
 	[WDRM_CONNECTOR_VRR_CAPABLE] = {
 		.name = "vrr_capable",
+	},
+	[WDRM_CONNECTOR_UNDERSCAN] = {
+		.name = "underscan",
+		.enum_values = underscan_enums,
+		.num_enum_values = WDRM_UNDERSCAN__COUNT,
+	},
+	[WDRM_CONNECTOR_UNDERSCAN_HBORDER] = {
+		.name = "underscan hborder",
+	},
+	[WDRM_CONNECTOR_UNDERSCAN_VBORDER] = {
+		.name = "underscan vborder",
 	},
 };
 
