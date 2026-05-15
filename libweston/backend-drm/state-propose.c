@@ -104,6 +104,50 @@ drm_output_check_plane_has_view_assigned(struct drm_plane *plane,
 	return false;
 }
 
+enum blend_mode_error {
+	BLEND_MODE_ERROR_INCOMPATIBLE_WITH_CONTENT = 0,
+};
+
+static const char *
+blend_mode_error_get_description(struct weston_compositor *wc,
+				 enum blend_mode_error err_blend_mode)
+{
+	switch (err_blend_mode) {
+	case BLEND_MODE_ERROR_INCOMPATIBLE_WITH_CONTENT:
+		return "blend modes supported by plane aren't compatible with content";
+	}
+
+	weston_assert_not_reached(wc, "unknown blend mode error");
+}
+
+static bool
+select_plane_blend_mode(struct drm_plane_state *state, struct drm_fb *fb,
+			enum blend_mode_error *err_blend_mode)
+{
+	struct drm_plane *plane = state->plane;
+	bool fully_opaque = state->alpha == DRM_PLANE_ALPHA_OPAQUE &&
+			    fb->format->bits.a == 0;
+
+	/**
+	 * BLEND_NONE can potentially avoid unnecessary operations on the
+	 * driver, so let's use it if possible.
+	 */
+	if (fully_opaque && drm_plane_supports_blend_mode(plane, WDRM_PLANE_BLEND_NONE)) {
+		state->blend_mode = WDRM_PLANE_BLEND_NONE;
+		return true;
+	}
+
+	if (drm_plane_supports_blend_mode(plane, WDRM_PLANE_BLEND_PREMULT)) {
+		state->blend_mode = WDRM_PLANE_BLEND_PREMULT;
+		return true;
+	}
+
+	/* TODO: BLEND_COVERAGE still unsupported. */
+
+	*err_blend_mode = BLEND_MODE_ERROR_INCOMPATIBLE_WITH_CONTENT;
+	return false;
+}
+
 static struct drm_plane_state *
 drm_output_try_paint_node_on_plane(struct drm_plane_handle *handle,
 				   struct drm_output_state *output_state,
@@ -117,6 +161,7 @@ drm_output_try_paint_node_on_plane(struct drm_plane_handle *handle,
 	struct drm_backend *b = device->backend;
 	struct drm_plane *plane = handle->plane;
 	struct drm_plane_state *state = NULL;
+	enum blend_mode_error err_blend_mode;
 
 	assert(!device->disable_client_buffer_scanout);
 	assert(output == handle->output);
@@ -133,6 +178,15 @@ drm_output_try_paint_node_on_plane(struct drm_plane_handle *handle,
 	state->handle = handle;
 
 	drm_plane_state_coords_for_paint_node(state, pnode, zpos);
+
+	if (!select_plane_blend_mode(state, fb, &err_blend_mode)) {
+		const char *err_msg =
+			blend_mode_error_get_description(b->compositor,
+							 err_blend_mode);
+		drm_debug(b, "\t\t\t[paint node] not placing paint node %s on plane %lu: %s\n",
+			     pnode->internal_name, (unsigned long) plane->plane_id, err_msg);
+		goto out;
+	}
 
 	/* We hold one reference for the lifetime of this function; from
 	 * calling drm_fb_get_from_paint_node() in
@@ -253,6 +307,7 @@ drm_output_prepare_cursor_paint_node(struct drm_output_state *output_state,
 	struct drm_plane_handle *handle = output->cursor_handle;
 	struct drm_plane *plane;
 	struct drm_plane_state *plane_state;
+	enum blend_mode_error err_blend_mode;
 	const char *p_name;
 
 	assert(!device->cursors_are_broken);
@@ -298,6 +353,15 @@ drm_output_prepare_cursor_paint_node(struct drm_output_state *output_state,
 	 * select the correct fb to use.
 	 */
 	plane_state->fb = drm_fb_ref(output->gbm_cursor_fb[0]);
+
+	if (!select_plane_blend_mode(plane_state, plane_state->fb, &err_blend_mode)) {
+		const char *err_msg =
+			blend_mode_error_get_description(b->compositor,
+							 err_blend_mode);
+		drm_debug(b, "\t\t\t\t[%s] not assigning paint node %s to %s plane (%s)\n",
+			     p_name, pnode->internal_name, p_name, err_msg);
+		goto err;
+	}
 
 	/* The cursor API is somewhat special: in cursor_bo_update(), we upload
 	 * a buffer which is always cursor_width x cursor_height, even if the
