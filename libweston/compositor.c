@@ -1421,6 +1421,15 @@ weston_surface_send_enter_leave(struct weston_surface *surface,
 
 	assert(enter != leave);
 
+	WESTON_TRACE_BEGIN_ANNOTATION();
+
+	WESTON_TRACE_ANNOTATE(("surface", enter ? "enter" : "leave"),
+			      ("internal_name", surface->internal_name),
+			      ("label", surface->label),
+			      ("output", head->output->name));
+
+	WESTON_TRACE_COMMIT_ANNOTATION();
+
 	client = wl_resource_get_client(surface->resource);
 	wl_resource_for_each(wloutput, &head->resource_list) {
 		if (wl_resource_get_client(wloutput) != client)
