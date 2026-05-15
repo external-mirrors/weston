@@ -11324,3 +11324,29 @@ weston_touch_device_list_release(struct weston_touch_device_list *list)
 	list->len = 0;
 	list->array = NULL;
 }
+
+/**
+ * Find an output by its head serial number
+ * \param compositor Weston compositor object
+ * \param serial Serial number of the head
+ * \return Output; NULL if not found
+ *
+ * \ingroup compositor
+ */
+WL_EXPORT struct weston_output *
+weston_compositor_find_output_by_head_serial(struct weston_compositor *compositor,
+					      const char *serial)
+{
+	struct weston_output *output;
+	struct weston_head *head;
+
+	/* Check active outputs */
+	wl_list_for_each(output, &compositor->output_list, link) {
+		wl_list_for_each(head, &output->head_list, output_link) {
+			if (head->serial_number && strcmp(head->serial_number, serial) == 0)
+				return output;
+		}
+	}
+
+	return NULL;
+}

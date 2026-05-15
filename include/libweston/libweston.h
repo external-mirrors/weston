@@ -2936,6 +2936,10 @@ weston_compositor_get_touch_devices(struct weston_compositor *compositor);
 void
 weston_touch_device_list_release(struct weston_touch_device_list *list);
 
+struct weston_output *
+weston_compositor_find_output_by_head_serial(struct weston_compositor *compositor,
+					      const char *serial);
+
 #ifdef  __cplusplus
 }
 #endif
