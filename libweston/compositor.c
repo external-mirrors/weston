@@ -11257,3 +11257,57 @@ weston_backend_clear_deferred(struct weston_backend *backend,
 		weston_output_schedule_repaint(output);
 	}
 }
+
+/**
+ * Get a list of all touch devices as an array of pointers.
+ *
+ * The pointers in the array remain valid until any touch device is
+ * destroyed. Do not store the array or any of the pointers for later
+ * use without adding destroy signal handlers for each stored pointer.
+ *
+ * \param compositor The compositor instance.
+ *
+ * \return A list of touch devices.
+ *
+ * \ingroup compositor
+ */
+WL_EXPORT struct weston_touch_device_list
+weston_compositor_get_touch_devices(struct weston_compositor *compositor)
+{
+	struct wl_array arr;
+	struct weston_seat *seat;
+	struct weston_touch_device *device;
+	struct weston_touch_device **entry;
+
+	wl_array_init(&arr);
+
+	wl_list_for_each(seat, &compositor->seat_list, link) {
+		if (!seat->touch_state)
+			continue;
+		wl_list_for_each(device, &seat->touch_state->device_list, link) {
+			entry = wl_array_add(&arr, sizeof *entry);
+			abort_oom_if_null(entry);
+			*entry = device;
+		}
+	}
+
+	return (struct weston_touch_device_list){
+		.len = arr.size / sizeof(struct weston_touch_device *),
+		.array = arr.data
+	};
+}
+
+/**
+ * Free the memory allocated by weston_compositor_get_touch_devices
+ *
+ * \param list List of touch devices
+ *
+ * \ingroup compositor
+ */
+WL_EXPORT void
+weston_touch_device_list_release(struct weston_touch_device_list *list)
+{
+	free(list->array);
+	list->len = 0;
+	list->array = NULL;
+}

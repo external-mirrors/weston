@@ -2919,6 +2919,20 @@ uint64_t
 weston_client_new_internal_id(struct weston_compositor *compositor,
 			      struct weston_client *client);
 
+/** Container for an array of touch devices. */
+struct weston_touch_device_list {
+	/** Length of \c array. */
+	size_t len;
+	/** Pointer to an array of touch device pointers. */
+	struct weston_touch_device **array;
+};
+
+struct weston_touch_device_list
+weston_compositor_get_touch_devices(struct weston_compositor *compositor);
+
+void
+weston_touch_device_list_release(struct weston_touch_device_list *list);
+
 #ifdef  __cplusplus
 }
 #endif
