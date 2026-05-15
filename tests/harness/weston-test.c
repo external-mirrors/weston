@@ -208,7 +208,7 @@ touch_device_add(struct weston_test *test)
 	snprintf(buf, sizeof buf, "test-touch-device-%d", i);
 
 	test->touch_device[i] = weston_touch_create_touch_device(
-				test->seat.touch_state, buf, NULL, NULL);
+				test->seat.touch_state, buf, NULL, NULL, NULL);
 	test->nr_touch_devices++;
 }
 

@@ -869,6 +869,10 @@ enum weston_touch_mode {
 	WESTON_TOUCH_MODE_PREP_NORMAL
 };
 
+typedef void (*weston_touch_device_set_output_func_t)(
+		struct weston_touch_device *,
+		struct weston_output *);
+
 /** Represents a physical touchscreen input device */
 struct weston_touch_device {
 	char *syspath;			/**< unique name */
@@ -880,6 +884,10 @@ struct weston_touch_device {
 	void *backend_data;		/**< backend-specific private */
 
 	const struct weston_touch_device_ops *ops;
+
+	/** Set touch to specific output */
+	weston_touch_device_set_output_func_t set_output;
+
 	struct weston_touch_device_matrix saved_calibration;
 };
 

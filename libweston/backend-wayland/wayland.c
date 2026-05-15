@@ -2255,7 +2255,7 @@ create_touch_device(struct wayland_input *input)
 		 wl_proxy_get_id((struct wl_proxy *)input->parent.seat));
 
 	touch_device = weston_touch_create_touch_device(input->base.touch_state,
-							str, NULL, NULL);
+							str, NULL, NULL, NULL);
 
 	return touch_device;
 }

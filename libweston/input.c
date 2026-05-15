@@ -129,13 +129,15 @@ remove_input_resource_from_timestamps(struct wl_resource *input_resource,
  * \param syspath Unique device name.
  * \param backend_data Backend private data if necessary.
  * \param ops Calibration operations, or NULL for not able to run calibration.
+ * \param set_output Set output function.
  * \return New touch device, or NULL on failure.
  */
 WL_EXPORT struct weston_touch_device *
 weston_touch_create_touch_device(struct weston_touch *touch,
 				 const char *syspath,
 				 void *backend_data,
-				 const struct weston_touch_device_ops *ops)
+				 const struct weston_touch_device_ops *ops,
+				 weston_touch_device_set_output_func_t set_output)
 {
 	struct weston_touch_device *device;
 
@@ -161,6 +163,7 @@ weston_touch_create_touch_device(struct weston_touch *touch,
 
 	device->backend_data = backend_data;
 	device->ops = ops;
+	device->set_output = set_output;
 
 	device->aggregate = touch;
 	wl_list_insert(touch->device_list.prev, &device->link);

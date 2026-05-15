@@ -480,7 +480,8 @@ struct weston_touch_device *
 weston_touch_create_touch_device(struct weston_touch *touch,
 				 const char *syspath,
 				 void *backend_data,
-				 const struct weston_touch_device_ops *ops);
+				 const struct weston_touch_device_ops *ops,
+				 weston_touch_device_set_output_func_t set_output);
 
 void
 weston_touch_device_destroy(struct weston_touch_device *device);

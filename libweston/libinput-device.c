@@ -409,6 +409,18 @@ touch_set_calibration(struct weston_touch_device *device,
 	do_set_calibration(evdev_device, cal);
 }
 
+static void
+touch_set_output(struct weston_touch_device *device,
+		     struct weston_output *output)
+{
+	struct evdev_device *evdev_device = device->backend_data;
+
+	if (!evdev_device || !output)
+		return;
+
+	evdev_device_set_output(evdev_device, output);
+}
+
 static const struct weston_touch_device_ops touch_calibration_ops = {
 	.get_output = touch_get_output,
 	.get_calibration_head_name = touch_get_calibration_head_name,
@@ -432,7 +444,8 @@ create_touch_device(struct evdev_device *device)
 
 	touch_device = weston_touch_create_touch_device(device->seat->touch_state,
 					udev_device_get_syspath(udev_device),
-					device, ops);
+					device, ops,
+					touch_set_output);
 
 	udev_device_unref(udev_device);
 
