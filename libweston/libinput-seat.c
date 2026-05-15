@@ -145,6 +145,9 @@ device_added(struct udev_input *input, struct libinput_device *libinput_device)
 			seat->led_update(seat, seat->keyboard_state->xkb_state.leds);
 	}
 
+	if (device->touch_device)
+		wl_signal_emit(&seat->compositor->touch_device_created_signal, device->touch_device);
+
 	return 0;
 }
 
