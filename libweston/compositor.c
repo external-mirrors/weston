@@ -7306,6 +7306,19 @@ weston_head_get_name(struct weston_head *head)
 	return head->name;
 }
 
+/** Get the serial number of the head
+ *
+ * \param head The head to query.
+ * \return The serial number string, or NULL if not available.
+ *
+ * \ingroup head
+ */
+WL_EXPORT const char *
+weston_head_get_serial_number(struct weston_head *head)
+{
+	return head->serial_number;
+}
+
 /** Get the output the head is attached to
  *
  * \param head The head to query.

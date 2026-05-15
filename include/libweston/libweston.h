@@ -2689,6 +2689,9 @@ weston_head_reset_device_changed(struct weston_head *head);
 const char *
 weston_head_get_name(struct weston_head *head);
 
+const char *
+weston_head_get_serial_number(struct weston_head *head);
+
 struct weston_output *
 weston_head_get_output(struct weston_head *head);
 
