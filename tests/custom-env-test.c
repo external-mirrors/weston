@@ -115,7 +115,7 @@ struct test_str {
 	char * const *argp;
 };
 
-static struct test_str str_tests[] = {
+static const struct test_str str_tests[] = {
 	{
 		.exec_str = "ENV1=1  ENV2=owt two-arghs",
 		.envp = (char * const []) { "ENV1=1", "ENV2=owt", "ENV3=three", NULL },
@@ -151,7 +151,7 @@ static struct test_str str_tests[] = {
 TEST_P(env_parse_string, str_tests)
 {
 	struct custom_env env;
-	struct test_str *test = data;
+	const struct test_str *test = data;
 
 	testlog("checking exec_str '%s'\n", test->exec_str);
 	custom_env_init_from_environ(&env);
