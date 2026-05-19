@@ -171,7 +171,7 @@ find_test(const char *name)
 
 static enum test_result_code
 run_test(struct wet_testsuite_data *suite_data, int fixture_nr,
-	 const struct weston_test_entry *t, void *data,
+	 const struct weston_test_entry *t, const void *data,
 	 int iteration)
 {
 	struct weston_test_run_info info;
@@ -189,7 +189,14 @@ run_test(struct wet_testsuite_data *suite_data, int fixture_nr,
 	weston_assert_counter_reset();
 
 	test_run_info_ = &info;
-	ret = t->run(suite_data, data);
+
+	if (suite_data->type == TEST_TYPE_PLUGIN)
+		ret = t->run.plugin(suite_data, suite_data->compositor);
+	else if (t->element_size > 0)
+		ret = t->run.arg(suite_data, data);
+	else
+		ret = t->run.plain(suite_data);
+
 	test_run_info_ = NULL;
 
 	return weston_assert_counter_get() ? RESULT_FAIL : ret;

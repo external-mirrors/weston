@@ -44,6 +44,12 @@
  */
 struct weston_test_harness;
 
+typedef enum test_result_code (*weston_test_run_fn)(struct wet_testsuite_data *);
+typedef enum test_result_code (*weston_test_run_arg_fn)(struct wet_testsuite_data *,
+							const void *);
+typedef enum test_result_code (*weston_test_run_plugin_fn)(struct wet_testsuite_data *,
+							   struct weston_compositor *);
+
 /** Test program entry
  *
  * Each invocation of TEST(), TEST_P(), or PLUGIN_TEST() will create one
@@ -55,7 +61,11 @@ struct weston_test_harness;
  */
 struct weston_test_entry {
 	const char *name;
-	enum test_result_code (*run)(struct wet_testsuite_data *, void *);
+	union {
+		weston_test_run_fn plain;
+		weston_test_run_arg_fn arg;
+		weston_test_run_plugin_fn plugin;
+	} run;
 	const void *table_data;
 	size_t element_size;
 	int n_elements;
@@ -69,35 +79,34 @@ struct weston_test_entry {
 	static enum test_result_code					\
 	name(struct wet_testsuite_data *_wet_suite_data)
 
-#define TEST_COMMON(func, name, data, size, n_elem)			\
+#define NO_ARG_TEST(func)						\
 	static enum test_result_code					\
-	func(struct wet_testsuite_data *, void *);			\
+	func(struct wet_testsuite_data *);				\
 									\
-	const struct weston_test_entry test##name			\
+	const struct weston_test_entry test##func			\
 		__attribute__ ((used, section ("test_section"))) =	\
 	{								\
-		#name, func, data, size, n_elem				\
-	};
-
-#define NO_ARG_TEST(name)						\
-	TEST_COMMON(wrap##name, name, NULL, 0, 1)			\
-	static enum test_result_code					\
-	name(struct wet_testsuite_data *);				\
-	static enum test_result_code					\
-	wrap##name(struct wet_testsuite_data *_wet_suite_data,		\
-		   void *data)						\
-	{								\
-		(void) data;						\
-		return name(_wet_suite_data);				\
-	}								\
+		.name = #func,						\
+		.run.plain = func,					\
+		.n_elements = 1,					\
+	};								\
 									\
-	TEST_BEGIN_NO_ARG(name)
+	TEST_BEGIN_NO_ARG(func)
 
-#define ARG_TEST(name, test_data)					\
-	TEST_COMMON(name, name, test_data,				\
-		    sizeof(test_data[0]),				\
-		    ARRAY_LENGTH(test_data))				\
-	TEST_BEGIN(name, void *data)
+#define ARG_TEST(func, test_data)					\
+	static enum test_result_code					\
+	func(struct wet_testsuite_data *, const void *);		\
+									\
+	const struct weston_test_entry test##func			\
+		__attribute__ ((used, section ("test_section"))) =	\
+	{								\
+		.name = #func,						\
+		.run.arg = func,					\
+		.table_data = test_data,				\
+		.element_size = sizeof(test_data[0]),			\
+		.n_elements = ARRAY_LENGTH(test_data),			\
+	};								\
+	TEST_BEGIN(func, const void *data)
 
 /** Add a test with no parameters
  *
@@ -137,21 +146,22 @@ struct weston_test_entry {
  * This macro is only usable if fixture setup is using
  * weston_test_harness_execute_as_plugin().
  *
- * \param name Name for the test, must be a valid function name.
+ * \param func Name for the test, must be a valid function name.
  *
  * \ingroup testharness
  */
-#define PLUGIN_TEST(name)						\
-	TEST_COMMON(wrap##name, name, NULL, 0, 1)			\
-	static enum test_result_code name(struct wet_testsuite_data *,	\
+#define PLUGIN_TEST(func)						\
+	static enum test_result_code func(struct wet_testsuite_data *,	\
 					  struct weston_compositor *);	\
-	static enum test_result_code					\
-	wrap##name(struct wet_testsuite_data *_wet_suite_data,		\
-		   void *compositor)					\
+									\
+	const struct weston_test_entry test##func			\
+		__attribute__ ((used, section ("test_section"))) =	\
 	{								\
-		return name(_wet_suite_data, compositor);		\
-	}								\
-	TEST_BEGIN(name, struct weston_compositor *compositor)
+		.name = #func,						\
+		.run.plugin = func,					\
+		.n_elements = 1,					\
+	};								\
+	TEST_BEGIN(func, struct weston_compositor *compositor)
 
 /** Get test suite data structure
  *
