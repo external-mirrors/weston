@@ -1684,7 +1684,7 @@ x11_backend_handle_event(int fd, uint32_t mask, void *data)
 			struct weston_key_event key_event;
 
 			weston_key_event_init(&key_event, &time, &b->core_seat,
-					      key_release->detail - 8,
+					      key_press->detail - 8,
 					      WL_KEYBOARD_KEY_STATE_PRESSED,
 					      b->has_xkb ? STATE_UPDATE_NONE : STATE_UPDATE_AUTOMATIC);
 			notify_key(&key_event);
