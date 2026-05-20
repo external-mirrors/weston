@@ -310,7 +310,7 @@ _weston_trace_scope_end(int *scope)
 
 #define _WESTON_TRACE_BEGIN_ANNOTATION()
 #define _WESTON_TRACE_COMMIT_ANNOTATION(id, name)
-#define _WESTON_TRACE_ANNOTATE_FUNC()
+#define _WESTON_TRACE_ANNOTATE_FUNC(...)
 #define _WESTON_TRACE_ANNOTATE_FUNC_FLOW(id, name)
 #define _WESTON_TRACE_ANNOTATE(...)
 
