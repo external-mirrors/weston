@@ -88,6 +88,8 @@
 #define _WESTON_TRACE_ANNOTATE_ADD_GENERIC(k, v)                                          \
 		static_assert(sizeof(k) < WESTON_TRACE_MAX_KEY_LENGTH);                   \
 		_Generic((v),                                                             \
+			struct weston_trace_flow *: perfetto_annotate_flow,               \
+			const struct weston_trace_flow *: perfetto_annotate_flow_const,   \
 			int: perfetto_annotate_int,                                       \
 			bool: perfetto_annotate_bool,                                     \
 			unsigned int: perfetto_annotate_int,                              \

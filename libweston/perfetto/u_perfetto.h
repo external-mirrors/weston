@@ -45,11 +45,13 @@ enum weston_debug_annotation_type {
 	WESTON_DEBUG_ANNOTATION_DOUBLE_VAL,
 	WESTON_DEBUG_ANNOTATION_STR_VAL,
 	WESTON_DEBUG_ANNOTATION_CONTAINER,
+	WESTON_DEBUG_ANNOTATION_FLOW,
 };
 
 struct weston_debug_annotation {
 	const char *key;
 	union {
+		uint64_t flow_value;
 		int ivalue;
 		float fvalue;
 		double dvalue;

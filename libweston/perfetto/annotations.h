@@ -26,6 +26,7 @@
 #pragma once
 
 #include <libweston/libweston.h>
+#include <libweston/libweston-internal.h>
 
 #include "perfetto/u_perfetto.h"
 
@@ -69,3 +70,15 @@ perfetto_annotate_solid_buffer_values(struct weston_debug_annotations *annots,
 				      const char *key,
 				      unsigned char key_size,
 				      const struct weston_solid_buffer_values *values);
+
+void
+perfetto_annotate_flow(struct weston_debug_annotations *annots,
+		       const char *key,
+		       unsigned char key_size,
+		       struct weston_trace_flow *flow);
+
+void
+perfetto_annotate_flow_const(struct weston_debug_annotations *annots,
+			     const char *key,
+			     unsigned char key_size,
+			     const struct weston_trace_flow *flow);

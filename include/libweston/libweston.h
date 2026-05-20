@@ -45,6 +45,10 @@ extern "C" {
 #include <libweston/zalloc.h>
 #include <libweston/colorimetry.h>
 
+struct weston_trace_flow {
+	uint64_t id;
+};
+
 struct weston_log_pacer {
 	/** This must be set to zero before first use */
 	bool initialized;

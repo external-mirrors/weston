@@ -253,6 +253,9 @@ util_perfetto_flush_debug_annotation(perfetto::EventContext *ctx,
 			else
 				ctx->AddDebugAnnotation(key, annot->svalue);
 			break;
+		case WESTON_DEBUG_ANNOTATION_FLOW:
+			perfetto::Flow::ProcessScoped(annot->flow_value)(*ctx);
+			break;
 		default:
 			break;
 		}

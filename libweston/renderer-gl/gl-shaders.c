@@ -978,7 +978,7 @@ gl_shader_load_config(struct gl_renderer *gr, struct weston_paint_node *pnode,
 	}
 
 	if (pnode) {
-		WESTON_TRACE_COMMIT_ANNOTATION(&pnode->flow_id);
+		WESTON_TRACE_COMMIT_ANNOTATION(&pnode->flow.id);
 	} else {
 		WESTON_TRACE_COMMIT_ANNOTATION(NULL);
 	}
