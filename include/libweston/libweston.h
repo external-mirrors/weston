@@ -371,6 +371,12 @@ enum weston_color_format {
 		    WESTON_COLOR_FORMAT_YUV444 | WESTON_COLOR_FORMAT_YUV422 | \
 		    WESTON_COLOR_FORMAT_YUV420))
 
+enum weston_underscan {
+	WESTON_UNDERSCAN_OFF = 0,
+	WESTON_UNDERSCAN_ON,
+	WESTON_UNDERSCAN_AUTO,
+};
+
 struct weston_plane {
 	struct weston_compositor *compositor;
 };
@@ -592,6 +598,10 @@ struct weston_output {
 	enum weston_vrr_mode vrr_mode;
 
 	enum weston_color_format color_format;
+
+	enum weston_underscan underscan;
+	uint32_t underscan_hborder;
+	uint32_t underscan_vborder;
 
 	/**
 	 * Set by the shell to indicate there's some content for this

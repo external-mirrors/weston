@@ -1361,6 +1361,56 @@ drm_connector_set_colorspace(struct drm_connector *connector,
 				  WDRM_CONNECTOR_COLORSPACE, enum_info->value);
 }
 
+static enum wdrm_underscan
+get_drm_underscan_from_weston_output(struct weston_output *woutput)
+{
+	switch (woutput->underscan) {
+	case WESTON_UNDERSCAN_OFF:
+		return WDRM_UNDERSCAN_OFF;
+	case WESTON_UNDERSCAN_ON:
+		return WDRM_UNDERSCAN_ON;
+	case WESTON_UNDERSCAN_AUTO:
+		return WDRM_UNDERSCAN_AUTO;
+	default:
+		weston_assert_not_reached(woutput->compositor,
+					  "unknown underscan type");
+	}
+
+	return WDRM_UNDERSCAN_OFF;
+}
+
+static int
+drm_connector_set_underscan(struct drm_connector *connector,
+			    struct drm_output *output,
+			    drmModeAtomicReq *req)
+{
+	struct weston_output *woutput = &output->base;
+	const struct drm_property_info *info;
+	const struct drm_property_enum_info *enum_info;
+	enum wdrm_underscan underscan;
+	uint32_t hborder = 0, vborder = 0;
+	int ret = 0;
+
+	if (!drm_connector_has_prop(connector, WDRM_CONNECTOR_UNDERSCAN))
+		return 0;
+
+	underscan = get_drm_underscan_from_weston_output(woutput);
+	info = &connector->props[WDRM_CONNECTOR_UNDERSCAN];
+	enum_info = &info->enum_values[underscan];
+	ret |= connector_add_prop(req, connector, WDRM_CONNECTOR_UNDERSCAN,
+				  enum_info->value);
+
+	if (woutput->underscan != WESTON_UNDERSCAN_OFF) {
+		hborder = woutput->underscan_hborder;
+		vborder = woutput->underscan_vborder;
+	}
+	ret |= connector_add_prop(req, connector, WDRM_CONNECTOR_UNDERSCAN_HBORDER,
+				  hborder);
+	ret |= connector_add_prop(req, connector, WDRM_CONNECTOR_UNDERSCAN_VBORDER,
+				  vborder);
+	return ret;
+}
+
 static int
 drm_plane_set_color_encoding(struct drm_plane *plane,
 			     enum wdrm_plane_color_encoding color_encoding,
@@ -1690,6 +1740,7 @@ drm_output_apply_state_atomic(struct drm_output_state *state,
 		ret |= drm_connector_set_max_bpc(&head->connector, output, req);
 		ret |= drm_connector_set_colorspace(&head->connector,
 						    output->connector_colorspace, req);
+		ret |= drm_connector_set_underscan(&head->connector, output, req);
 	}
 
 	if (ret != 0) {

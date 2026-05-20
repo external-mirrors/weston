@@ -8500,6 +8500,9 @@ weston_output_init(struct weston_output *output,
 	output->paint_track_id = 0;
 	output->presentation_track_id = 0;
 	output->vrr_mode = WESTON_VRR_MODE_NONE;
+	output->underscan = WESTON_UNDERSCAN_OFF;
+	output->underscan_hborder = 0;
+	output->underscan_vborder = 0;
 
 	wl_list_init(&output->fifo_barrier_surfaces);
 }
