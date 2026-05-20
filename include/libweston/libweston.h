@@ -2921,6 +2921,16 @@ weston_output_set_color_format(struct weston_output *output,
 uint32_t
 weston_output_get_supported_color_formats(struct weston_output *output);
 
+bool
+weston_output_get_supported_underscan(struct weston_output *output,
+				      uint32_t *hborder, uint32_t *vborder);
+
+int
+weston_output_set_underscan(struct weston_output *output,
+                            enum weston_underscan underscan,
+                            uint32_t hborder,
+                            uint32_t vborder);
+
 void
 weston_output_set_ready(struct weston_output *output);
 

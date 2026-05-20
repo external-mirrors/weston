@@ -2036,6 +2036,60 @@ wet_output_set_vrr_mode(struct weston_output *output,
 	return 0;
 }
 
+static int
+wet_output_set_underscan(struct weston_output *output,
+			 struct weston_config_section *section)
+{
+	static const struct weston_enum_map underscan_modes[] = {
+		{ "off",	WESTON_UNDERSCAN_OFF },
+		{ "on", 	WESTON_UNDERSCAN_ON },
+		{ "auto",	WESTON_UNDERSCAN_AUTO },
+	};
+	const struct weston_enum_map *entry;
+	enum weston_underscan underscan = WESTON_UNDERSCAN_OFF;
+	char *underscan_str;
+	unsigned int i;
+	uint32_t lim_vborder = 0, lim_hborder = 0;
+	uint32_t req_vborder = 0, req_hborder = 0;
+
+	weston_config_section_get_string(section, "underscan", &underscan_str, NULL);
+	if (!underscan_str)
+		return 0;
+
+	entry = weston_enum_map_find_name(underscan_modes, underscan_str);
+	if (!entry) {
+		weston_log("Error in config for output '%s': '%s' is not a valid underscan setting. Try one of:",
+			   output->name, underscan_str);
+		for (i = 0; i < ARRAY_LENGTH(underscan_modes); i++)
+			weston_log_continue(" %s", underscan_modes[i].name);
+		weston_log_continue("\n");
+		free(underscan_str);
+		return -1;
+	}
+	free(underscan_str);
+
+	underscan = entry->value;
+	if (underscan != WESTON_UNDERSCAN_OFF &&
+	    !weston_output_get_supported_underscan(output, &lim_hborder, &lim_vborder)) {
+		weston_log("Error: output '%s' does not support underscan\n",
+			   output->name);
+		return -1;
+	}
+
+	if (underscan) {
+		weston_config_section_get_uint(section, "underscan-hborder", &req_hborder, 0);
+		weston_config_section_get_uint(section, "underscan-vborder", &req_vborder, 0);
+	}
+
+	if (weston_output_set_underscan(output, underscan, req_hborder, req_vborder) < 0) {
+		weston_log("Error: output '%s' does not support requested underscan border values\n",
+			   output->name);
+		return -1;
+	}
+
+	return 0;
+}
+
 static const struct weston_enum_map cvd_correction_name_map[] = {
 	{ "deuteranopia", WESTON_CVD_CORRECTION_TYPE_DEUTERANOPIA },
 	{ "protanopia", WESTON_CVD_CORRECTION_TYPE_PROTANOPIA },
@@ -3055,6 +3109,9 @@ drm_backend_output_configure(struct weston_output *output,
 		return -1;
 
 	if (wet_output_set_vrr_mode(output, section) < 0)
+		return -1;
+
+	if (wet_output_set_underscan(output, section) < 0)
 		return -1;
 
 	return 0;

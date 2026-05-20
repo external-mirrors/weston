@@ -796,6 +796,48 @@ The mode can be one of the following strings:
 .RE
 .IP
 Defaults to "none".
+.TP 7
+.BI "underscan=" type
+Some displays will scale up the signal they receive, spilling some framebuffer
+content off the edges of the display. This is a throw-back to the days of
+analog CRTs and broadcast video with auxiliary signals that could sometimes
+appear in the visible region of the screen. Receivers would apply an arbitrary
+scale factor to all content to hide the auxiliary signal outside the borders
+of the screen. Some modern displays still use overscan, with no way to defeat
+it, causing the edges of weston's content to be outside of the display's
+viewable area.
+
+This option, if supported by the driver, will tell the driver to scale down
+the content to compensate for the display's overscan. The amount of overscan
+a display uses is not queryable, and must be manually compensated for using
+the border values in
+.BR underscan-hborder " and"
+.BR underscan-vborder "."
+
+The type may be one of the following:
+.PP
+.RS 11
+.TP
+.B off
+underscan is disabled
+.TP
+.B on
+underscan is enabled
+.TP
+.B auto
+the display driver may enable underscan
+.RE
+.IP
+Defaults to
+.BR off
+.TP 7
+.BI "underscan-hborder=" pixels
+Sets the width, in pixels, of the horizontal borders to be used on the left
+and right edges of the screen if underscan is enabled. Default is 0.
+.TP 7
+.BI "underscan-vborder=" pixels
+Sets the height, in pixels, of the vertical borders to be used on top and
+bottom edges of the screen if underscan is enabled. Default is 0.
 .\"---------------------------------------------------------------------
 .SH "INPUT-METHOD SECTION"
 .TP 7

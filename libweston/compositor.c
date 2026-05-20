@@ -9141,6 +9141,89 @@ weston_output_get_supported_color_formats(struct weston_output *output)
 	return color_formats;
 }
 
+/* Get the underscan limits for an output
+ *
+ * \param output The output to query.
+ * \param[out] hborder The underscan horizontal border limit
+ * \param[out] vborder The underscan vertical border limit
+ * \return Whether underscan is supported at all
+ *
+ * This function queries the underscan limits for an output.
+ *
+ * If underscan is unsupported, false will be returned and both
+ * borders will be set to 0.
+ *
+ * \ingroup output
+ */
+WL_EXPORT bool
+weston_output_get_supported_underscan(struct weston_output *output,
+				      uint32_t *hborder, uint32_t *vborder)
+{
+	struct weston_head *head;
+	uint32_t hborder_max = UINT32_MAX, vborder_max = UINT32_MAX;
+
+	*hborder = 0;
+	*vborder = 0;
+
+	if (wl_list_empty(&output->head_list))
+		return false;
+
+	wl_list_for_each(head, &output->head_list, output_link) {
+		if (!head->underscan_supported)
+			return false;
+
+		hborder_max = MIN(head->underscan_hborder_max, hborder_max);
+		vborder_max = MIN(head->underscan_vborder_max, vborder_max);
+	}
+
+	*hborder = hborder_max;
+	*vborder = vborder_max;
+
+	return true;
+}
+
+/* Set the underscan values for an output
+ *
+ * \param output The output to set
+ * \param underscan The underscan mode
+ * \param hborder The underscan horizontal border
+ * \param vborder The underscan vertical border
+ *
+ * This function enables or disables underscan for a head, and sets the
+ * border values.
+ *
+ * \ingroup output
+ */
+WL_EXPORT int
+weston_output_set_underscan(struct weston_output *output,
+			    enum weston_underscan underscan,
+			    uint32_t hborder,
+			    uint32_t vborder)
+{
+	uint32_t max_hborder, max_vborder;
+	bool sup_underscan;
+
+	if (underscan == WESTON_UNDERSCAN_OFF) {
+		output->underscan = WESTON_UNDERSCAN_OFF;
+		output->underscan_hborder = 0;
+		output->underscan_vborder = 0;
+		return 0;
+	}
+
+	sup_underscan = weston_output_get_supported_underscan(output,
+							      &max_hborder,
+							      &max_vborder);
+	if (!sup_underscan ||
+	    hborder > max_hborder ||
+	    vborder > max_vborder)
+		return -1;
+
+	output->underscan = underscan;
+	output->underscan_hborder = hborder;
+	output->underscan_vborder = vborder;
+	return 0;
+}
+
 static void
 xdg_output_unlist(struct wl_resource *resource)
 {
