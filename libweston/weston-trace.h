@@ -86,7 +86,6 @@
 	}
 
 #define _WESTON_TRACE_ANNOTATE_ADD_GENERIC(k, v)                                          \
-	if (unlikely(util_perfetto_is_tracing_enabled())) {                               \
 		static_assert(sizeof(k) < WESTON_TRACE_MAX_KEY_LENGTH);                   \
 		_Generic((v),                                                             \
 			int: perfetto_annotate_int,                                       \
@@ -98,8 +97,7 @@
 			const char *: perfetto_annotate_string,                           \
 			struct weston_buffer *: perfetto_annotate_buffer,                 \
 			const struct weston_buffer *: perfetto_annotate_buffer            \
-		) (&__pd_annots, k, sizeof(k), v);                                        \
-	}
+		) (&__pd_annots, k, sizeof(k), v);
 
 #define _WESTON_TRACE_ANNOTATE_ADD(k, v)                  \
 	do {                                              \
