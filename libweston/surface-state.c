@@ -76,7 +76,7 @@ struct weston_transaction_queue {
 
 struct weston_transaction {
 	struct weston_transaction_queue *queue;
-	uint64_t flow_id;
+	struct weston_trace_flow flow;
 	struct wl_list link; /* weston_transaction_queue::transaction_list */
 	struct wl_list content_update_list; /* weston_content_update::link */
 };
@@ -796,15 +796,15 @@ weston_surface_create_transaction(struct weston_compositor *comp,
 				  struct weston_surface *surface,
 				  struct weston_surface_state *state)
 {
-	uint64_t transaction_flow_id = 0;
-	WESTON_TRACE_FUNC_FLOW(&transaction_flow_id);
+	struct weston_trace_flow transaction_flow = {};
+	WESTON_TRACE_ANNOTATE_FUNC(("transaction flow", &transaction_flow));
 
 	struct weston_transaction *tr;
 	struct weston_transaction_queue *parent;
 	bool need_schedule = false;
 
 	tr = xzalloc(sizeof *tr);
-	tr->flow_id = transaction_flow_id;
+	tr->flow = transaction_flow;
 	wl_list_init(&tr->content_update_list);
 
 	weston_transaction_add_content_update(tr, surface, state);
@@ -956,7 +956,7 @@ weston_subsurface_set_synchronized(struct weston_subsurface *sub, bool sync)
 static void
 apply_transaction(struct weston_transaction *transaction)
 {
-	WESTON_TRACE_FUNC_FLOW(&transaction->flow_id);
+	WESTON_TRACE_ANNOTATE_FUNC(("transaction flow", &transaction->flow));
 	struct weston_content_update *cu, *tmp;
 
 	wl_list_remove(&transaction->link);
@@ -972,7 +972,7 @@ apply_transaction(struct weston_transaction *transaction)
 static bool
 transaction_ready(struct weston_transaction *transaction)
 {
-	WESTON_TRACE_FUNC_FLOW(&transaction->flow_id);
+	WESTON_TRACE_ANNOTATE_FUNC(("transaction flow", &transaction->flow));
 	struct weston_content_update *cu;
 
 	/* Every content update within the transaction must be ready
