@@ -70,6 +70,7 @@ struct headless_backend {
 
 	int refresh;
 	bool repaint_only_on_capture;
+	enum weston_output_fb_alpha_encoding output_fb_alpha_encoding;
 
 	bool use_fake_seat;
 };
@@ -547,6 +548,7 @@ headless_output_create(struct weston_backend *backend, const char *name)
 	output->base.enable = headless_output_enable;
 	output->base.attach_head = NULL;
 	output->base.repaint_only_on_capture = b->repaint_only_on_capture;
+	output->base.fb_alpha_encoding = b->output_fb_alpha_encoding;
 
 	output->backend = b;
 
@@ -680,6 +682,7 @@ headless_backend_create(struct weston_compositor *compositor,
 	b->base.create_output = headless_output_create;
 
 	b->decorate = config->decorate;
+	b->output_fb_alpha_encoding = config->output_fb_alpha_encoding;
 	if (b->decorate) {
 		b->theme = theme_create();
 		if (!b->theme) {
@@ -786,6 +789,7 @@ config_init_to_defaults(struct weston_headless_backend_config *config)
 {
 	config->refresh = DEFAULT_OUTPUT_REPAINT_REFRESH;
 	config->fake_seat = false;
+	config->output_fb_alpha_encoding = WESTON_OUTPUT_FB_ALPHA_PREMULT;
 }
 
 WL_EXPORT int

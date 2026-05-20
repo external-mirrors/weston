@@ -4217,6 +4217,7 @@ load_headless_backend(struct weston_compositor *c,
 	bool force_gl;
 	bool force_vulkan;
 	bool no_outputs = false;
+	bool output_straight_alpha;
 	char *transform = NULL;
 
 	struct wet_output_config *parsed_options = wet_init_parsed_options(c);
@@ -4231,6 +4232,8 @@ load_headless_backend(struct weston_compositor *c,
 	weston_config_section_get_bool(section, "use-vulkan", &force_vulkan,
 				       false);
 	weston_config_section_get_bool(section, "output-decorations", &config.decorate,
+				       false);
+	weston_config_section_get_bool(section, "output-straight-alpha", &output_straight_alpha,
 				       false);
 
 	const struct weston_option options[] = {
@@ -4264,6 +4267,9 @@ load_headless_backend(struct weston_compositor *c,
 	} else {
 		config.renderer = renderer;
 	}
+
+	config.output_fb_alpha_encoding = output_straight_alpha ?
+		WESTON_OUTPUT_FB_ALPHA_STRAIGHT : WESTON_OUTPUT_FB_ALPHA_PREMULT;
 
 	if (transform) {
 		if (weston_parse_transform(transform, &parsed_options->transform) < 0) {

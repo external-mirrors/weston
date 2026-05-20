@@ -54,6 +54,11 @@ struct weston_headless_backend_config {
 	 * The default is not to create a wl_seat.
 	 */
 	bool fake_seat;
+
+	/** Defines if renderers must produce straight or premultiplied alpha
+	 * framebuffers for headless-backend outputs.
+	 */
+	enum weston_output_fb_alpha_encoding output_fb_alpha_encoding;
 };
 
 #ifdef  __cplusplus

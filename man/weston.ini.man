@@ -237,6 +237,11 @@ Boolean, defaults to
 These decorations cannot normally be screenshot. This option is useful for
 the Weston test suite only.
 .TP 7
+.BI "output-straight-alpha=" true
+Require straight alpha framebuffers from renderers for outputs. Only supported
+by the headless backend. Boolean, defaults to
+.BR false .
+.TP 7
 .BI "placeholder-color=" 0xRRGGBB
 sets the color of the placeholder (unsigned integer). The hexadecimal digit
 pairs are in order red, green, and blue. This placeholder is used for
