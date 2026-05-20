@@ -38,7 +38,6 @@
 struct weston_commit_timer {
 	struct weston_surface *surface;
 	struct wl_listener surface_destroy_listener;
-	uint64_t flow_id;
 };
 
 static void
