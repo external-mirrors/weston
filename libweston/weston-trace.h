@@ -46,12 +46,6 @@
 			util_perfetto_trace_begin(name);                      \
 	} while (0)
 
-#define _WESTON_TRACE_FLOW_BEGIN(name, id)                                    \
-	do {                                                                  \
-		if (unlikely(util_perfetto_is_tracing_enabled()))             \
-			util_perfetto_trace_begin_flow(name, id);             \
-	} while (0)
-
 #define _WESTON_TRACE_END()                                                   \
 	do {                                                                  \
 		if (unlikely(util_perfetto_is_tracing_enabled()))             \
@@ -119,13 +113,6 @@
 		}                                                                                       \
 	} while (0)
 
-#define _WESTON_TRACE_ANNOTATE_FUNC_BEGIN_FLOW(name, id, annots)                                        \
-	do {                                                                                            \
-		if (unlikely(util_perfetto_is_tracing_enabled())) {                                     \
-			util_perfetto_trace_commit_annotate_func_flow(id, name, annots);                \
-		}                                                                                       \
-	} while (0)
-
 #define _WESTON_TRACE_ANNOTATE(...) \
 	do {                                                                \
 		_WESTON_TRACE_EXPAND(_WESTON_TRACE_ITER_HELPER(             \
@@ -179,48 +166,15 @@
 		__attribute__((cleanup(_weston_trace_scope_end), unused)) =   \
 			_weston_trace_scope_begin(name)
 
-#define _WESTON_TRACE_SCOPE_FLOW(name, id)                                    \
-	int _WESTON_TRACE_SCOPE_VAR(__LINE__)                                 \
-		__attribute__((cleanup(_weston_trace_scope_end), unused)) =   \
-			_Generic((id),                                        \
-				const uint64_t *: _weston_trace_scope_flow_begin_const, \
-				uint64_t *: _weston_trace_scope_flow_begin    \
-			)(name, id)
-
 #define _WESTON_TRACE_ANNOTATE_FUNC(name)                                     \
 	int _WESTON_TRACE_SCOPE_VAR(__LINE__)                                 \
 		__attribute__((cleanup(_weston_trace_scope_end), unused)) =   \
 			_weston_trace_annotate_func_begin(name, &__pd_annots)
 
-#define _WESTON_TRACE_ANNOTATE_FUNC_FLOW(id, name)                                        \
-	int _WESTON_TRACE_SCOPE_VAR(__LINE__)                                             \
-		__attribute__((cleanup(_weston_trace_scope_end), unused)) =               \
-			_Generic((id),                                                    \
-				uint64_t *: _weston_trace_annotate_func_begin_flow,       \
-				uint64_t  : _weston_trace_annotate_func_begin_const_flow  \
-			)(name, id, &__pd_annots)
-
 static inline int
 _weston_trace_scope_begin(const char *name)
 {
 	_WESTON_TRACE_BEGIN(name);
-	return 0;
-}
-
-static inline int
-_weston_trace_scope_flow_begin(const char *name, uint64_t *id)
-{
-	if (*id == 0)
-		*id = util_perfetto_next_id();
-	_WESTON_TRACE_FLOW_BEGIN(name, *id);
-	return 0;
-}
-
-static inline int
-_weston_trace_scope_flow_begin_const(const char *name, const uint64_t *id)
-{
-	weston_assert_u64_gt(NULL, *id, 0);
-	_WESTON_TRACE_FLOW_BEGIN(name, *id);
 	return 0;
 }
 
@@ -254,19 +208,6 @@ _weston_trace_annotate_func_begin(const char *name,
 }
 
 static inline int
-_weston_trace_annotate_func_begin_flow(const char *name, uint64_t *id,
-				       struct weston_debug_annotations *annots)
-{
-	if (*id == 0)
-		*id = util_perfetto_next_id();
-
-	_WESTON_TRACE_ANNOTATE_FUNC_BEGIN_FLOW(name, *id, annots);
-
-	annots->count = 0;
-	return 0;
-}
-
-static inline int
 _weston_trace_instant_timestamp(const char *name, uint64_t track_id, uint64_t id,
 				clock_t clock, uint64_t ts)
 {
@@ -274,18 +215,6 @@ _weston_trace_instant_timestamp(const char *name, uint64_t track_id, uint64_t id
 	util_perfetto_trace_instant_timestamp(name, track_id, id, clock, ts);
 	return 0;
 }
-
-static inline int
-_weston_trace_annotate_func_begin_const_flow(const char *name, uint64_t id,
-					     struct weston_debug_annotations *annots)
-{
-	weston_assert_u64_gt(NULL, id, 0);
-	_WESTON_TRACE_ANNOTATE_FUNC_BEGIN_FLOW(name, id, annots);
-
-	annots->count = 0;
-	return 0;
-}
-
 
 static inline void
 _weston_trace_scope_end(int *scope)
@@ -302,9 +231,7 @@ _weston_trace_scope_end(int *scope)
 #else /* No perfetto, make these all do nothing */
 
 #define _WESTON_TRACE_SCOPE(name)
-#define _WESTON_TRACE_SCOPE_FLOW(name, id)
 #define _WESTON_TRACE_FUNC()
-#define _WESTON_TRACE_FUNC_FLOW(id)
 #define _WESTON_TRACE_SET_COUNTER(name, value)
 #define _WESTON_TRACE_TIMESTAMP_BEGIN(name, track_id, flow_id, clock, timestamp)
 #define _WESTON_TRACE_TIMESTAMP_END(name, track_id, clock, timestamp)
@@ -313,15 +240,12 @@ _weston_trace_scope_end(int *scope)
 #define _WESTON_TRACE_BEGIN_ANNOTATION()
 #define _WESTON_TRACE_COMMIT_ANNOTATION(id, name)
 #define _WESTON_TRACE_ANNOTATE_FUNC(...)
-#define _WESTON_TRACE_ANNOTATE_FUNC_FLOW(id, name)
 #define _WESTON_TRACE_ANNOTATE(...)
 
 #endif /* HAVE_PERFETTO */
 
 #define WESTON_TRACE_SCOPE(name) _WESTON_TRACE_SCOPE(name)
-#define WESTON_TRACE_SCOPE_FLOW(name, id) _WESTON_TRACE_SCOPE_FLOW(name, id)
 #define WESTON_TRACE_FUNC() _WESTON_TRACE_SCOPE(__func__)
-#define WESTON_TRACE_FUNC_FLOW(id) _WESTON_TRACE_SCOPE_FLOW(__func__, id)
 #define WESTON_TRACE_SET_COUNTER(name, value) _WESTON_TRACE_SET_COUNTER(name, value)
 #define WESTON_TRACE_TIMESTAMP_BEGIN(name, track_id, flow_id, clock, timestamp) \
 	_WESTON_TRACE_TIMESTAMP_BEGIN(name, track_id, flow_id, clock, timestamp)
@@ -341,11 +265,6 @@ _weston_trace_scope_end(int *scope)
 	WESTON_TRACE_BEGIN_ANNOTATION();              \
 	WESTON_TRACE_ANNOTATE(__VA_ARGS__);           \
         _WESTON_TRACE_ANNOTATE_FUNC(__func__)
-
-#define WESTON_TRACE_ANNOTATE_FUNC_FLOW(id, ...)      \
-	WESTON_TRACE_BEGIN_ANNOTATION();              \
-	WESTON_TRACE_ANNOTATE(__VA_ARGS__);           \
-        _WESTON_TRACE_ANNOTATE_FUNC_FLOW(id, __func__)
 
 /* Adds a series of annotations of the form '("key string", value)' separated
  * by commas.
