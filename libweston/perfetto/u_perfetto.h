@@ -91,13 +91,10 @@ void util_perfetto_trace_full_begin(const char *name, uint64_t track_id, uint64_
 
 void util_perfetto_trace_full_end(const char *name, uint64_t track_id, clockid_t clock, uint64_t timestamp);
 
-void util_perfetto_trace_commit_debug_annots(uint64_t id, const char *name,
+void util_perfetto_trace_commit_debug_annots(const char *name,
 		struct weston_debug_annotations *annots);
 
 void util_perfetto_trace_commit_annotate_func(const char *name,
-		struct weston_debug_annotations *annots);
-
-void util_perfetto_trace_commit_annotate_func_flow(uint64_t id, const char *name,
 		struct weston_debug_annotations *annots);
 
 void util_perfetto_trace_instant_timestamp(const char *name, uint64_t track_id,

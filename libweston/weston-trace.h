@@ -100,9 +100,9 @@
 		_WESTON_TRACE_ANNOTATE_ADD_GENERIC(k, v); \
 	} while (0)
 
-#define _WESTON_TRACE_COMMIT_ANNOTATION(id, name)                                                       \
+#define _WESTON_TRACE_COMMIT_ANNOTATION(name)                                                           \
 	do {                                                                                            \
-		_weston_trace_scope_annotate_commit(id, name, &__pd_annots);                            \
+		_weston_trace_scope_annotate_commit(name, &__pd_annots);                                \
 	} while (0)
 
 /* annotated funcs */
@@ -179,20 +179,10 @@ _weston_trace_scope_begin(const char *name)
 }
 
 static inline void
-_weston_trace_scope_annotate_commit(uint64_t *id, const char *name,
+_weston_trace_scope_annotate_commit(const char *name,
 				    struct weston_debug_annotations *annots)
 {
-	uint64_t flow_id = 0;
-
-	if (id) {
-		if (*id == 0)
-			*id = util_perfetto_next_id();
-
-		flow_id = *id;
-	}
-
-	if (unlikely(util_perfetto_is_tracing_enabled()))
-		util_perfetto_trace_commit_debug_annots(flow_id, name, annots);
+	util_perfetto_trace_commit_debug_annots(name, annots);
 
 	annots->count = 0;
 }
@@ -238,7 +228,7 @@ _weston_trace_scope_end(int *scope)
 #define _WESTON_TRACE_INSTANT_TIMESTAMP(name, track_id, id, clock, timestamp)
 
 #define _WESTON_TRACE_BEGIN_ANNOTATION()
-#define _WESTON_TRACE_COMMIT_ANNOTATION(id, name)
+#define _WESTON_TRACE_COMMIT_ANNOTATION(name)
 #define _WESTON_TRACE_ANNOTATE_FUNC(...)
 #define _WESTON_TRACE_ANNOTATE(...)
 
@@ -258,8 +248,8 @@ _weston_trace_scope_end(int *scope)
 #define WESTON_TRACE_BEGIN_ANNOTATION() \
         _WESTON_TRACE_BEGIN_ANNOTATION()
 
-#define WESTON_TRACE_COMMIT_ANNOTATION(id) \
-        _WESTON_TRACE_COMMIT_ANNOTATION(id, __func__)
+#define WESTON_TRACE_COMMIT_ANNOTATION() \
+        _WESTON_TRACE_COMMIT_ANNOTATION(__func__)
 
 #define WESTON_TRACE_ANNOTATE_FUNC(...)               \
 	WESTON_TRACE_BEGIN_ANNOTATION();              \

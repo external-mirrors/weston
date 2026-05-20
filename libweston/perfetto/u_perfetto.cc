@@ -263,20 +263,9 @@ util_perfetto_flush_debug_annotation(perfetto::EventContext *ctx,
 }
 
 void
-util_perfetto_trace_commit_debug_annots(uint64_t id, const char *name,
+util_perfetto_trace_commit_debug_annots(const char *name,
 					struct weston_debug_annotations *annots)
 {
-	if (id) {
-		TRACE_EVENT_INSTANT(UTIL_PERFETTO_CATEGORY_DEFAULT_STR,
-				    nullptr,
-				    perfetto::Flow::ProcessScoped(id),
-				    [&](perfetto::EventContext ctx) {
-					ctx.event()->set_name(name);
-					util_perfetto_flush_debug_annotation(&ctx, annots);
-		});
-		return;
-	}
-
 	TRACE_EVENT_INSTANT(UTIL_PERFETTO_CATEGORY_DEFAULT_STR,
 			    nullptr,
 			    [&](perfetto::EventContext ctx) {
@@ -291,19 +280,6 @@ util_perfetto_trace_commit_annotate_func(const char *name,
 {
 	TRACE_EVENT_BEGIN(UTIL_PERFETTO_CATEGORY_DEFAULT_STR,
 			  nullptr,
-			  [&](perfetto::EventContext ctx) {
-			  ctx.event()->set_name(name);
-			  util_perfetto_flush_debug_annotation(&ctx, annots);
-	});
-}
-
-void
-util_perfetto_trace_commit_annotate_func_flow(uint64_t id, const char *name,
-					 struct weston_debug_annotations *annots)
-{
-	TRACE_EVENT_BEGIN(UTIL_PERFETTO_CATEGORY_DEFAULT_STR,
-			  nullptr,
-			  perfetto::Flow::ProcessScoped(id),
 			  [&](perfetto::EventContext ctx) {
 			  ctx.event()->set_name(name);
 			  util_perfetto_flush_debug_annotation(&ctx, annots);

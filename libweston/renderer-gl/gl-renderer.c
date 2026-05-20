@@ -436,14 +436,15 @@ gl_log_paint_node_bbox_and_region(struct gl_renderer *gr, struct weston_paint_no
 
 	WESTON_TRACE_BEGIN_ANNOTATION();
 
-	WESTON_TRACE_ANNOTATE(("paint node", pnode->internal_name),
+	WESTON_TRACE_ANNOTATE(("paint node flow", &pnode->flow),
+			      ("paint node", pnode->internal_name),
 			      ("type", str),
 			      ("x", box_x),
 			      ("y", box_y),
 			      ("box_width", box_width),
 			      ("box_height", box_height));
 
-	WESTON_TRACE_COMMIT_ANNOTATION(&pnode->flow.id);
+	WESTON_TRACE_COMMIT_ANNOTATION();
 
 	if (!weston_log_scope_is_enabled(gr->paint_node_scope))
 		return;
@@ -2372,11 +2373,11 @@ set_blend_state(struct gl_renderer *gr, struct weston_paint_node *pnode, bool st
 	}
 
 	if (pnode) {
-		WESTON_TRACE_ANNOTATE(("paint node", pnode->internal_name));
-		WESTON_TRACE_COMMIT_ANNOTATION(&pnode->flow.id);
-	} else {
-		WESTON_TRACE_COMMIT_ANNOTATION(NULL);
+		WESTON_TRACE_ANNOTATE(("paint node flow", &pnode->flow),
+				      ("paint node", pnode->internal_name));
 	}
+
+	WESTON_TRACE_COMMIT_ANNOTATION();
 
 	gr->blend_state = state;
 }
@@ -2555,16 +2556,18 @@ apply_color_effect(struct gl_renderer *gr, struct weston_paint_node *pnode, stru
 		*g = 1.0f - *g;
 		*b = 1.0f - *b;
 		gl_log_paint_node(gr, "\t\tcolor effect: inversion\n");
-		WESTON_TRACE_ANNOTATE(("color effect", "inversion"));
-		WESTON_TRACE_COMMIT_ANNOTATION(&pnode->flow.id);
+		WESTON_TRACE_ANNOTATE(("paint node flow", &pnode->flow),
+				      ("color effect", "inversion"));
+		WESTON_TRACE_COMMIT_ANNOTATION();
 		return;
 	case WESTON_OUTPUT_COLOR_EFFECT_TYPE_GRAYSCALE:
 		*r = 0.2126f * (*r) + 0.7152f * (*g) + 0.0722f * (*b);
 		*g = *r;
 		*b = *r;
 		gl_log_paint_node(gr, "\t\tcolor effect: grayscale\n");
-		WESTON_TRACE_ANNOTATE(("color effect", "greyscale"));
-		WESTON_TRACE_COMMIT_ANNOTATION(&pnode->flow.id);
+		WESTON_TRACE_ANNOTATE(("paint node flow", &pnode->flow),
+				      ("color effect", "greyscale"));
+		WESTON_TRACE_COMMIT_ANNOTATION();
 		return;
 	case WESTON_OUTPUT_COLOR_EFFECT_TYPE_CVD_CORRECTION:
 		/**
@@ -2578,9 +2581,10 @@ apply_color_effect(struct gl_renderer *gr, struct weston_paint_node *pnode, stru
 		weston_log_scope_printf(gr->paint_node_scope,
 					"\t\tcolor effect: cvd - %s\n",
 					 weston_output_cvd_type_to_str(effect->u.cvd));
-		WESTON_TRACE_ANNOTATE(("color effect",
+		WESTON_TRACE_ANNOTATE(("paint node flow", &pnode->flow),
+				      ("color effect",
 				weston_output_cvd_type_to_str(effect->u.cvd)));
-		WESTON_TRACE_COMMIT_ANNOTATION(&pnode->flow.id);
+		WESTON_TRACE_COMMIT_ANNOTATION();
 		return;
 	};
 
@@ -2644,7 +2648,8 @@ draw_paint_node(struct weston_paint_node *pnode,
 	pixman_region32_init(&repaint);
 	pixman_region32_intersect(&repaint, &pnode->visible, damage);
 
-	WESTON_TRACE_ANNOTATE(("paint node", pnode->internal_name),
+	WESTON_TRACE_ANNOTATE(("paint node flow", &pnode->flow),
+			      ("paint node", pnode->internal_name),
 			      ("label", pnode->surface->label),
 			      ("surface id", pnode->surface->s_id));
 
@@ -2730,7 +2735,7 @@ draw_paint_node(struct weston_paint_node *pnode,
 	pixman_region32_fini(&surface_blend);
 	pixman_region32_fini(&surface_opaque);
 
-	WESTON_TRACE_COMMIT_ANNOTATION(&pnode->flow.id);
+	WESTON_TRACE_COMMIT_ANNOTATION();
 
 out:
 	pixman_region32_fini(&repaint);
