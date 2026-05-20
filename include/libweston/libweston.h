@@ -319,6 +319,9 @@ struct weston_head {
 	uint32_t supported_vrr_mode_mask;
 
 	uint32_t supported_color_format_mask;
+
+	bool underscan_supported;
+	uint32_t underscan_hborder_max, underscan_vborder_max;
 };
 
 enum weston_output_power_state {

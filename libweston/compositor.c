@@ -7195,6 +7195,36 @@ weston_head_set_supported_vrr_modes_mask(struct weston_head *head,
 	weston_head_set_device_changed(head);
 }
 
+/** Set the underscan limits for a head
+ *
+ * \param head The head to modify.
+ * \param hborder_max The maximum underscan horizontal border
+ * \param vborder_max The maximum underscan vertical border
+ *
+ * This may set the device_changed flag.
+ *
+ * \ingroup head
+ * \internal
+ */
+WL_EXPORT void
+weston_head_set_supported_underscan(struct weston_head *head,
+				    uint32_t hborder_max, uint32_t vborder_max)
+{
+	if (head->underscan_hborder_max == hborder_max &&
+	    head->underscan_vborder_max == vborder_max)
+		return;
+
+	head->underscan_hborder_max = hborder_max;
+	head->underscan_vborder_max = vborder_max;
+
+	if (hborder_max == 0 && vborder_max == 0)
+		head->underscan_supported = false;
+	else
+		head->underscan_supported = true;
+
+	weston_head_set_device_changed(head);
+}
+
 WL_EXPORT void
 weston_head_set_content_protection_status(struct weston_head *head,
 					  enum weston_hdcp_protection status)

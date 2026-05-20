@@ -490,6 +490,33 @@ drm_head_get_kms_colorimetry_modes(const struct drm_head *head)
 	return colorimetry_modes;
 }
 
+static void
+drm_head_get_underscan_caps(const struct drm_head *head,
+			    uint32_t *hborder_max_out,
+			    uint32_t *vborder_max_out)
+{
+	const struct drm_property_info *info;
+	uint32_t hborder_max;
+
+	*hborder_max_out = 0;
+	*vborder_max_out = 0;
+	info = &head->connector.props[WDRM_CONNECTOR_UNDERSCAN];
+	if (info->prop_id == 0)
+		return;
+
+	info = &head->connector.props[WDRM_CONNECTOR_UNDERSCAN_HBORDER];
+	if (info->prop_id == 0 || info->num_range_values != 2)
+		return;
+	hborder_max = info->range_values[1];
+
+	info = &head->connector.props[WDRM_CONNECTOR_UNDERSCAN_VBORDER];
+	if (info->prop_id == 0 || info->num_range_values != 2)
+		return;
+	*vborder_max_out = info->range_values[1];
+
+	*hborder_max_out = hborder_max;
+}
+
 static uint32_t
 drm_refresh_rate_mHz(const drmModeModeInfo *info)
 {
@@ -661,6 +688,7 @@ update_head_from_connector(struct drm_head *head)
 	drmModeConnector *conn = connector->conn;
 	int vrr_capable;
 	uint32_t vrr_mode_mask = 0;
+	uint32_t hborder_max, vborder_max;
 	uint32_t conn_id = head->connector.connector_id;
 	bool ret;
 
@@ -720,6 +748,9 @@ update_head_from_connector(struct drm_head *head)
 	if (vrr_capable)
 		vrr_mode_mask = WESTON_VRR_MODE_GAME;
 	weston_head_set_supported_vrr_modes_mask(&head->base, vrr_mode_mask);
+
+	drm_head_get_underscan_caps(head, &hborder_max, &vborder_max);
+	weston_head_set_supported_underscan(&head->base, hborder_max, vborder_max);
 
 	drm_head_info_fini(&dhi);
 }

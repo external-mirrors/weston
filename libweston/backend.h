@@ -186,6 +186,10 @@ weston_head_set_supported_colorimetry_mask(struct weston_head *head,
 void
 weston_head_set_supported_vrr_modes_mask(struct weston_head *head,
 					 uint32_t vrr_modes_mask);
+
+void
+weston_head_set_supported_underscan(struct weston_head *head,
+				    uint32_t hborder, uint32_t vborder);
 /* weston_output */
 
 void

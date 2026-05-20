@@ -3234,6 +3234,18 @@ drm_head_log_info(struct drm_head *head, const char *msg)
 					    str);
 		}
 		free(str);
+
+		if (head->base.underscan_supported) {
+			weston_log_continue(STAMP_SPACE
+					    "Underscan supported.\n");
+			weston_log_continue(STAMP_SPACE
+					    "\tunderscan-hborder max: %d\n",
+					    head->base.underscan_hborder_max);
+			weston_log_continue(STAMP_SPACE
+					    "\tunderscan-vborder max: %d\n",
+					    head->base.underscan_vborder_max);
+		}
+
 	} else {
 		weston_log("DRM: head '%s' %s, connector %d is disconnected.\n",
 			   head->base.name, msg, head->connector.connector_id);
