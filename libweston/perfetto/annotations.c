@@ -260,8 +260,10 @@ perfetto_annotate_buffer(struct weston_debug_annotations *annots,
 			 unsigned char key_size,
 			 const struct weston_buffer *buffer)
 {
-	if (!buffer)
+	if (!buffer) {
 		perfetto_annotate_string(annots, key, key_size, "None");
+		return;
+	}
 
 	do_annotate_buffer(annots, annots->count, key, key_size, buffer);
 }
