@@ -106,9 +106,7 @@
 
 #define _WESTON_TRACE_COMMIT_ANNOTATION(id, name)                                                       \
 	do {                                                                                            \
-		if (unlikely(util_perfetto_is_tracing_enabled())) {                                     \
-			_weston_trace_scope_annotate_commit(id, name, &__pd_annots);                     \
-		}                                                                                       \
+		_weston_trace_scope_annotate_commit(id, name, &__pd_annots);                            \
 	} while (0)
 
 /* annotated funcs */
@@ -219,15 +217,18 @@ static inline void
 _weston_trace_scope_annotate_commit(uint64_t *id, const char *name,
 				    struct weston_debug_annotations *annots)
 {
-	if (id && *id == 0) {
-		*id = util_perfetto_next_id();
-		util_perfetto_trace_commit_debug_annots(*id, name, annots);
-		goto reset_entries;
+	uint64_t flow_id = 0;
+
+	if (id) {
+		if (*id == 0)
+			*id = util_perfetto_next_id();
+
+		flow_id = *id;
 	}
 
-	util_perfetto_trace_commit_debug_annots(0, name, annots);
+	if (unlikely(util_perfetto_is_tracing_enabled()))
+		util_perfetto_trace_commit_debug_annots(flow_id, name, annots);
 
-reset_entries:
 	annots->count = 0;
 }
 
