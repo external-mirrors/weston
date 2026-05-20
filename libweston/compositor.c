@@ -3441,7 +3441,7 @@ out:
 	/* We've flushed the surface's damage for *all* of its paint
 	 * nodes, so we can reset the surface flow_id here.
 	 */
-	surface->flow_id = 0;
+	surface->flow.id = 0;
 }
 
 static void
@@ -3537,7 +3537,7 @@ output_accumulate_damage(struct weston_output *output)
 static struct weston_paint_node *
 view_ensure_paint_node(struct weston_view *view, struct weston_output *output)
 {
-	WESTON_TRACE_FUNC_FLOW(&view->surface->flow_id);
+	WESTON_TRACE_ANNOTATE_FUNC(("surface flow", &view->surface->flow));
 	struct weston_paint_node *pnode;
 
 	if (!output)
@@ -3614,7 +3614,7 @@ static void
 view_list_add(struct weston_compositor *compositor,
 	      struct weston_view *view)
 {
-	WESTON_TRACE_FUNC_FLOW(&view->surface->flow_id);
+	WESTON_TRACE_ANNOTATE_FUNC(("surface flow", &view->surface->flow));
 	struct weston_subsurface *sub;
 
 	weston_view_update_transform(view);
@@ -5184,7 +5184,7 @@ static void
 surface_commit(struct wl_client *client, struct wl_resource *resource)
 {
 	struct weston_surface *surface = wl_resource_get_user_data(resource);
-	WESTON_TRACE_FUNC_FLOW(&surface->pending.flow_id);
+	WESTON_TRACE_ANNOTATE_FUNC(("surface state flow", &surface->pending.flow));
 	struct weston_buffer *buffer;
 	int32_t tmp_w, tmp_h;
 

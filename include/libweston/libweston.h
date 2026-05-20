@@ -1874,7 +1874,7 @@ enum weston_surface_status {
 };
 
 struct weston_surface_state {
-	uint64_t flow_id;
+	struct weston_trace_flow flow;
 	enum weston_surface_status status;
 
 	/* wl_surface.attach */
@@ -1966,6 +1966,7 @@ struct weston_pointer_constraint {
 };
 
 struct weston_surface {
+	struct weston_trace_flow flow;
 	/** Derived from weston_client::internal_id_counter */
 	uint64_t internal_id;
 	/** Short unique name derived from weston_client::internal_name and internal_id */
@@ -2105,8 +2106,6 @@ struct weston_surface {
 	struct weston_color_representation color_representation;
 
 	uint64_t damage_track_id;
-	uint64_t flow_id;
-
 
 	/** increments for each wl_surface::commit,
 	 * reset after each frame counter interval */
