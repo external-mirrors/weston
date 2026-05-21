@@ -569,11 +569,7 @@ pointer_send_relative_motion(struct weston_pointer *pointer,
 	if (!pointer->focus_client) {
 		WESTON_TRACE_ANNOTATE_FUNC_FLOW(event->base.flow_id,
 						("discard relative pointer motion",
-						 "missing focus client"),
-						("internal_name", pointer->focus->internal_name),
-						("label", pointer->focus->surface->label),
-						("pointer sx", pointer->sx),
-						("pointer sy", pointer->sy));
+						 "missing focus client"));
 		return;
 	}
 
