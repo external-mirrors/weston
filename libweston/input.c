@@ -579,8 +579,8 @@ pointer_send_relative_motion(struct weston_pointer *pointer,
 					    "invalid relative data"),
 					   ("internal_name", pointer->focus->internal_name),
 					   ("label", pointer->focus->surface->label),
-					   ("pointer sx", pointer->sx),
-					   ("pointer sy", pointer->sy));
+					   ("pointer surface x", wl_fixed_to_double(pointer->sx)),
+					   ("pointer surface y", wl_fixed_to_double(pointer->sy)));
 		return;
 	}
 
@@ -588,8 +588,8 @@ pointer_send_relative_motion(struct weston_pointer *pointer,
 				   ("send", "relative pointer motion"),
 				   ("internal_name", pointer->focus->internal_name),
 				   ("label", pointer->focus->surface->label),
-				   ("pointer sx", pointer->sx),
-				   ("pointer sy", pointer->sy));
+				   ("pointer surface x", wl_fixed_to_double(pointer->sx)),
+				   ("pointer surface y", wl_fixed_to_double(pointer->sy)));
 
 	resource_list = &pointer->focus_client->relative_pointer_resources;
 	time_usec = timespec_to_usec(&event->base.ts);
@@ -621,8 +621,8 @@ pointer_send_motion(struct weston_pointer *pointer, wl_fixed_t sx, wl_fixed_t sy
 				   ("send", "relative pointer motion"),
 				   ("internal_name", pointer->focus->internal_name),
 				   ("label", pointer->focus->surface->label),
-				   ("pointer sx", sx),
-				   ("pointer sy", sy));
+				   ("pointer surface x", wl_fixed_to_double(sx)),
+				   ("pointer surface y", wl_fixed_to_double(sy)));
 
 	resource_list = &pointer->focus_client->pointer_resources;
 	msecs = timespec_to_msec(&event->base.ts);
