@@ -137,7 +137,7 @@ do_annotate_double(struct weston_debug_annotations *annots,
 	struct weston_debug_annotation *annot = &annots->annots[annots->count];
 
 	annot->type = WESTON_DEBUG_ANNOTATION_DOUBLE_VAL;
-	annot->fvalue = value;
+	annot->dvalue = value;
 	annot->parent = parent;
 	annot->key = key;
 	annot->key_size = key_size;
