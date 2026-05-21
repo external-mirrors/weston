@@ -198,7 +198,7 @@ weston_timeline_perfetto(struct weston_log_scope *timeline_scope,
 		WESTON_TRACE_TIMESTAMP_END("Active", output->gpu_track_id, CLOCK_MONOTONIC, gpu_ns);
 		break;
 	case TLP_INPUT_KERNEL_TS:
-		WESTON_TRACE_INSTANT_TIMESTAMP("event ts", ievent->seat->track_id, ievent->flow_id, CLOCK_MONOTONIC, kernel_input_ts);
+		WESTON_TRACE_INSTANT_TIMESTAMP("event ts", ievent->seat->track_id, ievent->flow.id, CLOCK_MONOTONIC, kernel_input_ts);
 		break;
 	default:
 		assert(!"not reached");

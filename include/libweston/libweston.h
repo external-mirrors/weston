@@ -611,9 +611,9 @@ enum weston_pointer_motion_mask {
 
 /* base/common struct which all weston_xxx_event should "inherit" */
 struct weston_input_event {
-       struct timespec ts;
-       struct weston_seat *seat;
-       uint64_t flow_id;
+	struct timespec ts;
+	struct weston_seat *seat;
+	struct weston_trace_flow flow;
 };
 
 struct weston_pointer_motion_event {
