@@ -34,12 +34,14 @@
 #include "weston-test-assert.h"
 #include "image-iter.h"
 #include "color_util.h"
+#include "shared/string-helpers.h"
 
 struct setup_args {
 	struct fixture_metadata meta;
 	enum weston_renderer_type renderer;
 	bool color_management;
 	enum weston_blending_impl blend;
+	bool output_straight_alpha;
 };
 
 static const int ALPHA_STEPS = 256;
@@ -49,30 +51,48 @@ static const struct setup_args my_setup_args[] = {
 	{
 		.renderer = WESTON_RENDERER_PIXMAN,
 		.color_management = false,
+		.output_straight_alpha = false,
 		.meta.name = "pixman"
 	},
 	{
 		.renderer = WESTON_RENDERER_GL,
 		.color_management = false,
 		.blend = WESTON_BLENDING_IMPL_AUTO,
+		.output_straight_alpha = false,
 		.meta.name = "GL"
 	},
 	{
 		.renderer = WESTON_RENDERER_GL,
 		.color_management = true,
 		.blend = WESTON_BLENDING_IMPL_FF,
+		.output_straight_alpha = false,
 		.meta.name = "GL sRGB EOTF, shadow FB"
 	},
 	{
 		.renderer = WESTON_RENDERER_GL,
 		.color_management = true,
 		.blend = WESTON_BLENDING_IMPL_SHADER,
+		.output_straight_alpha = false,
 		.meta.name = "GL sRGB EOTF, in-shader blending"
 	},
 	{
 		.renderer = WESTON_RENDERER_VULKAN,
 		.color_management = false,
+		.output_straight_alpha = false,
 		.meta.name = "Vulkan"
+	},
+	{
+		/**
+		 * Reference images were generated with output_straight_alpha =
+		 * false. This fixture is a sanity check: with an opaque
+		 * background, renderer producing straight or premult alpha
+		 * framebuffers should have the same result.
+		 */
+		.renderer = WESTON_RENDERER_GL,
+		.color_management = false,
+		.blend = WESTON_BLENDING_IMPL_AUTO,
+		.output_straight_alpha = true,
+		.meta.name = "GL straight alpha fb encoding",
 	},
 };
 
@@ -88,14 +108,24 @@ fixture_setup(struct weston_test_harness *harness, const struct setup_args *arg)
 	setup.shell = SHELL_TEST_DESKTOP;
 	setup.test_quirks.blending_impl = arg->blend;
 
+	/**
+	 * To skip instead of failing if renderer can't do in-shader blending
+	 * (required for producing straight alpha framebuffers).
+	 */
+	if (arg->output_straight_alpha)
+		setup.test_quirks.required_capabilities = WESTON_CAP_SHADER_BLENDING;
+
 	if (arg->color_management) {
 #if !BUILD_COLOR_LCMS
 		return RESULT_SKIP;
 #endif
+	}
 
+	if (arg->color_management || arg->output_straight_alpha) {
 		weston_ini_setup(&setup,
 				 cfgln("[core]"),
-				 cfgln("color-management=true"));
+				 cfgln("color-management=%s", truefalse(arg->color_management)),
+				 cfgln("output-straight-alpha=%s", truefalse(arg->output_straight_alpha)));
 	}
 
 	return weston_test_harness_execute_as_client(harness, &setup);

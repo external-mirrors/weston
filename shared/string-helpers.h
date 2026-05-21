@@ -196,6 +196,12 @@ yesno(bool cond)
 	return cond ? "yes" : "no";
 }
 
+static inline const char *
+truefalse(bool cond)
+{
+	return cond ? "true" : "false";
+}
+
 struct weston_enum_map {
 	const char *name;
 	uint32_t value;
