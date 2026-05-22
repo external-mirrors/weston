@@ -91,6 +91,7 @@
 			double: perfetto_annotate_double,                                 \
 			char *: perfetto_annotate_string,                                 \
 			const char *: perfetto_annotate_string,                           \
+			weston_trace_time_since *: perfetto_annotate_time_since,          \
 			struct weston_buffer *: perfetto_annotate_buffer,                 \
 			const struct weston_buffer *: perfetto_annotate_buffer            \
 		) (&__pd_annots, k, sizeof(k), v);

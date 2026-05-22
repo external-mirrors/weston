@@ -25,10 +25,13 @@
 
 #pragma once
 
+#include "weston-trace.h"
 #include <libweston/libweston.h>
 #include <libweston/libweston-internal.h>
 
 #include "perfetto/u_perfetto.h"
+
+typedef struct { const struct timespec ts; } weston_trace_time_since;
 
 void
 perfetto_annotate_int(struct weston_debug_annotations *annots,
@@ -82,3 +85,9 @@ perfetto_annotate_flow_const(struct weston_debug_annotations *annots,
 			     const char *key,
 			     unsigned char key_size,
 			     const struct weston_trace_flow *flow);
+
+void
+perfetto_annotate_time_since(struct weston_debug_annotations *annots,
+			     const char *key,
+			     unsigned char key_size,
+			     weston_trace_time_since *since);

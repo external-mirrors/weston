@@ -28,6 +28,7 @@
 
 #include "libweston/pixel-formats.h"
 #include "perfetto/annotations.h"
+#include "shared/timespec-util.h"
 #include "shared/weston-assert.h"
 #include "weston-trace.h"
 
@@ -44,6 +45,13 @@ do_annotate_buffer(struct weston_debug_annotations *annots,
 		   const char *key,
 		   unsigned char key_size,
 		   const struct weston_buffer *buffer);
+
+static void
+do_annotate_time_since(struct weston_debug_annotations *annots,
+		       unsigned char parent,
+		       const char *key,
+		       unsigned char key_size,
+		       weston_trace_time_since *since);
 
 static void
 do_annotate_int(struct weston_debug_annotations *annots,
@@ -208,7 +216,8 @@ create_container(struct weston_debug_annotations *annots,
 			struct weston_buffer *:do_annotate_buffer,                   \
 			const struct weston_buffer *:do_annotate_buffer,             \
 			struct weston_solid_buffer_values *:do_annotate_solid_buffer_values,       \
-			const struct weston_solid_buffer_values *: do_annotate_solid_buffer_values \
+			const struct weston_solid_buffer_values *: do_annotate_solid_buffer_values,\
+			struct weston_trace_time_since *: do_annotate_time_since     \
 		) (annots, parent, key, sizeof(key), value);                         \
 	} while (0)
 
@@ -298,4 +307,29 @@ perfetto_annotate_flow(struct weston_debug_annotations *annots,
                 flow->id = util_perfetto_next_id();
 
 	perfetto_annotate_flow_const(annots, key, key_size, flow);
+}
+
+static void
+do_annotate_time_since(struct weston_debug_annotations *annots,
+		       unsigned char parent,
+		       const char *key,
+		       unsigned char key_size,
+		       weston_trace_time_since *since)
+{
+	struct timespec now;
+	struct timespec whence = since->ts;
+	double delta;
+
+	clock_gettime(CLOCK_MONOTONIC, &now);
+	delta = timespec_sub_to_nsec(&now, &whence) / 1000.0;
+	do_annotate_double(annots, annots->count, key, key_size, delta);
+}
+
+WL_EXPORT void
+perfetto_annotate_time_since(struct weston_debug_annotations *annots,
+			     const char *key,
+			     unsigned char key_size,
+			     weston_trace_time_since *since)
+{
+	do_annotate_time_since(annots, annots->count, key, key_size, since);
 }

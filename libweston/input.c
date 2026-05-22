@@ -589,6 +589,7 @@ pointer_send_relative_motion(struct weston_pointer *pointer,
 
 	WESTON_TRACE_ANNOTATE_FUNC(("input event flow", &event->base.flow),
 				   ("send", "relative pointer motion"),
+				   ("latency(us)", (weston_trace_time_since *)&event->base.ts),
 				   ("internal_name", pointer->focus->internal_name),
 				   ("label", pointer->focus->surface->label),
 				   ("pointer surface x", wl_fixed_to_double(pointer->sx)),
@@ -622,6 +623,7 @@ pointer_send_motion(struct weston_pointer *pointer, wl_fixed_t sx, wl_fixed_t sy
 
 	WESTON_TRACE_ANNOTATE_FUNC(("input event flow", &event->base.flow),
 				   ("send", "relative pointer motion"),
+				   ("latency(us)", (weston_trace_time_since *)&event->base.ts),
 				   ("internal_name", pointer->focus->internal_name),
 				   ("label", pointer->focus->surface->label),
 				   ("pointer surface x", wl_fixed_to_double(sx)),
@@ -731,6 +733,7 @@ weston_pointer_send_button(struct weston_pointer *pointer,
 
 	WESTON_TRACE_ANNOTATE_FUNC(("input event flow", &button_event->base.flow),
 				   ("send", "button"),
+				   ("latency(us)", (weston_trace_time_since *)&button_event->base.ts),
 				   ("internal_name", pointer->focus->internal_name),
 				   ("label", pointer->focus->surface->label),
 				   ("state", button_event->button_state),
@@ -796,6 +799,7 @@ weston_pointer_send_axis(struct weston_pointer *pointer,
 
 	WESTON_TRACE_ANNOTATE_FUNC(("input event flow", &event->base.flow),
 				   ("send", "axis"),
+				   ("latency(us)", (weston_trace_time_since *)&event->base.ts),
 				   ("internal_name", pointer->focus->internal_name),
 				   ("label", pointer->focus->surface->label),
 				   ("axis", event->axis),
@@ -975,6 +979,7 @@ weston_touch_send_down(const struct weston_touch_event *event)
 
 	WESTON_TRACE_ANNOTATE_FUNC(("input event flow", &event->base.flow),
 				   ("send", "touch down"),
+				   ("latency(us)", (weston_trace_time_since *)&event->base.ts),
 				   ("internal_name", touch->focus->internal_name),
 				   ("label", touch->focus->surface->label),
 				   ("touch pos x", event->pos.c.x),
@@ -1031,6 +1036,7 @@ weston_touch_send_up(const struct weston_touch_event *event)
 
 	WESTON_TRACE_ANNOTATE_FUNC(("input event flow", &event->base.flow),
 				   ("send", "touch up"),
+				   ("latency(us)", (weston_trace_time_since *)&event->base.ts),
 				   ("internal_name", touch->focus->internal_name),
 				   ("label", touch->focus->surface->label),
 				   ("touch id", event->touch_id));
@@ -1083,6 +1089,7 @@ weston_touch_send_motion(const struct weston_touch_event *event)
 
 	WESTON_TRACE_ANNOTATE_FUNC(("input event flow", &event->base.flow),
 				   ("send", "touch motion"),
+				   ("latency(us)", (weston_trace_time_since *)&event->base.ts),
 				   ("internal_name", touch->focus->internal_name),
 				   ("label", touch->focus->surface->label),
 				   ("touch pos x", event->pos.c.x),
@@ -1201,6 +1208,7 @@ weston_keyboard_send_key(struct weston_keyboard *keyboard,
 
 	WESTON_TRACE_ANNOTATE_FUNC(("input event flow", &key_event->base.flow),
 				   ("send", "key"),
+				   ("latency(us)", (weston_trace_time_since *)&key_event->base.ts),
 				   ("internal_name", keyboard->focus->internal_name),
 				   ("label", keyboard->focus->label),
 				   ("key", key),
