@@ -1392,6 +1392,38 @@ get_drm_underscan_from_weston_output(struct weston_output *woutput)
 }
 
 static int
+drm_connector_set_margins(struct drm_connector *connector,
+			  struct drm_output *output,
+			  drmModeAtomicReq *req)
+{
+	struct weston_output *woutput = &output->base;
+	uint32_t hborder = 0, vborder = 0;
+	int ret = 0;
+
+	if (!drm_connector_has_prop(connector, WDRM_CONNECTOR_LEFT_MARGIN) ||
+	    !drm_connector_has_prop(connector, WDRM_CONNECTOR_RIGHT_MARGIN) ||
+	    !drm_connector_has_prop(connector, WDRM_CONNECTOR_TOP_MARGIN) ||
+	    !drm_connector_has_prop(connector, WDRM_CONNECTOR_BOTTOM_MARGIN))
+		return -1;
+
+	/* We'll treat auto as on for margin properties. */
+	if (woutput->underscan != WESTON_UNDERSCAN_OFF) {
+		hborder = woutput->underscan_hborder;
+		vborder = woutput->underscan_vborder;
+	}
+
+	ret |= connector_add_prop(req, connector, WDRM_CONNECTOR_LEFT_MARGIN,
+				  hborder);
+	ret |= connector_add_prop(req, connector, WDRM_CONNECTOR_RIGHT_MARGIN,
+				  hborder);
+	ret |= connector_add_prop(req, connector, WDRM_CONNECTOR_TOP_MARGIN,
+				  vborder);
+	ret |= connector_add_prop(req, connector, WDRM_CONNECTOR_BOTTOM_MARGIN,
+				  vborder);
+	return ret;
+}
+
+static int
 drm_connector_set_underscan(struct drm_connector *connector,
 			    struct drm_output *output,
 			    drmModeAtomicReq *req)
@@ -1402,6 +1434,9 @@ drm_connector_set_underscan(struct drm_connector *connector,
 	enum wdrm_underscan underscan;
 	uint32_t hborder = 0, vborder = 0;
 	int ret = 0;
+
+	if (drm_connector_set_margins(connector, output, req) == 0)
+		return 0;
 
 	if (!drm_connector_has_prop(connector, WDRM_CONNECTOR_UNDERSCAN))
 		return 0;
