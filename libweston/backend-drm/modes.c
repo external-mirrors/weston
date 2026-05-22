@@ -490,6 +490,42 @@ drm_head_get_kms_colorimetry_modes(const struct drm_head *head)
 	return colorimetry_modes;
 }
 
+static bool
+drm_head_get_margin_caps(const struct drm_head *head,
+			 uint32_t *hborder_max,
+			 uint32_t *vborder_max)
+{
+	const struct drm_property_info *info;
+	uint32_t border = 0;
+
+	info = &head->connector.props[WDRM_CONNECTOR_LEFT_MARGIN];
+	if (info->prop_id == 0 || info->num_range_values != 2)
+		goto no_margins;
+	border = info->range_values[1];
+
+	info = &head->connector.props[WDRM_CONNECTOR_RIGHT_MARGIN];
+	if (info->prop_id == 0 || info->num_range_values != 2)
+		goto no_margins;
+	*hborder_max = MIN(border, info->range_values[1]);
+
+	info = &head->connector.props[WDRM_CONNECTOR_TOP_MARGIN];
+	if (info->prop_id == 0 || info->num_range_values != 2)
+		goto no_margins;
+	border = info->range_values[1];
+
+	info = &head->connector.props[WDRM_CONNECTOR_BOTTOM_MARGIN];
+	if (info->prop_id == 0 || info->num_range_values != 2)
+		goto no_margins;
+	*vborder_max = MIN(border, info->range_values[1]);
+
+	return true;
+
+no_margins:
+	*hborder_max = 0;
+	*vborder_max = 0;
+	return false;
+}
+
 static void
 drm_head_get_underscan_caps(const struct drm_head *head,
 			    uint32_t *hborder_max_out,
@@ -749,7 +785,8 @@ update_head_from_connector(struct drm_head *head)
 		vrr_mode_mask = WESTON_VRR_MODE_GAME;
 	weston_head_set_supported_vrr_modes_mask(&head->base, vrr_mode_mask);
 
-	drm_head_get_underscan_caps(head, &hborder_max, &vborder_max);
+	if (!drm_head_get_margin_caps(head, &hborder_max, &vborder_max))
+		drm_head_get_underscan_caps(head, &hborder_max, &vborder_max);
 	weston_head_set_supported_underscan(&head->base, hborder_max, vborder_max);
 
 	drm_head_info_fini(&dhi);
