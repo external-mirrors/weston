@@ -44,6 +44,7 @@
 #include "libinput-device.h"
 #include "shared/helpers.h"
 #include "shared/timespec-util.h"
+#include "weston-trace.h"
 
 #include "tablet-unstable-v2-server-protocol.h"
 
@@ -91,6 +92,7 @@ static void
 handle_keyboard_key(struct libinput_device *libinput_device,
 		    struct libinput_event_keyboard *keyboard_event)
 {
+	WESTON_TRACE_FUNC();
 	struct evdev_device *device =
 		libinput_device_get_user_data(libinput_device);
 	int key_state =
@@ -120,6 +122,7 @@ static bool
 handle_pointer_motion(struct libinput_device *libinput_device,
 		      struct libinput_event_pointer *pointer_event)
 {
+	WESTON_TRACE_FUNC();
 	struct evdev_device *device =
 		libinput_device_get_user_data(libinput_device);
 	struct weston_pointer_motion_event event;
@@ -151,6 +154,7 @@ handle_pointer_motion_absolute(
 	struct libinput_device *libinput_device,
 	struct libinput_event_pointer *pointer_event)
 {
+	WESTON_TRACE_FUNC();
 	struct evdev_device *device =
 		libinput_device_get_user_data(libinput_device);
 	struct weston_output *output = device->output;
@@ -187,6 +191,7 @@ static bool
 handle_pointer_button(struct libinput_device *libinput_device,
 		      struct libinput_event_pointer *pointer_event)
 {
+	WESTON_TRACE_FUNC();
 	struct evdev_device *device =
 		libinput_device_get_user_data(libinput_device);
 	int button_state =
@@ -266,6 +271,7 @@ static bool
 handle_pointer_axis(struct libinput_device *libinput_device,
 		    struct libinput_event_pointer *pointer_event)
 {
+	WESTON_TRACE_FUNC();
 	struct evdev_device *device =
 		libinput_device_get_user_data(libinput_device);
 	double vert, horiz;
@@ -464,6 +470,7 @@ handle_touch_with_coords(struct libinput_device *libinput_device,
 			 struct libinput_event_touch *touch_event,
 			 int touch_type)
 {
+	WESTON_TRACE_FUNC();
 	struct evdev_device *device =
 		libinput_device_get_user_data(libinput_device);
 	double x;
@@ -519,6 +526,7 @@ static void
 handle_touch_up(struct libinput_device *libinput_device,
 		struct libinput_event_touch *touch_event)
 {
+	WESTON_TRACE_FUNC();
 	struct evdev_device *device =
 		libinput_device_get_user_data(libinput_device);
 	struct timespec time;
