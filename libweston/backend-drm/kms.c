@@ -338,6 +338,18 @@ const struct drm_property_info connector_props[] = {
 	[WDRM_CONNECTOR_UNDERSCAN_VBORDER] = {
 		.name = "underscan vborder",
 	},
+	[WDRM_CONNECTOR_LEFT_MARGIN] = {
+		.name = "left margin",
+	},
+	[WDRM_CONNECTOR_RIGHT_MARGIN] = {
+		.name = "right margin",
+	},
+	[WDRM_CONNECTOR_TOP_MARGIN] = {
+		.name = "top margin",
+	},
+	[WDRM_CONNECTOR_BOTTOM_MARGIN] = {
+		.name = "bottom margin",
+	},
 };
 
 const struct drm_property_info crtc_props[] = {
