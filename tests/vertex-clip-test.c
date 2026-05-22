@@ -695,7 +695,7 @@ static const struct vertex_clip_test_data quad_clip_expected_data[] = {
 
 TEST_P(quad_clip_expected, quad_clip_expected_data)
 {
-	struct vertex_clip_test_data *tdata = data;
+	const struct vertex_clip_test_data *tdata = data;
 	struct clipper_vertex clipped[8];
 	struct clipper_quad quad;
 	int clipped_n;
@@ -750,7 +750,7 @@ static const struct vertex_clip_test_data quad_clip_box32_expected_data[] = {
 
 TEST_P(quad_clip_box32_expected, quad_clip_box32_expected_data)
 {
-	struct vertex_clip_test_data *tdata = data;
+	const struct vertex_clip_test_data *tdata = data;
 	struct clipper_vertex clipped[8];
 	struct clipper_quad quad;
 	int clipped_n;
