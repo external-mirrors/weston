@@ -4852,17 +4852,24 @@ setup_shader_blending_or_shadow(struct gl_renderer *gr,
 {
 	struct weston_compositor *wc = output->compositor;
 	const struct weston_testsuite_quirks *quirks = &wc->test_data.test_quirks;
-	bool needs_fb_curves;
+	bool has_blend_to_output;
 	bool needs_shadow;
 
-	needs_shadow = quirks->gl_force_full_redraw_of_shadow_fb;
-	needs_fb_curves = output->color_outcome->from_blend_to_output &&
-			  !output->from_blend_to_output_by_backend;
+	/**
+	 * has_blend_to_output requires either in-shader blending (our
+	 * preference) or, as a fallback, a shadow buffer. Shadow buffer require
+	 * an extra blit and also 16-bit floating point pixel formats, which uses
+	 * more memory and bandwidth in comparison to in-shader blending.
+	 */
 
-	if (needs_fb_curves)
+	needs_shadow = quirks->gl_force_full_redraw_of_shadow_fb;
+	has_blend_to_output = output->color_outcome->from_blend_to_output &&
+			      !output->from_blend_to_output_by_backend;
+
+	if (has_blend_to_output)
 		weston_assert_true(wc, gl_features_has(gr, FEATURE_COLOR_TRANSFORMS));
 
-	if (!needs_shadow && needs_fb_curves) {
+	if (!needs_shadow && has_blend_to_output) {
 		switch (quirks->blending_impl) {
 		case WESTON_BLENDING_IMPL_AUTO:
 			go->shader_blender = gl_shader_blender_create(gr, output);
