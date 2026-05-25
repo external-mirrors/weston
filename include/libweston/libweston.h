@@ -1393,6 +1393,9 @@ enum weston_capability {
 
 	/* renderer supports color representation operations */
 	WESTON_CAP_COLOR_REP			= 0x0080,
+
+	/* renderer supports in-shader blending */
+	WESTON_CAP_SHADER_BLENDING		= 0x0100,
 };
 
 /* Configuration struct for a backend.

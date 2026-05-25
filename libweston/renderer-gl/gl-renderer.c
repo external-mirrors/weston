@@ -5476,6 +5476,8 @@ gl_renderer_display_create(struct weston_compositor *ec,
 	if (gl_features_has(gr, FEATURE_COLOR_TRANSFORMS))
 		ec->capabilities |= WESTON_CAP_COLOR_OPS;
 	ec->capabilities |= WESTON_CAP_COLOR_REP;
+	if (gl_features_has(gr, FEATURE_SHADER_BLENDING))
+		ec->capabilities |= WESTON_CAP_SHADER_BLENDING;
 
 	return 0;
 

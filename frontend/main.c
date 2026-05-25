@@ -890,7 +890,8 @@ static const struct {
 	{ WESTON_CAP_VIEW_CLIP_MASK, "view mask clipping" },
 	{ WESTON_CAP_EXPLICIT_SYNC, "explicit sync" },
 	{ WESTON_CAP_COLOR_OPS, "color operations" },
-	{ WESTON_CAP_COLOR_REP, "color representation" }
+	{ WESTON_CAP_COLOR_REP, "color representation" },
+	{ WESTON_CAP_SHADER_BLENDING, "in-shader blending" },
 };
 
 static void
