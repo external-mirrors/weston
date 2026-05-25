@@ -745,13 +745,24 @@ pipewire_output_stream_add_buffer(void *data, struct pw_buffer *buffer)
 					    "failed to allocate DMABUF buffer");
 			return;
 		}
-		pipewire_output_setup_dmabuf(output, buffer, dmabuf);
 
 		frame_data->renderbuffer =
 			renderer->create_renderbuffer_dmabuf(&output->base,
 							     dmabuf->linux_dmabuf_memory,
 							     NULL, NULL);
+		/* If rendererbuffer is NULL, the linux_dmabuf_memory
+		 * must be released explicitly here.
+		 */
+		if (!frame_data->renderbuffer) {
+			dmabuf->linux_dmabuf_memory->destroy (dmabuf->linux_dmabuf_memory);
+			pipewire_destroy_dmabuf(output, dmabuf);
+			pw_stream_set_error(output->stream, -ENOMEM,
+					    "failed to allocate renderbuffer");
+			return;
+		}
+
 		frame_data->dmabuf = dmabuf;
+		pipewire_output_setup_dmabuf(output, buffer, dmabuf);
 	} else if (buffertype & (1u << SPA_DATA_MemFd)) {
 		const struct pixel_format_info *format = output->pixel_format;
 		int stride = output->base.current_mode->width * format->bpp / 8;
