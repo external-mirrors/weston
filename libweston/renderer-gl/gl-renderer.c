@@ -4880,10 +4880,16 @@ setup_shader_blending_or_shadow(struct gl_renderer *gr,
 		case WESTON_BLENDING_IMPL_SHADER:
 			go->shader_blender = gl_shader_blender_create(gr, output);
 			if (!go->shader_blender) {
+				/**
+				 * If there's a test quirk to create in-shader blender but we
+				 * can't do that (driver may not support), let's skip the test
+				 * instead of failing.
+				 */
 				weston_log("Error: quirks were used to force in-shader blending, "
 					   "but it's not supported by the GLES implementation.\n"
 					   "Quitting...\n");
 				weston_compositor_exit_with_code(wc, RESULT_SKIP);
+				return true;
 			}
 			break;
 		}
