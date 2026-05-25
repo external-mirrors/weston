@@ -2948,6 +2948,10 @@ struct weston_output *
 weston_compositor_find_output_by_head_serial(struct weston_compositor *compositor,
 					      const char *serial);
 
+bool
+weston_touch_device_bind_output(struct weston_touch_device *touch_device,
+				struct weston_output *output);
+
 #ifdef  __cplusplus
 }
 #endif

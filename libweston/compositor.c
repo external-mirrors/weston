@@ -11350,3 +11350,25 @@ weston_compositor_find_output_by_head_serial(struct weston_compositor *composito
 
 	return NULL;
 }
+
+/** Bind a touch device to an output
+ *
+ * \param touch_device The touch device to bind.
+ * \param output The output to bind the touch device to.
+ *
+ * \return true if the touch device was successfully bound to the output, false otherwise.
+ *
+ * \ingroup compositor
+ */
+WL_EXPORT bool
+weston_touch_device_bind_output(struct weston_touch_device *touch_device,
+				struct weston_output *output)
+{
+	if (!touch_device->set_output) {
+		weston_log("Touch device does not support set output\n");
+		return false;
+	}
+
+	touch_device->set_output(touch_device, output);
+	return true;
+}
