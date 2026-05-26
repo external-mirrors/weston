@@ -302,7 +302,8 @@ check_blend_pattern(struct buffer *bg, struct buffer *fg, struct buffer *shot,
  *   using their default color spaces
  * - blending through gl-renderer shadow framebuffer
  */
-TEST(alpha_blend)
+static enum test_result_code
+alpha_blend(struct wet_testsuite_data *suite_data)
 {
 	const int width = BLOCK_WIDTH * ALPHA_STEPS;
 	const int height = BLOCK_WIDTH;
@@ -378,3 +379,7 @@ TEST(alpha_blend)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(alpha_blend),
+);
