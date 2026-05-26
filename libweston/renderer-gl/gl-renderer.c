@@ -1064,6 +1064,7 @@ gl_renderer_create_renderbuffer_dmabuf(struct weston_output *output,
 	renderbuffer = xzalloc(sizeof(*renderbuffer));
 
 	renderbuffer->dmabuf.gr = gr;
+	renderbuffer->dmabuf.rb = rb;
 	renderbuffer->dmabuf.memory = dmabuf;
 	renderbuffer->dmabuf.image = image;
 	gl_renderbuffer_init(renderbuffer, RENDERBUFFER_DMABUF, fb,
