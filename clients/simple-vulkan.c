@@ -623,12 +623,22 @@ static void create_renderpass(struct window *window)
 		.colorAttachmentCount = 1,
 		.pColorAttachments = &attachment_reference,
 	};
+	const VkSubpassDependency subpass_dependency = {
+		.srcSubpass = VK_SUBPASS_EXTERNAL,
+		.dstSubpass = 0,
+		.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+		.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+		.srcAccessMask = 0,
+		.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+	};
 	const VkRenderPassCreateInfo renderpass_create_info = {
 		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
 		.attachmentCount = 1,
 		.pAttachments = &attachment_description,
 		.subpassCount = 1,
 		.pSubpasses = &subpass_description,
+		.dependencyCount = 1,
+		.pDependencies = &subpass_dependency,
 	};
 
 	result = vkCreateRenderPass(window->vk.dev, &renderpass_create_info, NULL, &window->vk.renderpass);
