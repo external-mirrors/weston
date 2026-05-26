@@ -123,9 +123,15 @@ create_outputs(struct weston_compositor *compositor)
                output_create(output);
 }
 
-PLUGIN_TEST(real_usecase_one)
+static enum test_result_code
+real_usecase_one(struct wet_testsuite_data *suite_data,
+		 struct weston_compositor *compositor)
 {
        create_outputs(compositor);
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN_PLUGIN(real_usecase_one),
+);
