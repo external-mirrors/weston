@@ -35,7 +35,8 @@
 #include "weston-test-client-helper.h"
 #include "weston-test-assert.h"
 
-TEST(strtol_conversions)
+static enum test_result_code
+strtol_conversions(struct wet_testsuite_data *suite_data)
 {
 	bool ret;
 	int32_t val = -1;
@@ -89,7 +90,8 @@ TEST(strtol_conversions)
 	return RESULT_OK;
 }
 
-TEST(strtof_conversions)
+static enum test_result_code
+strtof_conversions(struct wet_testsuite_data *suite_data)
 {
 	float val = NAN;
 
@@ -141,3 +143,8 @@ TEST(strtof_conversions)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(strtol_conversions),
+	TESTFN(strtof_conversions),
+);
