@@ -71,7 +71,8 @@ fixture_setup(struct weston_test_harness *harness, const struct setup_args *arg)
 }
 DECLARE_FIXTURE_SETUP_WITH_ARG(fixture_setup, my_setup_args, meta);
 
-TEST(solid_buffer_argb_u32)
+static enum test_result_code
+solid_buffer_argb_u32(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct wp_viewport *viewport;
@@ -111,7 +112,8 @@ TEST(solid_buffer_argb_u32)
 	return RESULT_OK;
 }
 
-TEST(solid_buffer_argb_u32_semi_transparent)
+static enum test_result_code
+solid_buffer_argb_u32_semi_transparent(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct wp_viewport *viewport;
@@ -151,7 +153,8 @@ TEST(solid_buffer_argb_u32_semi_transparent)
 	return RESULT_OK;
 }
 
-TEST(solid_buffer_argb_u32_scaled)
+static enum test_result_code
+solid_buffer_argb_u32_scaled(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct wp_viewport *viewport;
@@ -185,7 +188,8 @@ TEST(solid_buffer_argb_u32_scaled)
 	return RESULT_OK;
 }
 
-TEST(solid_buffer_argb_u32_scaled_in_second_commit)
+static enum test_result_code
+solid_buffer_argb_u32_scaled_in_second_commit(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct wp_viewport *viewport;
@@ -220,3 +224,10 @@ TEST(solid_buffer_argb_u32_scaled_in_second_commit)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(solid_buffer_argb_u32),
+	TESTFN(solid_buffer_argb_u32_semi_transparent),
+	TESTFN(solid_buffer_argb_u32_scaled),
+	TESTFN(solid_buffer_argb_u32_scaled_in_second_commit),
+);
