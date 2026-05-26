@@ -476,7 +476,8 @@ process_pipeline_comparison(const struct buffer *src_buf,
  * This tests particularly the chain of input-to-blend followed by
  * blend-to-output categories of color transformations.
  */
-TEST(opaque_pixel_conversion)
+static enum test_result_code
+opaque_pixel_conversion(struct wet_testsuite_data *suite_data)
 {
 	int seq_no = get_test_fixture_index();
 	const struct setup_args *arg = &my_setup_args[seq_no];
@@ -674,7 +675,8 @@ fill_alpha_pattern(struct buffer *buf)
  * Specifically, this test exercises the linearization of output ICC profiles,
  * retrieve_eotf_and_output_inv_eotf().
  */
-TEST(output_icc_alpha_blend)
+static enum test_result_code
+output_icc_alpha_blend(struct wet_testsuite_data *suite_data)
 {
 	const int width = BLOCK_WIDTH * ALPHA_STEPS;
 	const int height = BLOCK_WIDTH;
@@ -754,7 +756,8 @@ TEST(output_icc_alpha_blend)
  * easy access to the ground-truth image and so do not check the results
  * against a reference formula.
  */
-TEST(output_icc_decorations)
+static enum test_result_code
+output_icc_decorations(struct wet_testsuite_data *suite_data)
 {
 	int seq_no = get_test_fixture_index();
 	const struct setup_args *arg = &my_setup_args[seq_no];
@@ -772,3 +775,9 @@ TEST(output_icc_decorations)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(opaque_pixel_conversion),
+	TESTFN(output_icc_alpha_blend),
+	TESTFN(output_icc_decorations),
+);
