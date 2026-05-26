@@ -79,7 +79,8 @@ DECLARE_FIXTURE_SETUP_WITH_ARG(fixture_setup, my_setup_args, meta);
  * difficult to ensure text rendering is pixel-precise between different
  * systems.
  */
-TEST(output_decorations)
+static enum test_result_code
+output_decorations(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	bool match;
@@ -94,3 +95,7 @@ TEST(output_decorations)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(output_decorations),
+);
