@@ -76,7 +76,8 @@ add_destroy_listener(struct test_surface_state *st)
 		      &st->surface_destroy_listener);
 }
 
-TEST(real_usecase_standalone)
+static enum test_result_code
+real_usecase_standalone(struct wet_testsuite_data *suite_data)
 {
 	struct test_surface_state *st, *st_new;
 
@@ -91,3 +92,7 @@ TEST(real_usecase_standalone)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(real_usecase_standalone),
+);
