@@ -78,7 +78,8 @@ fixture_setup(struct weston_test_harness *harness)
 }
 DECLARE_FIXTURE_SETUP(fixture_setup);
 
-TEST(output_get_image_description)
+static enum test_result_code
+output_get_image_description(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct color_manager_client *cm;
@@ -102,7 +103,8 @@ TEST(output_get_image_description)
 	return RESULT_OK;
 }
 
-TEST(surface_get_preferred_image_description)
+static enum test_result_code
+surface_get_preferred_image_description(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct color_manager_client *cm;
@@ -125,3 +127,8 @@ TEST(surface_get_preferred_image_description)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(output_get_image_description),
+	TESTFN(surface_get_preferred_image_description),
+);
