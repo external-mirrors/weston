@@ -693,9 +693,10 @@ static const struct vertex_clip_test_data quad_clip_expected_data[] = {
 	},
 };
 
-TEST_P(quad_clip_expected, quad_clip_expected_data)
+static enum test_result_code
+quad_clip_expected(struct wet_testsuite_data *suite_data,
+		   const struct vertex_clip_test_data *tdata)
 {
-	const struct vertex_clip_test_data *tdata = data;
 	struct clipper_vertex clipped[8];
 	struct clipper_quad quad;
 	int clipped_n;
@@ -748,9 +749,10 @@ static const struct vertex_clip_test_data quad_clip_box32_expected_data[] = {
 	},
 };
 
-TEST_P(quad_clip_box32_expected, quad_clip_box32_expected_data)
+static enum test_result_code
+quad_clip_box32_expected(struct wet_testsuite_data *suite_data,
+			 const struct vertex_clip_test_data *tdata)
 {
-	const struct vertex_clip_test_data *tdata = data;
 	struct clipper_vertex clipped[8];
 	struct clipper_quad quad;
 	int clipped_n;
@@ -765,16 +767,25 @@ TEST_P(quad_clip_box32_expected, quad_clip_box32_expected_data)
 
 /* clipper_float_difference() tests: */
 
-TEST(float_difference_different)
+static enum test_result_code
+float_difference_different(struct wet_testsuite_data *suite_data)
 {
 	test_assert_f32_eq(clipper_float_difference(1.0f, 0.0f), 1.0f);
 
 	return RESULT_OK;
 }
 
-TEST(float_difference_same)
+static enum test_result_code
+float_difference_same(struct wet_testsuite_data *suite_data)
 {
 	test_assert_f32_eq(clipper_float_difference(1.0f, 1.0f), 0.0f);
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN_ARG(quad_clip_expected, quad_clip_expected_data),
+	TESTFN_ARG(quad_clip_box32_expected, quad_clip_box32_expected_data),
+	TESTFN(float_difference_different),
+	TESTFN(float_difference_same),
+);
