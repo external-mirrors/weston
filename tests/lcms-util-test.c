@@ -59,9 +59,10 @@ static const enum transfer_fn build_MPE_curves_test_set[] = {
 	TRANSFER_FN_POWER2_4_EOTF_INVERSE,
 };
 
-TEST_P(build_MPE_curves, build_MPE_curves_test_set)
+static enum test_result_code
+build_MPE_curves(struct wet_testsuite_data *suite_data,
+		 const enum transfer_fn *fn)
 {
-	const enum transfer_fn *fn = data;
 	const cmsContext ctx = 0;
 	cmsToneCurve *curve;
 	cmsStage *stage;
@@ -86,3 +87,7 @@ TEST_P(build_MPE_curves, build_MPE_curves_test_set)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN_ARG(build_MPE_curves, build_MPE_curves_test_set),
+);
