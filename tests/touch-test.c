@@ -92,7 +92,8 @@ send_touch(struct client *client, const struct timespec *time,
 	client_roundtrip(client);
 }
 
-TEST(broken_touch_event)
+static enum test_result_code
+broken_touch_event(struct wet_testsuite_data *suite_data)
 {
 	struct client *client = create_touch_test_client();
 	struct input_timestamps *input_ts =
@@ -107,7 +108,8 @@ TEST(broken_touch_event)
 	return RESULT_OK;
 }
 
-TEST(touch_events)
+static enum test_result_code
+touch_events(struct wet_testsuite_data *suite_data)
 {
 	struct client *client = create_touch_test_client();
 	struct touch *touch = client->input->touch;
@@ -133,7 +135,8 @@ TEST(touch_events)
 	return RESULT_OK;
 }
 
-TEST(touch_timestamps_stop_after_input_timestamps_object_is_destroyed)
+static enum test_result_code
+touch_timestamps_stop_after_input_timestamps_object_is_destroyed(struct wet_testsuite_data *suite_data)
 {
 	struct client *client = create_touch_test_client();
 	struct touch *touch = client->input->touch;
@@ -155,7 +158,8 @@ TEST(touch_timestamps_stop_after_input_timestamps_object_is_destroyed)
 	return RESULT_OK;
 }
 
-TEST(touch_timestamps_stop_after_client_releases_wl_touch)
+static enum test_result_code
+touch_timestamps_stop_after_client_releases_wl_touch(struct wet_testsuite_data *suite_data)
 {
 	struct client *client = create_touch_test_client();
 	struct touch *touch = client->input->touch;
@@ -185,3 +189,10 @@ TEST(touch_timestamps_stop_after_client_releases_wl_touch)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(broken_touch_event),
+	TESTFN(touch_events),
+	TESTFN(touch_timestamps_stop_after_input_timestamps_object_is_destroyed),
+	TESTFN(touch_timestamps_stop_after_client_releases_wl_touch),
+);
