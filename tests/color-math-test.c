@@ -178,7 +178,8 @@ struct test_case tests[] = {
 	},
 };
 
-TEST(find_neighbors_test)
+static enum test_result_code
+find_neighbors_test(struct wet_testsuite_data *suite_data)
 {
 	struct weston_compositor *compositor = NULL;
 	unsigned int i;
@@ -240,12 +241,14 @@ test_inverse_lut_with_curve(float (*sample_fn)(float))
 	return RESULT_OK;
 }
 
-TEST(inverse_lut)
+static enum test_result_code
+inverse_lut(struct wet_testsuite_data *suite_data)
 {
 	return test_inverse_lut_with_curve(sample_power_22);
 }
 
-TEST(inverse_lut_descendant)
+static enum test_result_code
+inverse_lut_descendant(struct wet_testsuite_data *suite_data)
 {
 	return test_inverse_lut_with_curve(sample_power_22_complement);
 }
@@ -339,10 +342,11 @@ diff_precision(struct weston_mat3f M, struct weston_mat3f ref)
  * Test that weston_normalized_primary_matrix() produces known-good results
  * for NPM, an that the NPM⁻¹ is actually the inverse matrix.
  */
-TEST_P(npm, npm_test_cases)
+static enum test_result_code
+npm(struct wet_testsuite_data *suite_data,
+    const struct npm_test_case *t)
 {
 	const float precision_bits = 21;
-	const struct npm_test_case *t = data;
 	struct weston_mat3f npm;
 	struct weston_mat3f npm_inv;
 	struct weston_mat3f roundtrip;
@@ -358,7 +362,8 @@ TEST_P(npm, npm_test_cases)
 }
 
 /* https://www.color.org/chadtag.xalter */
-TEST(bradform_adaptation_D65_D50)
+static enum test_result_code
+bradform_adaptation_D65_D50(struct wet_testsuite_data *suite_data)
 {
 	const struct weston_CIExy D65 = { 0.3127, 0.3290 };
 	const struct weston_CIExy D50 = { 0.3457, 0.3585 };
@@ -374,3 +379,11 @@ TEST(bradform_adaptation_D65_D50)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(find_neighbors_test),
+	TESTFN(inverse_lut),
+	TESTFN(inverse_lut_descendant),
+	TESTFN_ARG(npm, npm_test_cases),
+	TESTFN(bradform_adaptation_D65_D50),
+);
