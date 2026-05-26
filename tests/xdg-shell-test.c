@@ -56,7 +56,8 @@ fixture_setup(struct weston_test_harness *harness)
 }
 DECLARE_FIXTURE_SETUP(fixture_setup);
 
-TEST(initial_commit_without_a_buffer)
+static enum test_result_code
+initial_commit_without_a_buffer(struct wet_testsuite_data *suite_data)
 {
 	struct xdg_client *xdg_client = create_xdg_client();
 	struct xdg_surface_data *xdg_surface = create_xdg_surface(xdg_client);
@@ -72,7 +73,8 @@ TEST(initial_commit_without_a_buffer)
 	return RESULT_OK;
 }
 
-TEST(initial_commit_with_a_buffer)
+static enum test_result_code
+initial_commit_with_a_buffer(struct wet_testsuite_data *suite_data)
 {
 	struct xdg_client *xdg_client = create_xdg_client();
 	struct xdg_surface_data *xdg_surface = create_xdg_surface(xdg_client);
@@ -92,7 +94,8 @@ TEST(initial_commit_with_a_buffer)
 	return RESULT_OK;
 }
 
-TEST(initial_commit_with_fullscreen_state)
+static enum test_result_code
+initial_commit_with_fullscreen_state(struct wet_testsuite_data *suite_data)
 {
 	struct xdg_client *xdg_client = create_xdg_client();
 	struct xdg_surface_data *xdg_surface = create_xdg_surface(xdg_client);
@@ -112,7 +115,8 @@ TEST(initial_commit_with_fullscreen_state)
 	return RESULT_OK;
 }
 
-TEST(initial_commit_with_max_state)
+static enum test_result_code
+initial_commit_with_max_state(struct wet_testsuite_data *suite_data)
 {
 	struct xdg_client *xdg_client = create_xdg_client();
 	struct xdg_surface_data *xdg_surface = create_xdg_surface(xdg_client);
@@ -132,7 +136,8 @@ TEST(initial_commit_with_max_state)
 	return RESULT_OK;
 }
 
-TEST(initial_commit_without_a_buffer_subsurface)
+static enum test_result_code
+initial_commit_without_a_buffer_subsurface(struct wet_testsuite_data *suite_data)
 {
 	struct xdg_client *xdg_client = create_xdg_client();
 	struct xdg_surface_data *xdg_surface = create_xdg_surface(xdg_client);
@@ -183,7 +188,8 @@ TEST(initial_commit_without_a_buffer_subsurface)
 	return RESULT_OK;
 }
 
-TEST(defunct_surfaces)
+static enum test_result_code
+defunct_surfaces(struct wet_testsuite_data *suite_data)
 {
 	struct xdg_client *xdg_client = create_xdg_client();
 	struct xdg_surface_data *xdg_surface = create_xdg_surface(xdg_client);
@@ -205,3 +211,12 @@ TEST(defunct_surfaces)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(initial_commit_without_a_buffer),
+	TESTFN(initial_commit_with_a_buffer),
+	TESTFN(initial_commit_with_fullscreen_state),
+	TESTFN(initial_commit_with_max_state),
+	TESTFN(initial_commit_without_a_buffer_subsurface),
+	TESTFN(defunct_surfaces),
+);
