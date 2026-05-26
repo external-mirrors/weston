@@ -222,10 +222,11 @@ const char * const render_order_test_names[] = {
 	"layer_add_surfaces",
 };
 
-TEST_P(ivi_layout_runner, basic_test_names)
+static enum test_result_code
+ivi_layout_runner(struct wet_testsuite_data *suite_data,
+		  const char * const *test_name)
 {
 	/* an element from basic_test_names */
-	const char * const *test_name = data;
 	struct client *client;
 	struct runner *runner;
 	struct ivi_application *iviapp;
@@ -247,7 +248,8 @@ TEST_P(ivi_layout_runner, basic_test_names)
 	return RESULT_OK;
 }
 
-TEST(ivi_layout_surface_create)
+static enum test_result_code
+ivi_layout_surface_create(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct runner *runner;
@@ -277,10 +279,11 @@ TEST(ivi_layout_surface_create)
 	return RESULT_OK;
 }
 
-TEST_P(commit_changes_after_properties_set_surface_destroy, surface_property_commit_changes_test_names)
+static enum test_result_code
+commit_changes_after_properties_set_surface_destroy(struct wet_testsuite_data *suite_data,
+						    const char * const *test_name)
 {
 	/* an element from surface_property_commit_changes_test_names */
-	const char * const *test_name = data;
 	struct client *client;
 	struct runner *runner;
 	struct ivi_application *iviapp;
@@ -305,7 +308,8 @@ TEST_P(commit_changes_after_properties_set_surface_destroy, surface_property_com
 	return RESULT_OK;
 }
 
-TEST(get_surface_after_destroy_ivi_surface)
+static enum test_result_code
+get_surface_after_destroy_ivi_surface(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct runner *runner;
@@ -331,7 +335,8 @@ TEST(get_surface_after_destroy_ivi_surface)
 	return RESULT_OK;
 }
 
-TEST(get_surface_after_destroy_wl_surface)
+static enum test_result_code
+get_surface_after_destroy_wl_surface(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct runner *runner;
@@ -357,10 +362,11 @@ TEST(get_surface_after_destroy_wl_surface)
 	return RESULT_OK;
 }
 
-TEST_P(ivi_layout_layer_render_order_runner, render_order_test_names)
+static enum test_result_code
+ivi_layout_layer_render_order_runner(struct wet_testsuite_data *suite_data,
+				     const char * const *test_name)
 {
 	/* an element from render_order_test_names */
-	const char * const *test_name = data;
 	struct client *client;
 	struct runner *runner;
 	struct ivi_application *iviapp;
@@ -389,7 +395,8 @@ TEST_P(ivi_layout_layer_render_order_runner, render_order_test_names)
 	return RESULT_OK;
 }
 
-TEST(destroy_surface_after_layer_render_order)
+static enum test_result_code
+destroy_surface_after_layer_render_order(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct runner *runner;
@@ -422,7 +429,8 @@ TEST(destroy_surface_after_layer_render_order)
 	return RESULT_OK;
 }
 
-TEST(commit_changes_after_render_order_set_surface_destroy)
+static enum test_result_code
+commit_changes_after_render_order_set_surface_destroy(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct runner *runner;
@@ -456,7 +464,8 @@ TEST(commit_changes_after_render_order_set_surface_destroy)
 	return RESULT_OK;
 }
 
-TEST(ivi_layout_surface_configure_notification)
+static enum test_result_code
+ivi_layout_surface_configure_notification(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct runner *runner;
@@ -497,7 +506,8 @@ TEST(ivi_layout_surface_configure_notification)
 	return RESULT_OK;
 }
 
-TEST(ivi_layout_surface_create_notification)
+static enum test_result_code
+ivi_layout_surface_create_notification(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct runner *runner;
@@ -526,7 +536,8 @@ TEST(ivi_layout_surface_create_notification)
 	return RESULT_OK;
 }
 
-TEST(ivi_layout_surface_remove_notification)
+static enum test_result_code
+ivi_layout_surface_remove_notification(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct runner *runner;
@@ -553,3 +564,17 @@ TEST(ivi_layout_surface_remove_notification)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN_ARG(ivi_layout_runner, basic_test_names),
+	TESTFN(ivi_layout_surface_create),
+	TESTFN_ARG(commit_changes_after_properties_set_surface_destroy, surface_property_commit_changes_test_names),
+	TESTFN(get_surface_after_destroy_ivi_surface),
+	TESTFN(get_surface_after_destroy_wl_surface),
+	TESTFN_ARG(ivi_layout_layer_render_order_runner, render_order_test_names),
+	TESTFN(destroy_surface_after_layer_render_order),
+	TESTFN(commit_changes_after_render_order_set_surface_destroy),
+	TESTFN(ivi_layout_surface_configure_notification),
+	TESTFN(ivi_layout_surface_create_notification),
+	TESTFN(ivi_layout_surface_remove_notification),
+);

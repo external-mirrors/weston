@@ -255,12 +255,12 @@ runner_assert_fail(const char *cond, const char *file, int line,
  *
  * The test program containing the fixture setup and initiating the tests is
  * test-ivi-layout-client (ivi-layout-test-client.c).
- * That program uses the weston-test-runner framework to execute each TEST()
+ * That program uses the weston-test-runner framework to execute each TESTFN()
  * in ivi-layout-test-client.c with a fresh connection to the single
  * compositor instance.
  *
- * Each TEST() in ivi-layout-test-client.c will bind to weston_test_runner global
- * interface. A TEST() will set up the client state, and issue
+ * Each TESTFN() in ivi-layout-test-client.c will bind to weston_test_runner global
+ * interface. A TESTFN() will set up the client state, and issue
  * weston_test_runner.run request to execute the compositor-side of the test.
  *
  * The compositor-side parts of the tests are in this file. They are specified
@@ -271,7 +271,7 @@ runner_assert_fail(const char *cond, const char *file, int line,
  * a fatal protocol error is sent to the client from runner_assert() or
  * runner_assert_or_return().
  *
- * A single TEST() in ivi-layout-test-client.c may use multiple RUNNER_TEST()s to
+ * A single TESTFN() in ivi-layout-test-client.c may use multiple RUNNER_TEST()s to
  * achieve multiple test points over a client action sequence.
  */
 
