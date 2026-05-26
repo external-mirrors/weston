@@ -83,9 +83,9 @@ assert_surface_is_background(struct wet_testsuite_data *suite_data,
 	test_assert_str_eq(surface->label, "kiosk shell background surface");
 }
 
-TEST(two_surface_switching)
+static enum test_result_code
+two_surface_switching(struct wet_testsuite_data *suite_data)
 {
-	struct wet_testsuite_data *suite_data = TEST_GET_SUITE_DATA();
 	struct xdg_client *xdg_client = create_xdg_client();
 	struct xdg_surface_data *xdg_surface1, *xdg_surface2;
 	struct input *input;
@@ -246,9 +246,9 @@ TEST(two_surface_switching)
 	return RESULT_OK;
 }
 
-TEST(top_surface_present_in_output_repaint)
+static enum test_result_code
+top_surface_present_in_output_repaint(struct wet_testsuite_data *suite_data)
 {
-	struct wet_testsuite_data *suite_data = TEST_GET_SUITE_DATA();
 	struct xdg_client *xdg_client = create_xdg_client();
 	struct xdg_surface_data *xdg_surface = create_xdg_surface(xdg_client);
 
@@ -302,9 +302,9 @@ TEST(top_surface_present_in_output_repaint)
 	return RESULT_OK;
 }
 
-TEST(test_surface_unmaps_on_null)
+static enum test_result_code
+test_surface_unmaps_on_null(struct wet_testsuite_data *suite_data)
 {
-	struct wet_testsuite_data *suite_data = TEST_GET_SUITE_DATA();
 	struct xdg_client *xdg_client = create_xdg_client();
 	struct xdg_surface_data *xdg_surface = create_xdg_surface(xdg_client);;
 
@@ -393,3 +393,9 @@ TEST(test_surface_unmaps_on_null)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(two_surface_switching),
+	TESTFN(top_surface_present_in_output_repaint),
+	TESTFN(test_surface_unmaps_on_null),
+);
