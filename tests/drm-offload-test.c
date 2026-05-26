@@ -157,7 +157,9 @@ static const struct wl_buffer_listener overlay_buffer_listener = {
  * Test that a fullscreen client with fullscreen-sized buffer is presented via
  * direct-scanout.
  */
-TEST(drm_offload_fullscreen) {
+static enum test_result_code
+drm_offload_fullscreen(struct wet_testsuite_data *suite_data)
+{
 	struct xdg_client *xdg_client;
 	struct xdg_surface_data *xdg_surface;
 	struct client *client;
@@ -213,7 +215,9 @@ TEST(drm_offload_fullscreen) {
  * Test that a fullscreen client with fullscreen-sized buffer and a fully
  * transparent overlay surface is presented via direct-scanout.
  */
-TEST(drm_offload_fullscreen_transparent_overlay) {
+static enum test_result_code
+drm_offload_fullscreen_transparent_overlay(struct wet_testsuite_data *suite_data)
+{
 	struct xdg_client *xdg_client;
 	struct xdg_surface_data *xdg_surface;
 	struct client *client;
@@ -293,7 +297,9 @@ TEST(drm_offload_fullscreen_transparent_overlay) {
  * Test that a fullscreen client with smaller-than-fullscreen-sized buffer is
  * presented via direct-scanout.
  */
-TEST(drm_offload_fullscreen_black_background) {
+static enum test_result_code
+drm_offload_fullscreen_black_background(struct wet_testsuite_data *suite_data)
+{
 	struct xdg_client *xdg_client;
 	struct xdg_surface_data *xdg_surface;
 	struct client *client;
@@ -350,7 +356,9 @@ TEST(drm_offload_fullscreen_black_background) {
  * smaller-than-fullscreen-sized dmabuf subsurface above is presented via
  * direct-scanout.
  */
-TEST(drm_offload_fullscreen_semi_transparent_black_background) {
+static enum test_result_code
+drm_offload_fullscreen_semi_transparent_black_background(struct wet_testsuite_data *suite_data)
+{
 	struct xdg_client *xdg_client;
 	struct xdg_surface_data *xdg_surface;
 	struct client *client;
@@ -433,7 +441,9 @@ TEST(drm_offload_fullscreen_semi_transparent_black_background) {
  * smaller-than-fullscreen-sized dmabuf subsurface above is presented via
  * direct-scanout.
  */
-TEST(drm_offload_fullscreen_semi_transparent_white_background) {
+static enum test_result_code
+drm_offload_fullscreen_semi_transparent_white_background(struct wet_testsuite_data *suite_data)
+{
 	struct xdg_client *xdg_client;
 	struct xdg_surface_data *xdg_surface;
 	struct client *client;
@@ -523,7 +533,9 @@ TEST(drm_offload_fullscreen_semi_transparent_white_background) {
  * single-pixel-buffer with an even smaller dmabuf subsurface above is presented
  * via direct-scanout.
  */
-TEST(drm_offload_fullscreen_black_background_black_subsurface_underlay) {
+static enum test_result_code
+drm_offload_fullscreen_black_background_black_subsurface_underlay(struct wet_testsuite_data *suite_data)
+{
 	struct xdg_client *xdg_client;
 	struct xdg_surface_data *xdg_surface;
 	struct client *client;
@@ -609,7 +621,9 @@ TEST(drm_offload_fullscreen_black_background_black_subsurface_underlay) {
  * *not* presented via direct-scanout. This test is meant to ensure that future
  * optimizations for the above tests don't overreach.
  */
-TEST(drm_offload_fullscreen_black_background_black_subsurface_overlay) {
+static enum test_result_code
+drm_offload_fullscreen_black_background_black_subsurface_overlay(struct wet_testsuite_data *suite_data)
+{
 	struct xdg_client *xdg_client;
 	struct xdg_surface_data *xdg_surface;
 	struct client *client;
@@ -694,7 +708,9 @@ TEST(drm_offload_fullscreen_black_background_black_subsurface_overlay) {
  * support multiple solid color planes, see
  * https://lore.kernel.org/dri-devel/20231027-solid-fill-v7-0-780188bfa7b2@quicinc.com/
  */
-TEST(drm_offload_fullscreen_black_background_red_subsurface_underlay) {
+static enum test_result_code
+drm_offload_fullscreen_black_background_red_subsurface_underlay(struct wet_testsuite_data *suite_data)
+{
 	struct xdg_client *xdg_client;
 	struct xdg_surface_data *xdg_surface;
 	struct client *client;
@@ -776,7 +792,9 @@ TEST(drm_offload_fullscreen_black_background_red_subsurface_underlay) {
  * Test that a windowed / not-fullscreen client on top of a solid background is
  * presented via direct-scanout.
  */
-TEST(drm_offload_windowed) {
+static enum test_result_code
+drm_offload_windowed(struct wet_testsuite_data *suite_data)
+{
 	struct xdg_client *xdg_client;
 	struct xdg_surface_data *xdg_surface;
 	struct client *client;
@@ -838,7 +856,9 @@ TEST(drm_offload_windowed) {
  * presented via direct-scanout. This is mainly a sanity check for the tests
  * above.
  */
-TEST(drm_offload_windowed_shm) {
+static enum test_result_code
+drm_offload_windowed_shm(struct wet_testsuite_data *suite_data)
+{
 	struct xdg_client *xdg_client;
 	struct xdg_surface_data *xdg_surface;
 	struct client *client;
@@ -887,3 +907,16 @@ TEST(drm_offload_windowed_shm) {
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(drm_offload_fullscreen),
+	TESTFN(drm_offload_fullscreen_transparent_overlay),
+	TESTFN(drm_offload_fullscreen_black_background),
+	TESTFN(drm_offload_fullscreen_semi_transparent_black_background),
+	TESTFN(drm_offload_fullscreen_semi_transparent_white_background),
+	TESTFN(drm_offload_fullscreen_black_background_black_subsurface_underlay),
+	TESTFN(drm_offload_fullscreen_black_background_black_subsurface_overlay),
+	TESTFN(drm_offload_fullscreen_black_background_red_subsurface_underlay),
+	TESTFN(drm_offload_windowed),
+	TESTFN(drm_offload_windowed_shm),
+);
