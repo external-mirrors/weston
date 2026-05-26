@@ -75,7 +75,8 @@ DECLARE_FIXTURE_SETUP(setup_env);
 
 #define DEFAULT_ENVP (char * const []) { "ENV1=one", "ENV2=two", "ENV3=three", NULL }
 
-TEST(basic_env)
+static enum test_result_code
+basic_env(struct wet_testsuite_data *suite_data)
 {
 	struct custom_env env;
 	char *const envp[] = { "ENV1=one", "ENV2=two", "ENV3=four", "ENV5=five", NULL };
@@ -90,7 +91,8 @@ TEST(basic_env)
 	return RESULT_OK;
 }
 
-TEST(basic_env_arg)
+static enum test_result_code
+basic_env_arg(struct wet_testsuite_data *suite_data)
 {
 	struct custom_env env;
 	char *const argp[] = { "arg1", "arg2", "arg3", NULL };
@@ -148,10 +150,11 @@ static const struct test_str str_tests[] = {
 	},
 };
 
-TEST_P(env_parse_string, str_tests)
+static enum test_result_code
+env_parse_string(struct wet_testsuite_data *suite_data,
+		 const struct test_str *test)
 {
 	struct custom_env env;
-	const struct test_str *test = data;
 
 	testlog("checking exec_str '%s'\n", test->exec_str);
 	custom_env_init_from_environ(&env);
@@ -162,3 +165,9 @@ TEST_P(env_parse_string, str_tests)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(basic_env),
+	TESTFN(basic_env_arg),
+	TESTFN_ARG(env_parse_string, str_tests),
+);
