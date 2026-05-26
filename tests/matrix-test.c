@@ -201,9 +201,10 @@ static const struct test_matrix matrices[] = {
 	},
 };
 
-TEST_P(matrix_inversion_precision, matrices)
+static enum test_result_code
+matrix_inversion_precision(struct wet_testsuite_data *suite_data,
+			   const struct test_matrix *tm)
 {
-	const struct test_matrix *tm = data;
 	struct weston_matrix rr;
 	double err;
 
@@ -230,3 +231,7 @@ TEST_P(matrix_inversion_precision, matrices)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN_ARG(matrix_inversion_precision, matrices),
+);
