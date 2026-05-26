@@ -74,7 +74,8 @@ draw_stuff(pixman_image_t *image)
 	}
 }
 
-TEST(internal_screenshot)
+static enum test_result_code
+internal_screenshot(struct wet_testsuite_data *suite_data)
 {
 	struct buffer *buf;
 	struct client *client;
@@ -182,3 +183,7 @@ TEST(internal_screenshot)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(internal_screenshot),
+);
