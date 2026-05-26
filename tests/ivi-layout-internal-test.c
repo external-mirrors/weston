@@ -773,7 +773,9 @@ run_internal_tests(struct test_context *ctx)
 	test_layer_remove_notification(ctx);
 }
 
-PLUGIN_TEST(ivi_layout_internal)
+static enum test_result_code
+ivi_layout_internal(struct wet_testsuite_data *suite_data,
+		    struct weston_compositor *compositor)
 {
 	/* struct weston_compositor *compositor; */
 	struct test_context ctx = {};
@@ -794,3 +796,7 @@ PLUGIN_TEST(ivi_layout_internal)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN_PLUGIN(ivi_layout_internal),
+);
