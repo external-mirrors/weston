@@ -113,7 +113,8 @@ get_wm_name(struct window_x11 *window)
 	return wm_name;
 }
 
-TEST(xwayland_client_test)
+static enum test_result_code
+xwayland_client_test(struct wet_testsuite_data *suite_data)
 {
 	struct window_x11 *window;
 	struct connection_x11 *conn;
@@ -181,3 +182,7 @@ TEST(xwayland_client_test)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(xwayland_client_test),
+);
