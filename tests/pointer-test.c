@@ -137,7 +137,8 @@ create_client_with_pointer_focus(int x, int y, int w, int h)
 	return cl;
 }
 
-TEST(test_pointer_top_left)
+static enum test_result_code
+test_pointer_top_left(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	int x, y;
@@ -166,7 +167,8 @@ TEST(test_pointer_top_left)
 	return RESULT_OK;
 }
 
-TEST(test_pointer_bottom_left)
+static enum test_result_code
+test_pointer_bottom_left(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	int x, y;
@@ -195,7 +197,8 @@ TEST(test_pointer_bottom_left)
 	return RESULT_OK;
 }
 
-TEST(test_pointer_top_right)
+static enum test_result_code
+test_pointer_top_right(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	int x, y;
@@ -224,7 +227,8 @@ TEST(test_pointer_top_right)
 	return RESULT_OK;
 }
 
-TEST(test_pointer_bottom_right)
+static enum test_result_code
+test_pointer_bottom_right(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	int x, y;
@@ -253,7 +257,8 @@ TEST(test_pointer_bottom_right)
 	return RESULT_OK;
 }
 
-TEST(test_pointer_top_center)
+static enum test_result_code
+test_pointer_top_center(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	int x, y;
@@ -282,7 +287,8 @@ TEST(test_pointer_top_center)
 	return RESULT_OK;
 }
 
-TEST(test_pointer_bottom_center)
+static enum test_result_code
+test_pointer_bottom_center(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	int x, y;
@@ -311,7 +317,8 @@ TEST(test_pointer_bottom_center)
 	return RESULT_OK;
 }
 
-TEST(test_pointer_left_center)
+static enum test_result_code
+test_pointer_left_center(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	int x, y;
@@ -340,7 +347,8 @@ TEST(test_pointer_left_center)
 	return RESULT_OK;
 }
 
-TEST(test_pointer_right_center)
+static enum test_result_code
+test_pointer_right_center(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	int x, y;
@@ -369,7 +377,8 @@ TEST(test_pointer_right_center)
 	return RESULT_OK;
 }
 
-TEST(test_pointer_surface_move)
+static enum test_result_code
+test_pointer_surface_move(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 
@@ -390,7 +399,8 @@ TEST(test_pointer_surface_move)
 	return RESULT_OK;
 }
 
-TEST(pointer_motion_events)
+static enum test_result_code
+pointer_motion_events(struct wet_testsuite_data *suite_data)
 {
 	struct client *client = create_client_with_pointer_focus(100, 100,
 								 100, 100);
@@ -411,7 +421,8 @@ TEST(pointer_motion_events)
 	return RESULT_OK;
 }
 
-TEST(pointer_button_events)
+static enum test_result_code
+pointer_button_events(struct wet_testsuite_data *suite_data)
 {
 	struct client *client = create_client_with_pointer_focus(100, 100,
 								 100, 100);
@@ -441,7 +452,8 @@ TEST(pointer_button_events)
 	return RESULT_OK;
 }
 
-TEST(pointer_axis_events)
+static enum test_result_code
+pointer_axis_events(struct wet_testsuite_data *suite_data)
 {
 	struct client *client = create_client_with_pointer_focus(100, 100,
 								 100, 100);
@@ -467,7 +479,8 @@ TEST(pointer_axis_events)
 	return RESULT_OK;
 }
 
-TEST(pointer_timestamps_stop_after_input_timestamps_object_is_destroyed)
+static enum test_result_code
+pointer_timestamps_stop_after_input_timestamps_object_is_destroyed(struct wet_testsuite_data *suite_data)
 {
 	struct client *client = create_client_with_pointer_focus(100, 100,
 								 100, 100);
@@ -494,7 +507,8 @@ TEST(pointer_timestamps_stop_after_input_timestamps_object_is_destroyed)
 	return RESULT_OK;
 }
 
-TEST(pointer_timestamps_stop_after_client_releases_wl_pointer)
+static enum test_result_code
+pointer_timestamps_stop_after_client_releases_wl_pointer(struct wet_testsuite_data *suite_data)
 {
 	struct client *client = create_client_with_pointer_focus(100, 100,
 								 100, 100);
@@ -527,3 +541,20 @@ TEST(pointer_timestamps_stop_after_client_releases_wl_pointer)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(test_pointer_top_left),
+	TESTFN(test_pointer_bottom_left),
+	TESTFN(test_pointer_top_right),
+	TESTFN(test_pointer_bottom_right),
+	TESTFN(test_pointer_top_center),
+	TESTFN(test_pointer_bottom_center),
+	TESTFN(test_pointer_left_center),
+	TESTFN(test_pointer_right_center),
+	TESTFN(test_pointer_surface_move),
+	TESTFN(pointer_motion_events),
+	TESTFN(pointer_button_events),
+	TESTFN(pointer_axis_events),
+	TESTFN(pointer_timestamps_stop_after_input_timestamps_object_is_destroyed),
+	TESTFN(pointer_timestamps_stop_after_client_releases_wl_pointer),
+);
