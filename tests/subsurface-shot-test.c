@@ -100,7 +100,8 @@ surface_commit_color(struct client *client, struct wl_surface *surface,
 	return buf;
 }
 
-TEST(subsurface_recursive_unmap)
+static enum test_result_code
+subsurface_recursive_unmap(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct wl_subcompositor *subco;
@@ -192,7 +193,8 @@ TEST(subsurface_recursive_unmap)
 	return RESULT_OK;
 }
 
-TEST(subsurface_z_order)
+static enum test_result_code
+subsurface_z_order(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct wl_subcompositor *subco;
@@ -285,7 +287,8 @@ TEST(subsurface_z_order)
 	return RESULT_OK;
 }
 
-TEST(subsurface_sync_damage_buffer)
+static enum test_result_code
+subsurface_sync_damage_buffer(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct wl_subcompositor *subco;
@@ -354,7 +357,8 @@ TEST(subsurface_sync_damage_buffer)
 	return RESULT_OK;
 }
 
-TEST(subsurface_empty_mapping)
+static enum test_result_code
+subsurface_empty_mapping(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct wl_subcompositor *subco;
@@ -488,7 +492,8 @@ TEST(subsurface_empty_mapping)
 	return RESULT_OK;
 }
 
-TEST(subsurface_desync_commit)
+static enum test_result_code
+subsurface_desync_commit(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct wl_subcompositor *subco;
@@ -540,3 +545,11 @@ TEST(subsurface_desync_commit)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(subsurface_recursive_unmap),
+	TESTFN(subsurface_z_order),
+	TESTFN(subsurface_sync_damage_buffer),
+	TESTFN(subsurface_empty_mapping),
+	TESTFN(subsurface_desync_commit),
+);
