@@ -116,9 +116,10 @@ static const struct buffer_args my_buffer_args[] = {
 	{ 3, TRANSFORM(FLIPPED_90) },
 };
 
-TEST_P(buffer_transform, my_buffer_args)
+static enum test_result_code
+buffer_transform(struct wet_testsuite_data *suite_data,
+		 const struct buffer_args *bargs)
 {
-	const struct buffer_args *bargs = data;
 	const struct setup_args *oargs;
 	struct client *client;
 	bool match;
@@ -166,9 +167,10 @@ static const struct buffer_args my_split_args[] = {
 	{ 2, TRANSFORM(NORMAL) },
 };
 
-TEST_P(buffer_transform_split, my_split_args)
+static enum test_result_code
+buffer_transform_split(struct wet_testsuite_data *suite_data,
+		       const struct buffer_args *bargs)
 {
-	const struct buffer_args *bargs = data;
 	const struct setup_args *oargs;
 	struct client *client;
 	bool match;
@@ -221,3 +223,8 @@ TEST_P(buffer_transform_split, my_split_args)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN_ARG(buffer_transform, my_buffer_args),
+	TESTFN_ARG(buffer_transform_split, my_split_args),
+);
