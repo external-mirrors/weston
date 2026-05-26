@@ -74,7 +74,8 @@ get_xdg_wm_base(struct client *client)
 	return xdg_wm_base;
 }
 
-TEST(test_role_conflict_sub_wlshell)
+static enum test_result_code
+test_role_conflict_sub_wlshell(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct wl_subcompositor *subco;
@@ -111,7 +112,8 @@ TEST(test_role_conflict_sub_wlshell)
 	return RESULT_OK;
 }
 
-TEST(test_role_conflict_wlshell_sub)
+static enum test_result_code
+test_role_conflict_wlshell_sub(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct wl_subcompositor *subco;
@@ -151,3 +153,8 @@ TEST(test_role_conflict_wlshell_sub)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(test_role_conflict_sub_wlshell),
+	TESTFN(test_role_conflict_wlshell_sub),
+);
