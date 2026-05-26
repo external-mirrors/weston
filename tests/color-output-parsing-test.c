@@ -600,9 +600,10 @@ compare_results(struct weston_color_profile *tst,
  * wet_create_output_color_profile() says. Tests for the return value and
  * the error messages logged.
  */
-TEST_P(parametric_color_profile_parsing, config_cases)
+static enum test_result_code
+parametric_color_profile_parsing(struct wet_testsuite_data *suite_data,
+				 const struct config_testcase *t)
 {
-	const struct config_testcase *t = data;
 	struct weston_color_profile *cprof;
 	struct weston_config *wc;
 	struct mock_color_manager mock_cm = {
@@ -652,3 +653,7 @@ TEST_P(parametric_color_profile_parsing, config_cases)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN_ARG(parametric_color_profile_parsing, config_cases),
+);
