@@ -103,7 +103,8 @@ surface_commit_color(struct client *client, struct surface *surface,
 	return buf;
 }
 
-TEST(pointer_cursor_retains_committed_buffer_after_reenter)
+static enum test_result_code
+pointer_cursor_retains_committed_buffer_after_reenter(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	pixman_color_t red;
@@ -182,3 +183,7 @@ TEST(pointer_cursor_retains_committed_buffer_after_reenter)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(pointer_cursor_retains_committed_buffer_after_reenter),
+);
