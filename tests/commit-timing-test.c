@@ -70,7 +70,8 @@ surface_commit_color(struct client *client, struct wl_surface *surface,
 }
 
 /* Ensure we can only have one commit-timer object for a surface */
-TEST(get_two_timers)
+static enum test_result_code
+get_two_timers(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct wp_commit_timer_v1 *timer1, *timer2;
@@ -92,7 +93,8 @@ TEST(get_two_timers)
 }
 
 /* Ensure we can get a second timer for a surface if we destroy the first. */
-TEST(get_two_timers_safely)
+static enum test_result_code
+get_two_timers_safely(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct wp_commit_timer_v1 *timer;
@@ -115,7 +117,8 @@ TEST(get_two_timers_safely)
 /* Ensure the appropriate error occurs for using a timer object associated
  * with a destroyed surface.
  */
-TEST(use_timer_on_destroyed_surface)
+static enum test_result_code
+use_timer_on_destroyed_surface(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct wp_commit_timer_v1 *timer;
@@ -148,7 +151,8 @@ TEST(use_timer_on_destroyed_surface)
 }
 
 /* Ensure an error occurs for invalid tv_nsec. */
-TEST(invalid_timestamp)
+static enum test_result_code
+invalid_timestamp(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct wp_commit_timer_v1 *timer;
@@ -181,7 +185,8 @@ TEST(invalid_timestamp)
 /* Ensure an error occurs when a second timestamp is set before a
  * wl_surface.commit
  */
-TEST(too_many_timestamps)
+static enum test_result_code
+too_many_timestamps(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct wp_commit_timer_v1 *timer;
@@ -219,7 +224,8 @@ TEST(too_many_timestamps)
 /* Ensure the compositor doesn't explode if we delete a surface with
  * timestamped content updates
  */
-TEST(commit_timing_delete_surface_with_timestamps)
+static enum test_result_code
+commit_timing_delete_surface_with_timestamps(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct buffer *buf;
@@ -264,3 +270,12 @@ TEST(commit_timing_delete_surface_with_timestamps)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(get_two_timers),
+	TESTFN(get_two_timers_safely),
+	TESTFN(use_timer_on_destroyed_surface),
+	TESTFN(invalid_timestamp),
+	TESTFN(too_many_timestamps),
+	TESTFN(commit_timing_delete_surface_with_timestamps),
+);
