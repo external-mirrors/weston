@@ -1139,27 +1139,27 @@ window_next_buffer(struct window *window)
 }
 
 static void
-transfer_image_queue_family(VkCommandBuffer cmd_buffer, VkImage image,
-			    uint32_t src_index, uint32_t dst_index)
+transition_image_layout(VkCommandBuffer cmd_buffer, VkImage image,
+			VkImageLayout old_layout, VkImageLayout new_layout,
+			VkPipelineStageFlags srcs, VkPipelineStageFlags dsts,
+			VkAccessFlags src_access, VkAccessFlags dst_access,
+			uint32_t src_index, uint32_t dst_index)
 {
 	const VkImageMemoryBarrier barrier = {
 		.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-		.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-		.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-		.srcAccessMask = 0,
-		.dstAccessMask = 0,
+		.oldLayout = old_layout,
+		.newLayout = new_layout,
 		.image = image,
 		.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 		.subresourceRange.layerCount = 1,
 		.subresourceRange.levelCount = 1,
+		.srcAccessMask = src_access,
+		.dstAccessMask = dst_access,
 		.srcQueueFamilyIndex = src_index,
 		.dstQueueFamilyIndex = dst_index,
 	};
 
-	vkCmdPipelineBarrier(cmd_buffer,
-			     VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-			     VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-			     0, 0, NULL, 0, NULL, 1, &barrier);
+	vkCmdPipelineBarrier(cmd_buffer, srcs, dsts, 0, 0, NULL, 0, NULL, 1, &barrier);
 }
 
 static const struct wl_callback_listener frame_listener;
@@ -1223,9 +1223,11 @@ render(struct window *window, struct buffer *buffer)
 	result = vkBeginCommandBuffer(buffer->cmd_buffer, &command_buffer_begin_info);
 	check_vk_success(result, "vkCreateCommandPool");
 
-	transfer_image_queue_family(buffer->cmd_buffer, buffer->image,
-				    VK_QUEUE_FAMILY_FOREIGN_EXT,
-				    display->vk.queue_family);
+	transition_image_layout(buffer->cmd_buffer, buffer->image,
+				VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+				VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+				VK_ACCESS_MEMORY_READ_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+				VK_QUEUE_FAMILY_FOREIGN_EXT, display->vk.queue_family);
 
 	const VkClearValue clear_color = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
 	const VkRenderPassBeginInfo renderpass_begin_info = {
@@ -1277,9 +1279,11 @@ render(struct window *window, struct buffer *buffer)
 
 	vkCmdEndRenderPass(buffer->cmd_buffer);
 
-	transfer_image_queue_family(buffer->cmd_buffer, buffer->image,
-				    display->vk.queue_family,
-				    VK_QUEUE_FAMILY_FOREIGN_EXT);
+	transition_image_layout(buffer->cmd_buffer, buffer->image,
+				VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL,
+				VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+				VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_MEMORY_READ_BIT,
+				display->vk.queue_family, VK_QUEUE_FAMILY_FOREIGN_EXT);
 
 	result = vkEndCommandBuffer(buffer->cmd_buffer);
 	check_vk_success(result, "vkEndCommandBuffer");
