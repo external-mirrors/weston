@@ -34,7 +34,8 @@
  * consecutive sequence starting from 1. 0 is not a valid id.
  * Tests reallocation of the bucket array.
  */
-TEST(test_sequential_ids)
+static enum test_result_code
+test_sequential_ids(struct wet_testsuite_data *suite_data)
 {
 	struct weston_idalloc *ida;
 	unsigned i;
@@ -53,3 +54,7 @@ TEST(test_sequential_ids)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(test_sequential_ids),
+);
