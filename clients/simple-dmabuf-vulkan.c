@@ -1210,11 +1210,11 @@ render(struct window *window, struct buffer *buffer)
 	 */
 	weston_matrix_scale(&reflection, 1, -1, 1);
 
-	memcpy(buffer->ubo_buffer.map, &reflection.M.colmaj, sizeof(reflection.M.colmaj));
-	memcpy(buffer->ubo_buffer.map + sizeof(reflection.M.colmaj), &offset, sizeof(offset));
-
 	vkWaitForFences(display->vk.dev, 1, &buffer->fence, VK_TRUE, UINT64_MAX);
 	vkResetFences(display->vk.dev, 1, &buffer->fence);
+
+	memcpy(buffer->ubo_buffer.map, &reflection.M.colmaj, sizeof(reflection.M.colmaj));
+	memcpy(buffer->ubo_buffer.map + sizeof(reflection.M.colmaj), &offset, sizeof(offset));
 
 	const VkCommandBufferBeginInfo command_buffer_begin_info = {
 			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
