@@ -45,7 +45,9 @@ fixture_setup(struct weston_test_harness *harness)
 }
 DECLARE_FIXTURE_SETUP(fixture_setup);
 
-PLUGIN_TEST(surface_to_from_global)
+static enum test_result_code
+surface_to_from_global(struct wet_testsuite_data *suite_data,
+		       struct weston_compositor *compositor)
 {
 	/* struct weston_compositor *compositor; */
 	struct weston_surface *surface;
@@ -114,3 +116,7 @@ PLUGIN_TEST(surface_to_from_global)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN_PLUGIN(surface_to_from_global),
+);
