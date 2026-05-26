@@ -91,7 +91,8 @@ fini_compound_surface(struct compound_surface *com)
 	wl_subcompositor_destroy(com->subco);
 }
 
-TEST(test_subsurface_basic_protocol)
+static enum test_result_code
+test_subsurface_basic_protocol(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct compound_surface com1;
@@ -112,7 +113,8 @@ TEST(test_subsurface_basic_protocol)
 	return RESULT_OK;
 }
 
-TEST(test_subsurface_position_protocol)
+static enum test_result_code
+test_subsurface_position_protocol(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct compound_surface com;
@@ -134,7 +136,8 @@ TEST(test_subsurface_position_protocol)
 	return RESULT_OK;
 }
 
-TEST(test_subsurface_placement_protocol)
+static enum test_result_code
+test_subsurface_placement_protocol(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct compound_surface com;
@@ -157,7 +160,8 @@ TEST(test_subsurface_placement_protocol)
 	return RESULT_OK;
 }
 
-TEST(test_subsurface_paradox)
+static enum test_result_code
+test_subsurface_paradox(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct wl_surface *parent;
@@ -184,7 +188,8 @@ TEST(test_subsurface_paradox)
 	return RESULT_OK;
 }
 
-TEST(test_subsurface_identical_link)
+static enum test_result_code
+test_subsurface_identical_link(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct compound_surface com;
@@ -208,7 +213,8 @@ TEST(test_subsurface_identical_link)
 	return RESULT_OK;
 }
 
-TEST(test_subsurface_change_link)
+static enum test_result_code
+test_subsurface_change_link(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct compound_surface com;
@@ -235,7 +241,8 @@ TEST(test_subsurface_change_link)
 	return RESULT_OK;
 }
 
-TEST(test_subsurface_nesting)
+static enum test_result_code
+test_subsurface_nesting(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct compound_surface com;
@@ -261,7 +268,8 @@ TEST(test_subsurface_nesting)
 	return RESULT_OK;
 }
 
-TEST(test_subsurface_nesting_parent)
+static enum test_result_code
+test_subsurface_nesting_parent(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct compound_surface com;
@@ -287,7 +295,8 @@ TEST(test_subsurface_nesting_parent)
 	return RESULT_OK;
 }
 
-TEST(test_subsurface_loop_paradox)
+static enum test_result_code
+test_subsurface_loop_paradox(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct wl_surface *surface[3];
@@ -322,7 +331,8 @@ TEST(test_subsurface_loop_paradox)
 	return RESULT_OK;
 }
 
-TEST(test_subsurface_place_above_nested_parent)
+static enum test_result_code
+test_subsurface_place_above_nested_parent(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct compound_surface com;
@@ -352,7 +362,8 @@ TEST(test_subsurface_place_above_nested_parent)
 	return RESULT_OK;
 }
 
-TEST(test_subsurface_place_above_grandparent)
+static enum test_result_code
+test_subsurface_place_above_grandparent(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct compound_surface com;
@@ -384,7 +395,8 @@ TEST(test_subsurface_place_above_grandparent)
 	return RESULT_OK;
 }
 
-TEST(test_subsurface_place_above_great_aunt)
+static enum test_result_code
+test_subsurface_place_above_great_aunt(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct compound_surface com;
@@ -416,7 +428,8 @@ TEST(test_subsurface_place_above_great_aunt)
 	return RESULT_OK;
 }
 
-TEST(test_subsurface_place_above_child)
+static enum test_result_code
+test_subsurface_place_above_child(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct compound_surface com;
@@ -448,7 +461,8 @@ TEST(test_subsurface_place_above_child)
 	return RESULT_OK;
 }
 
-TEST(test_subsurface_place_below_nested_parent)
+static enum test_result_code
+test_subsurface_place_below_nested_parent(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct compound_surface com;
@@ -478,7 +492,8 @@ TEST(test_subsurface_place_below_nested_parent)
 	return RESULT_OK;
 }
 
-TEST(test_subsurface_place_below_grandparent)
+static enum test_result_code
+test_subsurface_place_below_grandparent(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct compound_surface com;
@@ -510,7 +525,8 @@ TEST(test_subsurface_place_below_grandparent)
 	return RESULT_OK;
 }
 
-TEST(test_subsurface_place_below_great_aunt)
+static enum test_result_code
+test_subsurface_place_below_great_aunt(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct compound_surface com;
@@ -542,7 +558,8 @@ TEST(test_subsurface_place_below_great_aunt)
 	return RESULT_OK;
 }
 
-TEST(test_subsurface_place_below_child)
+static enum test_result_code
+test_subsurface_place_below_child(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct compound_surface com;
@@ -574,7 +591,8 @@ TEST(test_subsurface_place_below_child)
 	return RESULT_OK;
 }
 
-TEST(test_subsurface_place_above_stranger)
+static enum test_result_code
+test_subsurface_place_above_stranger(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct compound_surface com;
@@ -599,7 +617,8 @@ TEST(test_subsurface_place_above_stranger)
 	return RESULT_OK;
 }
 
-TEST(test_subsurface_place_below_stranger)
+static enum test_result_code
+test_subsurface_place_below_stranger(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct compound_surface com;
@@ -624,7 +643,8 @@ TEST(test_subsurface_place_below_stranger)
 	return RESULT_OK;
 }
 
-TEST(test_subsurface_place_above_foreign)
+static enum test_result_code
+test_subsurface_place_above_foreign(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct compound_surface com1;
@@ -649,7 +669,8 @@ TEST(test_subsurface_place_above_foreign)
 	return RESULT_OK;
 }
 
-TEST(test_subsurface_place_below_foreign)
+static enum test_result_code
+test_subsurface_place_below_foreign(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct compound_surface com1;
@@ -674,7 +695,8 @@ TEST(test_subsurface_place_below_foreign)
 	return RESULT_OK;
 }
 
-TEST(test_subsurface_destroy_protocol)
+static enum test_result_code
+test_subsurface_destroy_protocol(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct compound_surface com;
@@ -874,7 +896,8 @@ destroy_permu_object(struct wl_surface **surfs,
 	}
 }
 
-TEST(test_subsurface_destroy_permutations)
+static enum test_result_code
+test_subsurface_destroy_permutations(struct wet_testsuite_data *suite_data)
 {
 	/*
 	 * Test wl_surface and wl_subsurface destruction orders in a
@@ -931,3 +954,29 @@ TEST(test_subsurface_destroy_permutations)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(test_subsurface_basic_protocol),
+	TESTFN(test_subsurface_position_protocol),
+	TESTFN(test_subsurface_placement_protocol),
+	TESTFN(test_subsurface_paradox),
+	TESTFN(test_subsurface_identical_link),
+	TESTFN(test_subsurface_change_link),
+	TESTFN(test_subsurface_nesting),
+	TESTFN(test_subsurface_nesting_parent),
+	TESTFN(test_subsurface_loop_paradox),
+	TESTFN(test_subsurface_place_above_nested_parent),
+	TESTFN(test_subsurface_place_above_grandparent),
+	TESTFN(test_subsurface_place_above_great_aunt),
+	TESTFN(test_subsurface_place_above_child),
+	TESTFN(test_subsurface_place_below_nested_parent),
+	TESTFN(test_subsurface_place_below_grandparent),
+	TESTFN(test_subsurface_place_below_great_aunt),
+	TESTFN(test_subsurface_place_below_child),
+	TESTFN(test_subsurface_place_above_stranger),
+	TESTFN(test_subsurface_place_below_stranger),
+	TESTFN(test_subsurface_place_above_foreign),
+	TESTFN(test_subsurface_place_below_foreign),
+	TESTFN(test_subsurface_destroy_protocol),
+	TESTFN(test_subsurface_destroy_permutations),
+);
