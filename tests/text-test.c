@@ -180,7 +180,8 @@ static const struct zwp_text_input_v1_listener text_input_listener = {
 	text_input_text_direction
 };
 
-TEST(text_test)
+static enum test_result_code
+text_test(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct global *global;
@@ -245,3 +246,7 @@ TEST(text_test)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(text_test),
+);
