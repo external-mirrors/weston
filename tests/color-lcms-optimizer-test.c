@@ -166,7 +166,8 @@ are_matrices_equal(const cmsFloat64Number matrix_A[N_CHANNELS * N_CHANNELS],
 }
 
 /* Pipeline with a regular matrix. Nothing should change. */
-TEST(keep_regular_matrix)
+static enum test_result_code
+keep_regular_matrix(struct wet_testsuite_data *suite_data)
 {
 	struct pipeline_context pc = pipeline_context_new();
 	const _cmsStageMatrixData *data;
@@ -189,7 +190,8 @@ TEST(keep_regular_matrix)
 }
 
 /* Pipeline with a identity matrix, which should be removed. */
-TEST(drop_identity_matrix)
+static enum test_result_code
+drop_identity_matrix(struct wet_testsuite_data *suite_data)
 {
 	struct pipeline_context pc = pipeline_context_new();
 
@@ -206,7 +208,8 @@ TEST(drop_identity_matrix)
 
 /* Pipeline with two inverse matrices. When merged they become identity, which
  * should be removed. */
-TEST(drop_inverse_matrices)
+static enum test_result_code
+drop_inverse_matrices(struct wet_testsuite_data *suite_data)
 {
 	struct pipeline_context pc = pipeline_context_new();
 
@@ -224,7 +227,8 @@ TEST(drop_inverse_matrices)
 
 /* Pipeline with an identity and two inverse matrices. Pipeline must be empty
  * afterwards. */
-TEST(drop_identity_and_inverse_matrices)
+static enum test_result_code
+drop_identity_and_inverse_matrices(struct wet_testsuite_data *suite_data)
 {
 	struct pipeline_context pc = pipeline_context_new();
 
@@ -243,7 +247,8 @@ TEST(drop_identity_and_inverse_matrices)
 
 /* Pipeline has a regular matrix followed by two inverses, which should be
  * removed. Pipeline must contain only the regular matrix afterwards. */
-TEST(only_drop_inverse_matrices)
+static enum test_result_code
+only_drop_inverse_matrices(struct wet_testsuite_data *suite_data)
 {
 	struct pipeline_context pc = pipeline_context_new();
 	const _cmsStageMatrixData *data;
@@ -268,7 +273,8 @@ TEST(only_drop_inverse_matrices)
 }
 
 /* Same as above, but the regular matrix is the last element. */
-TEST(only_drop_inverse_matrices_another_order)
+static enum test_result_code
+only_drop_inverse_matrices_another_order(struct wet_testsuite_data *suite_data)
 {
 	struct pipeline_context pc = pipeline_context_new();
 	const _cmsStageMatrixData *data;
@@ -293,7 +299,8 @@ TEST(only_drop_inverse_matrices_another_order)
 }
 
 /* Pipeline has an identity curve, which should be removed. */
-TEST(drop_identity_curve)
+static enum test_result_code
+drop_identity_curve(struct wet_testsuite_data *suite_data)
 {
 	struct pipeline_context pc = pipeline_context_new();
 
@@ -310,7 +317,8 @@ TEST(drop_identity_curve)
 
 /* Pipeline has two parametric curves that are inverse. So they should be
  * removed from the pipeline. */
-TEST(drop_inverse_curves)
+static enum test_result_code
+drop_inverse_curves(struct wet_testsuite_data *suite_data)
 {
 	struct pipeline_context pc = pipeline_context_new();
 
@@ -328,7 +336,8 @@ TEST(drop_inverse_curves)
 
 /* Pipeline has two parametric inverse curves followed by an identity. Pipeline
  * should be empty afterwards. */
-TEST(drop_identity_and_inverse_curves)
+static enum test_result_code
+drop_identity_and_inverse_curves(struct wet_testsuite_data *suite_data)
 {
 	struct pipeline_context pc = pipeline_context_new();
 
@@ -346,7 +355,8 @@ TEST(drop_identity_and_inverse_curves)
 }
 
 /* Same as above, but the identity is the last element. */
-TEST(drop_identity_and_inverse_curves_another_order)
+static enum test_result_code
+drop_identity_and_inverse_curves_another_order(struct wet_testsuite_data *suite_data)
 {
 	struct pipeline_context pc = pipeline_context_new();
 
@@ -391,7 +401,8 @@ are_curveset_curves_equal_to_curve(struct pipeline_context *pc,
 }
 
 /* Pipeline with a regular curve. Nothing should change. */
-TEST(keep_regular_curve)
+static enum test_result_code
+keep_regular_curve(struct wet_testsuite_data *suite_data)
 {
 	struct pipeline_context pc = pipeline_context_new();
 	cmsStage *stage;
@@ -415,7 +426,8 @@ TEST(keep_regular_curve)
 /* Inverse curves followed by a parametric curve. Inverse curves are dropped (as
  * they would become identity if merged), and parametric curve should not be
  * changed. */
-TEST(do_not_merge_identity_with_parametric)
+static enum test_result_code
+do_not_merge_identity_with_parametric(struct wet_testsuite_data *suite_data)
 {
 	struct pipeline_context pc = pipeline_context_new();
 	cmsStage *stage;
@@ -439,7 +451,8 @@ TEST(do_not_merge_identity_with_parametric)
 }
 
 /* Merge power-law function with itself. */
-TEST(merge_power_law_curves_with_itself)
+static enum test_result_code
+merge_power_law_curves_with_itself(struct wet_testsuite_data *suite_data)
 {
 	struct pipeline_context pc = pipeline_context_new();
 	cmsStage *stage;
@@ -467,7 +480,8 @@ TEST(merge_power_law_curves_with_itself)
 }
 
 /* Merge power-law functions into a single parametric one of the same type. */
-TEST(merge_power_law_curves_with_another)
+static enum test_result_code
+merge_power_law_curves_with_another(struct wet_testsuite_data *suite_data)
 {
 	struct pipeline_context pc = pipeline_context_new();
 	cmsStage *stage;
@@ -495,3 +509,20 @@ TEST(merge_power_law_curves_with_another)
 }
 
 #endif /* HAVE_CMS_GET_TONE_CURVE_SEGMENT */
+
+DECLARE_TEST_LIST(
+	TESTFN(keep_regular_matrix),
+	TESTFN(drop_identity_matrix),
+	TESTFN(drop_inverse_matrices),
+	TESTFN(drop_identity_and_inverse_matrices),
+	TESTFN(only_drop_inverse_matrices),
+	TESTFN(only_drop_inverse_matrices_another_order),
+	TESTFN(drop_identity_curve),
+	TESTFN(drop_inverse_curves),
+	TESTFN(drop_identity_and_inverse_curves),
+	TESTFN(drop_identity_and_inverse_curves_another_order),
+	TESTFN(keep_regular_curve),
+	TESTFN(do_not_merge_identity_with_parametric),
+	TESTFN(merge_power_law_curves_with_itself),
+	TESTFN(merge_power_law_curves_with_another),
+);
