@@ -75,7 +75,8 @@ send_key(struct client *client, const struct timespec *time,
 	client_roundtrip(client);
 }
 
-TEST(simple_keyboard_test)
+static enum test_result_code
+simple_keyboard_test(struct wet_testsuite_data *suite_data)
 {
 	struct client *client = create_client_with_keyboard_focus();
 	struct keyboard *keyboard = client->input->keyboard;
@@ -114,7 +115,8 @@ TEST(simple_keyboard_test)
 	return RESULT_OK;
 }
 
-TEST(keyboard_key_event_time)
+static enum test_result_code
+keyboard_key_event_time(struct wet_testsuite_data *suite_data)
 {
 	struct client *client = create_client_with_keyboard_focus();
 	struct keyboard *keyboard = client->input->keyboard;
@@ -136,7 +138,8 @@ TEST(keyboard_key_event_time)
 	return RESULT_OK;
 }
 
-TEST(keyboard_timestamps_stop_after_input_timestamps_object_is_destroyed)
+static enum test_result_code
+keyboard_timestamps_stop_after_input_timestamps_object_is_destroyed(struct wet_testsuite_data *suite_data)
 {
 	struct client *client = create_client_with_keyboard_focus();
 	struct keyboard *keyboard = client->input->keyboard;
@@ -158,7 +161,8 @@ TEST(keyboard_timestamps_stop_after_input_timestamps_object_is_destroyed)
 	return RESULT_OK;
 }
 
-TEST(keyboard_timestamps_stop_after_client_releases_wl_keyboard)
+static enum test_result_code
+keyboard_timestamps_stop_after_client_releases_wl_keyboard(struct wet_testsuite_data *suite_data)
 {
 	struct client *client = create_client_with_keyboard_focus();
 	struct keyboard *keyboard = client->input->keyboard;
@@ -188,3 +192,10 @@ TEST(keyboard_timestamps_stop_after_client_releases_wl_keyboard)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(simple_keyboard_test),
+	TESTFN(keyboard_key_event_time),
+	TESTFN(keyboard_timestamps_stop_after_input_timestamps_object_is_destroyed),
+	TESTFN(keyboard_timestamps_stop_after_client_releases_wl_keyboard),
+);
