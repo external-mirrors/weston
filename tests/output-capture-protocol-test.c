@@ -245,7 +245,8 @@ capturer_destroy(struct capturer *capt)
  * Use the guaranteed source and all the right parameters to check that
  * shooting succeeds on the first try.
  */
-TEST(simple_shot)
+static enum test_result_code
+simple_shot(struct wet_testsuite_data *suite_data)
 {
 	const struct setup_args *fix = &my_setup_args[get_test_fixture_index()];
 	struct client *client;
@@ -289,7 +290,8 @@ TEST(simple_shot)
  * Use a guaranteed source, but use an unsupported pixel format.
  * This should always cause a retry.
  */
-TEST(retry_on_wrong_format)
+static enum test_result_code
+retry_on_wrong_format(struct wet_testsuite_data *suite_data)
 {
 	const struct setup_args *fix = &my_setup_args[get_test_fixture_index()];
 	const uint32_t drm_format = DRM_FORMAT_ABGR2101010;
@@ -337,7 +339,8 @@ TEST(retry_on_wrong_format)
  * Use a guaranteed source, but use a smaller buffer size.
  * This should always cause a retry.
  */
-TEST(retry_on_wrong_size)
+static enum test_result_code
+retry_on_wrong_size(struct wet_testsuite_data *suite_data)
 {
 	const struct setup_args *fix = &my_setup_args[get_test_fixture_index()];
 	struct client *client;
@@ -380,7 +383,8 @@ TEST(retry_on_wrong_size)
  * Try a source that is guaranteed to not exist, and check that
  * capturing fails.
  */
-TEST(writeback_on_headless_fails)
+static enum test_result_code
+writeback_on_headless_fails(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct capturer *capt;
@@ -413,3 +417,10 @@ TEST(writeback_on_headless_fails)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(simple_shot),
+	TESTFN(retry_on_wrong_format),
+	TESTFN(retry_on_wrong_size),
+	TESTFN(writeback_on_headless_fails),
+);
