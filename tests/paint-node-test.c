@@ -106,9 +106,9 @@ get_paint_node_status(struct client *client,
 }
 
 
-TEST(paint_node_status_on_repaint)
+static enum test_result_code
+paint_node_status_on_repaint(struct wet_testsuite_data *suite_data)
 {
-	struct wet_testsuite_data *suite_data = TEST_GET_SUITE_DATA();
 	struct client *client;
 	struct buffer *buf1, *buf2, *buf3;
 	enum weston_paint_node_status changes;
@@ -206,9 +206,9 @@ TEST(paint_node_status_on_repaint)
 }
 
 
-TEST(top_surface_present_in_output_repaint)
+static enum test_result_code
+top_surface_present_in_output_repaint(struct wet_testsuite_data *suite_data)
 {
-	struct wet_testsuite_data *suite_data = TEST_GET_SUITE_DATA();
 	struct client *client;
 	struct buffer *buf;
 	pixman_color_t red;
@@ -269,9 +269,9 @@ TEST(top_surface_present_in_output_repaint)
 	return RESULT_OK;
 }
 
-TEST(test_surface_unmaps_on_null)
+static enum test_result_code
+test_surface_unmaps_on_null(struct wet_testsuite_data *suite_data)
 {
-	struct wet_testsuite_data *suite_data = TEST_GET_SUITE_DATA();
 	struct client *client;
 	struct buffer *buf;
 	pixman_color_t red;
@@ -364,3 +364,9 @@ TEST(test_surface_unmaps_on_null)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(paint_node_status_on_repaint),
+	TESTFN(top_surface_present_in_output_repaint),
+	TESTFN(test_surface_unmaps_on_null),
+);
