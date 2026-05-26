@@ -44,7 +44,9 @@ fixture_setup(struct weston_test_harness *harness)
 }
 DECLARE_FIXTURE_SETUP(fixture_setup);
 
-TEST(drm_smoke) {
+static enum test_result_code
+drm_smoke(struct wet_testsuite_data *suite_data)
+{
 	struct client *client;
 	struct buffer *buffer;
 	struct wl_surface *surface;
@@ -73,7 +75,9 @@ TEST(drm_smoke) {
 	return RESULT_OK;
 }
 
-TEST(drm_screenshot_no_damage) {
+static enum test_result_code
+drm_screenshot_no_damage(struct wet_testsuite_data *suite_data)
+{
 	struct client *client;
 	int i;
 	bool ret;
@@ -100,3 +104,8 @@ TEST(drm_screenshot_no_damage) {
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(drm_smoke),
+	TESTFN(drm_screenshot_no_damage),
+);
