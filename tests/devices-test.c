@@ -58,7 +58,8 @@ DECLARE_FIXTURE_SETUP(fixture_setup);
 
 /* simply test if weston sends the right capabilities when
  * some devices are removed */
-TEST(seat_capabilities_test)
+static enum test_result_code
+seat_capabilities_test(struct wet_testsuite_data *suite_data)
 {
 	struct client *cl = create_client_and_test_surface(100, 100, 100, 100);
 	test_assert_enum(cl->input->caps, WL_SEAT_CAPABILITY_ALL);
@@ -117,7 +118,8 @@ TEST(seat_capabilities_test)
 }
 
 #define COUNT 15
-TEST(multiple_device_add_and_remove)
+static enum test_result_code
+multiple_device_add_and_remove(struct wet_testsuite_data *suite_data)
 {
 	int i;
 	struct client *cl = create_client_and_test_surface(100, 100, 100, 100);
@@ -198,7 +200,8 @@ device_release_before_destroy(void)
 	client_destroy(cl);
 }
 
-TEST(device_release_before_destroy_multiple)
+static enum test_result_code
+device_release_before_destroy_multiple(struct wet_testsuite_data *suite_data)
 {
 	int i;
 
@@ -249,7 +252,8 @@ device_release_after_destroy(void)
 	client_destroy(cl);
 }
 
-TEST(device_release_after_destroy_multiple)
+static enum test_result_code
+device_release_after_destroy_multiple(struct wet_testsuite_data *suite_data)
 {
 	int i;
 
@@ -324,7 +328,8 @@ get_device_after_destroy(void)
 	client_destroy(cl);
 }
 
-TEST(get_device_after_destroy_multiple)
+static enum test_result_code
+get_device_after_destroy_multiple(struct wet_testsuite_data *suite_data)
 {
 	int i;
 
@@ -337,7 +342,8 @@ TEST(get_device_after_destroy_multiple)
 	return RESULT_OK;
 }
 
-TEST(seats_have_names)
+static enum test_result_code
+seats_have_names(struct wet_testsuite_data *suite_data)
 {
 	struct client *cl = create_client_and_test_surface(100, 100, 100, 100);
 	struct input *input;
@@ -351,7 +357,8 @@ TEST(seats_have_names)
 	return RESULT_OK;
 }
 
-TEST(seat_destroy_and_recreate)
+static enum test_result_code
+seat_destroy_and_recreate(struct wet_testsuite_data *suite_data)
 {
 	struct client *cl = create_client_and_test_surface(100, 100, 100, 100);
 
@@ -376,3 +383,13 @@ TEST(seat_destroy_and_recreate)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(seat_capabilities_test),
+	TESTFN(multiple_device_add_and_remove),
+	TESTFN(device_release_before_destroy_multiple),
+	TESTFN(device_release_after_destroy_multiple),
+	TESTFN(get_device_after_destroy_multiple),
+	TESTFN(seats_have_names),
+	TESTFN(seat_destroy_and_recreate),
+);
