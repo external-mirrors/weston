@@ -149,7 +149,8 @@ fixture_setup(struct weston_test_harness *harness)
 DECLARE_FIXTURE_SETUP(fixture_setup);
 
 
-TEST(create_image_description_before_setting_icc_file)
+static enum test_result_code
+create_image_description_before_setting_icc_file(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct color_manager_client *cm;
@@ -178,7 +179,8 @@ TEST(create_image_description_before_setting_icc_file)
 	return RESULT_OK;
 }
 
-TEST(set_unreadable_icc_fd)
+static enum test_result_code
+set_unreadable_icc_fd(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct color_manager_client *cm;
@@ -211,7 +213,8 @@ TEST(set_unreadable_icc_fd)
 	return RESULT_OK;
 }
 
-TEST(set_bad_icc_size_zero)
+static enum test_result_code
+set_bad_icc_size_zero(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct color_manager_client *cm;
@@ -240,7 +243,8 @@ TEST(set_bad_icc_size_zero)
 	return RESULT_OK;
 }
 
-TEST(set_bad_icc_non_seekable)
+static enum test_result_code
+set_bad_icc_non_seekable(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct color_manager_client *cm;
@@ -271,7 +275,8 @@ TEST(set_bad_icc_non_seekable)
 	return RESULT_OK;
 }
 
-TEST(set_icc_twice)
+static enum test_result_code
+set_icc_twice(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct color_manager_client *cm;
@@ -306,7 +311,8 @@ TEST(set_icc_twice)
 	return RESULT_OK;
 }
 
-TEST(create_icc_image_description_no_info)
+static enum test_result_code
+create_icc_image_description_no_info(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct color_manager_client *cm;
@@ -333,7 +339,8 @@ TEST(create_icc_image_description_no_info)
 	return RESULT_OK;
 }
 
-TEST(create_image_description_soft_fail)
+static enum test_result_code
+create_image_description_soft_fail(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct color_manager_client *cm;
@@ -353,7 +360,8 @@ TEST(create_image_description_soft_fail)
 	return RESULT_OK;
 }
 
-TEST(set_failed_image_description)
+static enum test_result_code
+set_failed_image_description(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct color_manager_client *cm;
@@ -379,7 +387,8 @@ TEST(set_failed_image_description)
 	return RESULT_OK;
 }
 
-TEST(get_surface_twice_bad)
+static enum test_result_code
+get_surface_twice_bad(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct color_manager_client *cm;
@@ -401,7 +410,8 @@ TEST(get_surface_twice_bad)
 	return RESULT_OK;
 }
 
-TEST(get_surface_twice_good)
+static enum test_result_code
+get_surface_twice_good(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct color_manager_client *cm;
@@ -420,7 +430,8 @@ TEST(get_surface_twice_good)
 	return RESULT_OK;
 }
 
-TEST(set_surface_image_description)
+static enum test_result_code
+set_surface_image_description(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct color_manager_client *cm;
@@ -452,7 +463,8 @@ TEST(set_surface_image_description)
 	return RESULT_OK;
 }
 
-TEST(set_inert_surface_image_description)
+static enum test_result_code
+set_inert_surface_image_description(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct color_manager_client *cm;
@@ -485,7 +497,8 @@ TEST(set_inert_surface_image_description)
 	return RESULT_OK;
 }
 
-TEST(set_bad_rendering_intent)
+static enum test_result_code
+set_bad_rendering_intent(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct color_manager_client *cm;
@@ -514,7 +527,8 @@ TEST(set_bad_rendering_intent)
 	return RESULT_OK;
 }
 
-TEST(inert_get_preferred_image_description)
+static enum test_result_code
+inert_get_preferred_image_description(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct color_manager_client *cm;
@@ -924,12 +938,13 @@ static const struct parametric_case parametric_cases[] = {
 	},
 };
 
-TEST_P(create_parametric_image_description, parametric_cases)
+static enum test_result_code
+create_parametric_image_description(struct wet_testsuite_data *suite_data,
+				    const struct parametric_case *args)
 {
 	struct client *client;
 	struct color_manager_client *cm;
 	struct wp_image_description_creator_params_v1 *image_desc_creator_param = NULL;
-	const struct parametric_case *args = data;
 	struct image_description *image_desc = NULL;
 
 	client = create_client();
@@ -988,9 +1003,10 @@ TEST_P(create_parametric_image_description, parametric_cases)
 	if (args->target_primaries)
 		param_creator_set_mastering_display_primaries(image_desc_creator_param,
 							      args->target_primaries);
-	/**
-	 * The only possible failure for set_mastering_display() is ALREADY_SET, but we test
-	 * that in another TEST(). So we don't have ERROR_POINT_MASTERING_DISPLAY_PRIMARIES.
+	/*
+	 * The only possible failure for set_mastering_display() is ALREADY_SET,
+	 * but we test that in set_target_primaries_twice().
+	 * So we don't have ERROR_POINT_MASTERING_DISPLAY_PRIMARIES.
 	 */
 
 	if (args->target_min_lum != NOT_SET && args->target_max_lum != NOT_SET)
@@ -1006,17 +1022,19 @@ TEST_P(create_parametric_image_description, parametric_cases)
 	if (args->target_max_cll != NOT_SET)
 		wp_image_description_creator_params_v1_set_max_cll(image_desc_creator_param,
 								   args->target_max_cll);
-	/**
-	 * The only possible failure for set_max_cll() is ALREADY_SET, but we test that
-	 * in another TEST(). So we don't have ERROR_POINT_TARGET_MAX_CLL.
+	/*
+	 * The only possible failure for set_max_cll() is ALREADY_SET,
+	 * but we test that in set_cll_twice().
+	 * So we don't have ERROR_POINT_TARGET_MAX_CLL.
 	 */
 
 	if (args->target_max_fall != NOT_SET)
 		wp_image_description_creator_params_v1_set_max_fall(image_desc_creator_param,
 								    args->target_max_fall);
-	/**
-	 * The only possible failure for set_max_fall() is ALREADY_SET, but we test that
-	 * in another TEST(). So we don't have ERROR_POINT_TARGET_MAX_FALL.
+	/*
+	 * The only possible failure for set_max_fall() is ALREADY_SET,
+	 * but we test that in set_max_fall_twice().
+	 * So we don't have ERROR_POINT_TARGET_MAX_FALL.
 	 */
 
 	image_desc = image_description_from_param(image_desc_creator_param);
@@ -1052,7 +1070,8 @@ out:
 	return RESULT_OK;
 }
 
-TEST(set_primaries_named_twice)
+static enum test_result_code
+set_primaries_named_twice(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct color_manager_client *cm;
@@ -1076,7 +1095,8 @@ TEST(set_primaries_named_twice)
 	return RESULT_OK;
 }
 
-TEST(set_primaries_twice)
+static enum test_result_code
+set_primaries_twice(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct color_manager_client *cm;
@@ -1098,7 +1118,8 @@ TEST(set_primaries_twice)
 	return RESULT_OK;
 }
 
-TEST(set_primaries_then_primaries_named)
+static enum test_result_code
+set_primaries_then_primaries_named(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct color_manager_client *cm;
@@ -1121,7 +1142,8 @@ TEST(set_primaries_then_primaries_named)
 	return RESULT_OK;
 }
 
-TEST(set_primaries_named_then_primaries)
+static enum test_result_code
+set_primaries_named_then_primaries(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct color_manager_client *cm;
@@ -1144,7 +1166,8 @@ TEST(set_primaries_named_then_primaries)
 	return RESULT_OK;
 }
 
-TEST(set_tf_power_twice)
+static enum test_result_code
+set_tf_power_twice(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct color_manager_client *cm;
@@ -1168,7 +1191,8 @@ TEST(set_tf_power_twice)
 	return RESULT_OK;
 }
 
-TEST(set_tf_named_twice)
+static enum test_result_code
+set_tf_named_twice(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct color_manager_client *cm;
@@ -1192,7 +1216,8 @@ TEST(set_tf_named_twice)
 	return RESULT_OK;
 }
 
-TEST(set_tf_power_then_tf_named)
+static enum test_result_code
+set_tf_power_then_tf_named(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct color_manager_client *cm;
@@ -1216,7 +1241,8 @@ TEST(set_tf_power_then_tf_named)
 	return RESULT_OK;
 }
 
-TEST(set_tf_named_then_tf_power)
+static enum test_result_code
+set_tf_named_then_tf_power(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct color_manager_client *cm;
@@ -1240,7 +1266,8 @@ TEST(set_tf_named_then_tf_power)
 	return RESULT_OK;
 }
 
-TEST(set_luminance_twice)
+static enum test_result_code
+set_luminance_twice(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct color_manager_client *cm;
@@ -1271,7 +1298,8 @@ TEST(set_luminance_twice)
 	return RESULT_OK;
 }
 
-TEST(set_target_primaries_twice)
+static enum test_result_code
+set_target_primaries_twice(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct color_manager_client *cm;
@@ -1293,7 +1321,8 @@ TEST(set_target_primaries_twice)
 	return RESULT_OK;
 }
 
-TEST(set_target_luminance_twice)
+static enum test_result_code
+set_target_luminance_twice(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct color_manager_client *cm;
@@ -1321,7 +1350,8 @@ TEST(set_target_luminance_twice)
 	return RESULT_OK;
 }
 
-TEST(set_max_cll_twice)
+static enum test_result_code
+set_max_cll_twice(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct color_manager_client *cm;
@@ -1343,7 +1373,8 @@ TEST(set_max_cll_twice)
 	return RESULT_OK;
 }
 
-TEST(set_max_fall_twice)
+static enum test_result_code
+set_max_fall_twice(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct color_manager_client *cm;
@@ -1364,3 +1395,34 @@ TEST(set_max_fall_twice)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(create_image_description_before_setting_icc_file),
+	TESTFN(set_unreadable_icc_fd),
+	TESTFN(set_bad_icc_size_zero),
+	TESTFN(set_bad_icc_non_seekable),
+	TESTFN(set_icc_twice),
+	TESTFN(create_icc_image_description_no_info),
+	TESTFN(create_image_description_soft_fail),
+	TESTFN(set_failed_image_description),
+	TESTFN(get_surface_twice_bad),
+	TESTFN(get_surface_twice_good),
+	TESTFN(set_surface_image_description),
+	TESTFN(set_inert_surface_image_description),
+	TESTFN(set_bad_rendering_intent),
+	TESTFN(inert_get_preferred_image_description),
+	TESTFN_ARG(create_parametric_image_description, parametric_cases),
+	TESTFN(set_primaries_named_twice),
+	TESTFN(set_primaries_twice),
+	TESTFN(set_primaries_then_primaries_named),
+	TESTFN(set_primaries_named_then_primaries),
+	TESTFN(set_tf_power_twice),
+	TESTFN(set_tf_named_twice),
+	TESTFN(set_tf_power_then_tf_named),
+	TESTFN(set_tf_named_then_tf_power),
+	TESTFN(set_luminance_twice),
+	TESTFN(set_target_primaries_twice),
+	TESTFN(set_target_luminance_twice),
+	TESTFN(set_max_cll_twice),
+	TESTFN(set_max_fall_twice),
+);
