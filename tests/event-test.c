@@ -67,7 +67,8 @@ check_client_move(struct client *client, int x, int y)
 	}
 }
 
-TEST(test_surface_output)
+static enum test_result_code
+test_surface_output(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	int x, y;
@@ -129,7 +130,8 @@ static struct wl_buffer_listener buffer_listener = {
 	buffer_release_handler
 };
 
-TEST(buffer_release)
+static enum test_result_code
+buffer_release(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct wl_surface *surface;
@@ -194,3 +196,8 @@ TEST(buffer_release)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(test_surface_output),
+	TESTFN(buffer_release),
+);
