@@ -208,7 +208,8 @@ fixture_setup(struct weston_test_harness *harness, const struct setup_args *arg)
 }
 DECLARE_FIXTURE_SETUP_WITH_ARG(fixture_setup, my_setup_args, meta);
 
-TEST(color_effects)
+static enum test_result_code
+color_effects(struct wet_testsuite_data *suite_data)
 {
 	int seq_no = get_test_fixture_index();
 	const struct setup_args *arg = &my_setup_args[seq_no];
@@ -272,3 +273,7 @@ TEST(color_effects)
 
 	return res ? RESULT_OK : RESULT_FAIL;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(color_effects),
+);
