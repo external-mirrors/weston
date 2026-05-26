@@ -1575,10 +1575,10 @@ redraw(struct window *window)
 
 	struct window_frame *frame = &window->vk.frames[window->vk.frame_index];
 
-	memcpy(frame->ubo_buffer.map, &rotation.M.colmaj, sizeof(rotation.M.colmaj));
-
 	assert(window->vk.frame_index < ARRAY_LENGTH(window->vk.frames));
 	vkWaitForFences(window->vk.dev, 1, &frame->fence, VK_TRUE, UINT64_MAX);
+
+	memcpy(frame->ubo_buffer.map, &rotation.M.colmaj, sizeof(rotation.M.colmaj));
 
 	uint32_t image_index;
 	result = vkAcquireNextImageKHR(window->vk.dev, window->vk.swapchain, UINT64_MAX,
