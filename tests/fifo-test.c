@@ -87,7 +87,8 @@ surface_commit_color(struct client *client, struct wl_surface *surface,
 }
 
 /* Ensure we can only have one fifo object for a surface */
-TEST(get_two_fifos)
+static enum test_result_code
+get_two_fifos(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct wp_fifo_v1 *fifo1, *fifo2;
@@ -107,7 +108,8 @@ TEST(get_two_fifos)
 }
 
 /* Ensure we can get a second fifo for a surface if we destroy the first. */
-TEST(get_two_fifos_safely)
+static enum test_result_code
+get_two_fifos_safely(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct wp_fifo_v1 *fifo;
@@ -128,7 +130,8 @@ TEST(get_two_fifos_safely)
 /* Ensure the appropriate error occurs for using a fifo object associated
  * with a destroyed surface.
  */
-TEST(use_fifo_on_destroyed_surface)
+static enum test_result_code
+use_fifo_on_destroyed_surface(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct wp_fifo_v1 *fifo;
@@ -151,7 +154,8 @@ TEST(use_fifo_on_destroyed_surface)
 /* Ensure the compositor doesn't explode if we delete a surface with
  * active barriers
  */
-TEST(fifo_delete_surface_with_barriers)
+static enum test_result_code
+fifo_delete_surface_with_barriers(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct buffer *buf;
@@ -213,9 +217,9 @@ check_fifo_status(struct client *client,
 }
 
 /* Make sure N barriers provokes N redraws */
-TEST(fifo_many_barriers)
+static enum test_result_code
+fifo_many_barriers(struct wet_testsuite_data *suite_data)
 {
-	struct wet_testsuite_data *suite_data = TEST_GET_SUITE_DATA();
 	struct client *client;
 	struct buffer *buf, *buf2;
 	struct wp_fifo_v1 *fifo;
@@ -330,7 +334,8 @@ feedback_create(struct client *client,
  * This is a "may" in the spec, so this isn't necessarily rigorous,
  * but a strong effort.
  */
-TEST(fifo_on_occluded_surface)
+static enum test_result_code
+fifo_on_occluded_surface(struct wet_testsuite_data *suite_data)
 {
 	struct wl_subcompositor *subco;
 	struct wl_surface *oc_surf;
@@ -494,9 +499,9 @@ get_surface_width(struct client *client,
 }
 
 /* Make sure fifo is ignored on synchronous subsurfaces, but works on desync */
-TEST(fifo_on_subsurface)
+static enum test_result_code
+fifo_on_subsurface(struct wet_testsuite_data *suite_data)
 {
-	struct wet_testsuite_data *suite_data = TEST_GET_SUITE_DATA();
 	struct wl_subcompositor *subco;
 	struct wl_surface *surf;
 	struct wl_subsurface *subsurf;
@@ -597,9 +602,9 @@ TEST(fifo_on_subsurface)
 /* Make sure that surface state changes that can change occlusion status are
  * properly noticed before a redraw.
  */
-TEST(fifo_when_occlusion_changes)
+static enum test_result_code
+fifo_when_occlusion_changes(struct wet_testsuite_data *suite_data)
 {
-	struct wet_testsuite_data *suite_data = TEST_GET_SUITE_DATA();
 	struct wl_subcompositor *subco;
 	struct wl_surface *surf;
 	struct wl_subsurface *subsurf;
@@ -689,3 +694,14 @@ TEST(fifo_when_occlusion_changes)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(get_two_fifos),
+	TESTFN(get_two_fifos_safely),
+	TESTFN(use_fifo_on_destroyed_surface),
+	TESTFN(fifo_delete_surface_with_barriers),
+	TESTFN(fifo_many_barriers),
+	TESTFN(fifo_on_occluded_surface),
+	TESTFN(fifo_on_subsurface),
+	TESTFN(fifo_when_occlusion_changes),
+);
