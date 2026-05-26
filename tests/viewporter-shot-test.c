@@ -69,7 +69,8 @@ fixture_setup(struct weston_test_harness *harness,
 DECLARE_FIXTURE_SETUP_WITH_ARG(fixture_setup, my_setup_args, meta);
 
 
-TEST(viewport_upscale_solid)
+static enum test_result_code
+viewport_upscale_solid(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct wp_viewport *viewport;
@@ -104,3 +105,7 @@ TEST(viewport_upscale_solid)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(viewport_upscale_solid),
+);
