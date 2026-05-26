@@ -73,8 +73,10 @@ fixture_setup(struct weston_test_harness *harness, const struct setup_args *arg)
 }
 DECLARE_FIXTURE_SETUP_WITH_ARG(fixture_setup, my_setup_args, meta);
 
-TEST_P(color_representation_renderer, color_state_cases) {
-	const struct color_state *color_state = data;
+static enum test_result_code
+color_representation_renderer(struct wet_testsuite_data *suite_data,
+			      const struct color_state *color_state)
+{
 	const struct setup_args *args = &my_setup_args[get_test_fixture_index()];
 
 	return test_color_representation(color_state, args->buffer_type,
@@ -149,7 +151,8 @@ static const struct wl_buffer_listener buffer_listener = {
  * Test that the same NV12 buffer can be attached to multiple wl_surfaces with
  * different color representation values.
  */
-TEST(drm_color_representation_reuse_buffer)
+static enum test_result_code
+drm_color_representation_reuse_buffer(struct wet_testsuite_data *suite_data)
 {
 	const struct setup_args *args = &my_setup_args[get_test_fixture_index()];
 	struct xdg_client *xdg_client;
@@ -256,3 +259,8 @@ TEST(drm_color_representation_reuse_buffer)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN_ARG(color_representation_renderer, color_state_cases),
+	TESTFN(drm_color_representation_reuse_buffer),
+);
