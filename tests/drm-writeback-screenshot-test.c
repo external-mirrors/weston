@@ -102,7 +102,9 @@ draw_stuff(pixman_image_t *image)
 		}
 }
 
-TEST(drm_writeback_screenshot) {
+static enum test_result_code
+drm_writeback_screenshot(struct wet_testsuite_data *suite_data)
+{
 	const struct setup_args *args = &my_setup_args[get_test_fixture_index()];
 	struct client *client;
 	struct buffer *buffer;
@@ -197,3 +199,7 @@ TEST(drm_writeback_screenshot) {
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(drm_writeback_screenshot),
+);
