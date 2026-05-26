@@ -78,9 +78,15 @@ iterate_debug_scopes(struct weston_compositor *compositor)
 	test_assert_true(found_test_harness_debug_scope);
 }
 
-PLUGIN_TEST(iterate_default_debug_scopes)
+static enum test_result_code
+iterate_default_debug_scopes(struct wet_testsuite_data *suite_data,
+			     struct weston_compositor *compositor)
 {
 	iterate_debug_scopes(compositor);
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN_PLUGIN(iterate_default_debug_scopes),
+);
