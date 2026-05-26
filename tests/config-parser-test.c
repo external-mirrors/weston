@@ -71,7 +71,8 @@ assert_load_config(const char *text)
 static const char *comment_only_text =
 	"# nothing in this file...\n";
 
-TEST(comment_only)
+static enum test_result_code
+comment_only(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(comment_only_text);
 
@@ -125,7 +126,8 @@ static const char *legit_text =
 	"color=red\n"
 	"contents=sand\n";
 
-TEST(legit_test01)
+static enum test_result_code
+legit_test01(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -139,7 +141,8 @@ TEST(legit_test01)
 	return RESULT_OK;
 }
 
-TEST(legit_test02)
+static enum test_result_code
+legit_test02(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -158,7 +161,8 @@ TEST(legit_test02)
 	return RESULT_OK;
 }
 
-TEST(legit_test03)
+static enum test_result_code
+legit_test03(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -177,7 +181,8 @@ TEST(legit_test03)
 	return RESULT_OK;
 }
 
-TEST(legit_test04)
+static enum test_result_code
+legit_test04(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -196,7 +201,8 @@ TEST(legit_test04)
 	return RESULT_OK;
 }
 
-TEST(legit_test05)
+static enum test_result_code
+legit_test05(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -216,7 +222,8 @@ TEST(legit_test05)
 	return RESULT_OK;
 }
 
-TEST(legit_test06)
+static enum test_result_code
+legit_test06(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -235,7 +242,8 @@ TEST(legit_test06)
 	return RESULT_OK;
 }
 
-TEST(legit_test07)
+static enum test_result_code
+legit_test07(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -254,7 +262,8 @@ TEST(legit_test07)
 	return RESULT_OK;
 }
 
-TEST(legit_test08)
+static enum test_result_code
+legit_test08(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -273,7 +282,8 @@ TEST(legit_test08)
 	return RESULT_OK;
 }
 
-TEST(legit_test09)
+static enum test_result_code
+legit_test09(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -292,7 +302,8 @@ TEST(legit_test09)
 	return RESULT_OK;
 }
 
-TEST(legit_test10)
+static enum test_result_code
+legit_test10(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -310,7 +321,8 @@ TEST(legit_test10)
 	return RESULT_OK;
 }
 
-TEST(legit_test11)
+static enum test_result_code
+legit_test11(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -328,7 +340,8 @@ TEST(legit_test11)
 	return RESULT_OK;
 }
 
-TEST(legit_test12)
+static enum test_result_code
+legit_test12(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -347,7 +360,8 @@ TEST(legit_test12)
 	return RESULT_OK;
 }
 
-TEST(legit_test13)
+static enum test_result_code
+legit_test13(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -367,7 +381,8 @@ TEST(legit_test13)
 	return RESULT_OK;
 }
 
-TEST(legit_test14)
+static enum test_result_code
+legit_test14(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -387,7 +402,8 @@ TEST(legit_test14)
 	return RESULT_OK;
 }
 
-TEST(legit_test15)
+static enum test_result_code
+legit_test15(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -409,7 +425,8 @@ TEST(legit_test15)
 	return RESULT_OK;
 }
 
-TEST(legit_test16)
+static enum test_result_code
+legit_test16(struct wet_testsuite_data *suite_data)
 {
 	static const char *section_names[] = {
 		"foo", "bar", "colors", "stuff", "bucket", "bucket"
@@ -431,7 +448,8 @@ TEST(legit_test16)
 	return RESULT_OK;
 }
 
-TEST(legit_test17)
+static enum test_result_code
+legit_test17(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -450,7 +468,8 @@ TEST(legit_test17)
 	return RESULT_OK;
 }
 
-TEST(legit_test18)
+static enum test_result_code
+legit_test18(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -469,7 +488,8 @@ TEST(legit_test18)
 	return RESULT_OK;
 }
 
-TEST(legit_test19)
+static enum test_result_code
+legit_test19(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -488,7 +508,8 @@ TEST(legit_test19)
 	return RESULT_OK;
 }
 
-TEST(legit_test20)
+static enum test_result_code
+legit_test20(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -507,7 +528,8 @@ TEST(legit_test20)
 	return RESULT_OK;
 }
 
-TEST(legit_test21)
+static enum test_result_code
+legit_test21(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -526,7 +548,8 @@ TEST(legit_test21)
 	return RESULT_OK;
 }
 
-TEST(legit_test22)
+static enum test_result_code
+legit_test22(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -546,7 +569,8 @@ TEST(legit_test22)
 	return RESULT_OK;
 }
 
-TEST(legit_test23)
+static enum test_result_code
+legit_test23(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -566,7 +590,8 @@ TEST(legit_test23)
 	return RESULT_OK;
 }
 
-TEST(legit_test24)
+static enum test_result_code
+legit_test24(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -586,7 +611,8 @@ TEST(legit_test24)
 	return RESULT_OK;
 }
 
-TEST(legit_test25)
+static enum test_result_code
+legit_test25(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -606,7 +632,8 @@ TEST(legit_test25)
 	return RESULT_OK;
 }
 
-TEST(legit_test26)
+static enum test_result_code
+legit_test26(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -625,7 +652,8 @@ TEST(legit_test26)
 	return RESULT_OK;
 }
 
-TEST(legit_test27)
+static enum test_result_code
+legit_test27(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -644,7 +672,8 @@ TEST(legit_test27)
 	return RESULT_OK;
 }
 
-TEST(get_double_number)
+static enum test_result_code
+get_double_number(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -664,7 +693,8 @@ TEST(get_double_number)
 	return RESULT_OK;
 }
 
-TEST(get_double_missing)
+static enum test_result_code
+get_double_missing(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -683,7 +713,8 @@ TEST(get_double_missing)
 	return RESULT_OK;
 }
 
-TEST(get_double_zero)
+static enum test_result_code
+get_double_zero(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -703,7 +734,8 @@ TEST(get_double_zero)
 	return RESULT_OK;
 }
 
-TEST(get_double_negative)
+static enum test_result_code
+get_double_negative(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -723,7 +755,8 @@ TEST(get_double_negative)
 	return RESULT_OK;
 }
 
-TEST(get_double_flag)
+static enum test_result_code
+get_double_flag(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -743,7 +776,8 @@ TEST(get_double_flag)
 	return RESULT_OK;
 }
 
-TEST(get_double_real)
+static enum test_result_code
+get_double_real(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -763,7 +797,8 @@ TEST(get_double_real)
 	return RESULT_OK;
 }
 
-TEST(get_double_negreal)
+static enum test_result_code
+get_double_negreal(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -783,7 +818,8 @@ TEST(get_double_negreal)
 	return RESULT_OK;
 }
 
-TEST(get_double_expval)
+static enum test_result_code
+get_double_expval(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -803,7 +839,8 @@ TEST(get_double_expval)
 	return RESULT_OK;
 }
 
-TEST(get_double_negexpval)
+static enum test_result_code
+get_double_negexpval(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -823,7 +860,8 @@ TEST(get_double_negexpval)
 	return RESULT_OK;
 }
 
-TEST(get_double_notanumber)
+static enum test_result_code
+get_double_notanumber(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -843,7 +881,8 @@ TEST(get_double_notanumber)
 	return RESULT_OK;
 }
 
-TEST(get_double_empty)
+static enum test_result_code
+get_double_empty(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -863,7 +902,8 @@ TEST(get_double_empty)
 	return RESULT_OK;
 }
 
-TEST(get_double_tiny)
+static enum test_result_code
+get_double_tiny(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config *config = assert_load_config(legit_text);
 	struct weston_config_section *section;
@@ -900,16 +940,18 @@ static const struct doesnt_parse_test doesnt_parse_test_data[] = {
 	},
 };
 
-TEST_P(doesnt_parse, doesnt_parse_test_data)
+static enum test_result_code
+doesnt_parse(struct wet_testsuite_data *suite_data,
+	     const struct doesnt_parse_test *test)
 {
-	struct doesnt_parse_test *test = (struct doesnt_parse_test *) data;
 	struct weston_config *config = load_config(test->text);
 	test_assert_ptr_null(config);
 
 	return RESULT_OK;
 }
 
-TEST(destroy_null)
+static enum test_result_code
+destroy_null(struct wet_testsuite_data *suite_data)
 {
 	weston_config_destroy(NULL);
 	test_assert_int_eq(0, weston_config_next_section(NULL, NULL, NULL));
@@ -917,7 +959,8 @@ TEST(destroy_null)
 	return RESULT_OK;
 }
 
-TEST(section_from_null)
+static enum test_result_code
+section_from_null(struct wet_testsuite_data *suite_data)
 {
 	struct weston_config_section *section;
 	section = weston_config_get_section(NULL, "bucket", NULL, NULL);
@@ -926,7 +969,8 @@ TEST(section_from_null)
 	return RESULT_OK;
 }
 
-TEST(parse_comma_separated_list)
+static enum test_result_code
+parse_comma_separated_list(struct wet_testsuite_data *suite_data)
 {
 	const char *matter;
 	struct weston_string_array strarr;
@@ -1000,3 +1044,50 @@ TEST(parse_comma_separated_list)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(comment_only),
+	TESTFN(legit_test01),
+	TESTFN(legit_test02),
+	TESTFN(legit_test03),
+	TESTFN(legit_test04),
+	TESTFN(legit_test05),
+	TESTFN(legit_test06),
+	TESTFN(legit_test07),
+	TESTFN(legit_test08),
+	TESTFN(legit_test09),
+	TESTFN(legit_test10),
+	TESTFN(legit_test11),
+	TESTFN(legit_test12),
+	TESTFN(legit_test13),
+	TESTFN(legit_test14),
+	TESTFN(legit_test15),
+	TESTFN(legit_test16),
+	TESTFN(legit_test17),
+	TESTFN(legit_test18),
+	TESTFN(legit_test19),
+	TESTFN(legit_test20),
+	TESTFN(legit_test21),
+	TESTFN(legit_test22),
+	TESTFN(legit_test23),
+	TESTFN(legit_test24),
+	TESTFN(legit_test25),
+	TESTFN(legit_test26),
+	TESTFN(legit_test27),
+	TESTFN(get_double_number),
+	TESTFN(get_double_missing),
+	TESTFN(get_double_zero),
+	TESTFN(get_double_negative),
+	TESTFN(get_double_flag),
+	TESTFN(get_double_real),
+	TESTFN(get_double_negreal),
+	TESTFN(get_double_expval),
+	TESTFN(get_double_negexpval),
+	TESTFN(get_double_notanumber),
+	TESTFN(get_double_empty),
+	TESTFN(get_double_tiny),
+	TESTFN_ARG(doesnt_parse, doesnt_parse_test_data),
+	TESTFN(destroy_null),
+	TESTFN(section_from_null),
+	TESTFN(parse_comma_separated_list),
+);
