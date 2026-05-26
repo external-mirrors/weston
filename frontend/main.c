@@ -754,7 +754,8 @@ usage(int error_code)
 		"  --additional-devices=CARD\tSecondary DRM devices to use for output only, e.g. \"card1,card2\".\n"
 		"  --use-pixman\t\tUse the pixman (CPU) renderer (deprecated alias for --renderer=pixman)\n"
 		"  --current-mode\tPrefer current KMS mode over EDID preferred mode\n"
-		"  --continue-without-input\tAllow the compositor to start without input devices\n\n");
+		"  --continue-without-input\tAllow the compositor to start without input devices\n"
+		"  --disable-drm-state-reuse\tForce-rebuild the DRM state on every frame (only available in combination with --debug)\n\n");
 #endif
 
 #if defined(BUILD_HEADLESS_COMPOSITOR)
@@ -4116,10 +4117,16 @@ load_drm_backend(struct weston_compositor *c, int *argc, char **argv,
 		{ WESTON_OPTION_STRING, "additional-devices", 0, &config.additional_devices},
 		{ WESTON_OPTION_BOOLEAN, "current-mode", 0, &wet->drm_use_current_mode },
 		{ WESTON_OPTION_BOOLEAN, "use-pixman", 0, &force_pixman },
-		{ WESTON_OPTION_BOOLEAN, "continue-without-input", false, &without_input }
+		{ WESTON_OPTION_BOOLEAN, "continue-without-input", false, &without_input },
+		{ WESTON_OPTION_BOOLEAN, "disable-drm-state-reuse", false, &config.disable_drm_state_reuse },
 	};
 
 	parse_options(options, ARRAY_LENGTH(options), argc, argv);
+
+	if (config.disable_drm_state_reuse && !weston_compositor_is_debug_protocol_enabled(c)) {
+		weston_log("error: disable-drm-state-reuse option only available in combination with --debug\n");
+		return -1;
+	}
 
 	if (force_pixman && renderer != WESTON_RENDERER_AUTO) {
 		weston_log("error: conflicting renderer specification\n");

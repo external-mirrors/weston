@@ -4630,6 +4630,7 @@ drm_backend_create(struct weston_compositor *compositor,
 	b->pageflip_timeout = config->pageflip_timeout;
 	b->use_pixman_shadow = config->use_pixman_shadow;
 	b->offload_blend_to_output = config->offload_blend_to_output;
+	b->disable_drm_state_reuse = config->disable_drm_state_reuse;
 
 	b->debug = weston_compositor_add_log_scope(compositor, "drm-backend",
 						   "Debug messages from DRM/KMS backend\n",

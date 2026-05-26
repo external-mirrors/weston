@@ -295,6 +295,8 @@ struct drm_backend {
 
 	/* True if we need a workaround for some very old kernels */
 	bool stale_timestamp_workaround;
+
+	bool disable_drm_state_reuse;
 };
 
 struct drm_mode {

@@ -1559,7 +1559,7 @@ drm_assign_planes(struct weston_output *output_base)
 	struct drm_device *device = output->device;
 	struct drm_backend *b = device->backend;
 	struct drm_pending_state *pending_state = device->repaint_data;
-	struct drm_output_state *state;
+	struct drm_output_state *state = NULL;
 	struct drm_plane_state *plane_state;
 	struct drm_writeback_state *wb_state = output->wb_state;
 	struct weston_paint_node *pnode;
@@ -1571,13 +1571,15 @@ drm_assign_planes(struct weston_output *output_base)
 	drm_debug(b, "\t[repaint] preparing state for output %s (%lu)\n",
 		  output_base->name, (unsigned long) output_base->id);
 
-	drm_debug(b, "\t[repaint] trying to reuse prior %s\n",
-		  drm_propose_state_mode_to_string(output->state_cur->mode));
+	if (!b->disable_drm_state_reuse) {
+		drm_debug(b, "\t[repaint] trying to reuse prior %s\n",
+			  drm_propose_state_mode_to_string(output->state_cur->mode));
 
-	mode = DRM_OUTPUT_PROPOSE_STATE_REUSE | output->state_cur->mode;
-	state = drm_output_propose_state(output_base, pending_state, mode);
-	if (!state)
-		drm_debug(b, "\t[repaint] could not reuse prior state\n");
+		mode = DRM_OUTPUT_PROPOSE_STATE_REUSE | output->state_cur->mode;
+		state = drm_output_propose_state(output_base, pending_state, mode);
+		if (!state)
+			drm_debug(b, "\t[repaint] could not reuse prior state\n");
+	}
 
 	if (!state && !device->disable_client_buffer_scanout &&
 	    !output_base->disable_planes && !output->is_virtual && b->gbm) {

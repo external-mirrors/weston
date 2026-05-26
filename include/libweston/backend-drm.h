@@ -266,6 +266,9 @@ struct weston_drm_backend_config {
 	 * "color-management" to be enabled.
 	 */
 	bool offload_blend_to_output;
+
+	/** Disable state reuse for debugging */
+	bool disable_drm_state_reuse;
 };
 
 #ifdef  __cplusplus

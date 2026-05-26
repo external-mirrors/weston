@@ -245,6 +245,9 @@ instead of the seat defined in the environment variable
 .TP
 .B \-\-continue\-without\-input
 Allow Weston to start without input devices. Used for testing purposes.
+.TP
+.B \-\-disable\-drm\-state\-reuse
+Force-rebuild the DRM state on every frame (only available in combination with --debug). Used for testing purposes.
 .
 .\" ***************************************************************
 .SH ENVIRONMENT
