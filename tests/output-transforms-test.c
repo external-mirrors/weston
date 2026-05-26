@@ -116,9 +116,10 @@ static const struct buffer_args my_buffer_args[] = {
 	{ 2, TRANSFORM(90) },
 };
 
-TEST_P(output_transform, my_buffer_args)
+static enum test_result_code
+output_transform(struct wet_testsuite_data *suite_data,
+		 const struct buffer_args *bargs)
 {
-	const struct buffer_args *bargs = data;
 	const struct setup_args *oargs;
 	struct client *client;
 	bool match;
@@ -160,3 +161,7 @@ TEST_P(output_transform, my_buffer_args)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN_ARG(output_transform, my_buffer_args),
+);
