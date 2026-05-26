@@ -73,9 +73,9 @@ next_##name(parent *from, child *pos)						\
 DECLARE_LIST_ITERATOR(pnode_from_z, struct weston_output, paint_node_z_order_list,
 		      struct weston_paint_node, z_order_link);
 
-TEST(four_apps_in_a_square)
+static enum test_result_code
+four_apps_in_a_square(struct wet_testsuite_data *suite_data)
 {
-	struct wet_testsuite_data *suite_data = TEST_GET_SUITE_DATA();
 	struct app {
 		const char *title_id;
 		int width, height;
@@ -171,3 +171,7 @@ TEST(four_apps_in_a_square)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(four_apps_in_a_square),
+);
