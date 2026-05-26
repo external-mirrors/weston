@@ -90,7 +90,8 @@ create_test_client(void)
 	return cl;
 }
 
-TEST(second_surface_synchronization_on_surface_raises_error)
+static enum test_result_code
+second_surface_synchronization_on_surface_raises_error(struct wet_testsuite_data *suite_data)
 {
 	struct client *client = create_test_client();
 	struct zwp_linux_explicit_synchronization_v1 *sync =
@@ -120,7 +121,8 @@ TEST(second_surface_synchronization_on_surface_raises_error)
 	return RESULT_OK;
 }
 
-TEST(set_acquire_fence_with_invalid_fence_raises_error)
+static enum test_result_code
+set_acquire_fence_with_invalid_fence_raises_error(struct wet_testsuite_data *suite_data)
 {
 	struct client *client = create_test_client();
 	struct zwp_linux_explicit_synchronization_v1 *sync =
@@ -148,7 +150,8 @@ TEST(set_acquire_fence_with_invalid_fence_raises_error)
 	return RESULT_OK;
 }
 
-TEST(set_acquire_fence_on_destroyed_surface_raises_error)
+static enum test_result_code
+set_acquire_fence_on_destroyed_surface_raises_error(struct wet_testsuite_data *suite_data)
 {
 	struct client *client = create_test_client();
 	struct zwp_linux_explicit_synchronization_v1 *sync =
@@ -178,7 +181,8 @@ TEST(set_acquire_fence_on_destroyed_surface_raises_error)
 	return RESULT_OK;
 }
 
-TEST(second_buffer_release_in_commit_raises_error)
+static enum test_result_code
+second_buffer_release_in_commit_raises_error(struct wet_testsuite_data *suite_data)
 {
 	struct client *client = create_test_client();
 	struct zwp_linux_explicit_synchronization_v1 *sync =
@@ -210,7 +214,8 @@ TEST(second_buffer_release_in_commit_raises_error)
 	return RESULT_OK;
 }
 
-TEST(get_release_without_buffer_raises_commit_error)
+static enum test_result_code
+get_release_without_buffer_raises_commit_error(struct wet_testsuite_data *suite_data)
 {
 	struct client *client = create_test_client();
 	struct zwp_linux_explicit_synchronization_v1 *sync =
@@ -237,7 +242,8 @@ TEST(get_release_without_buffer_raises_commit_error)
 	return RESULT_OK;
 }
 
-TEST(get_release_on_destroyed_surface_raises_error)
+static enum test_result_code
+get_release_on_destroyed_surface_raises_error(struct wet_testsuite_data *suite_data)
 {
 	struct client *client = create_test_client();
 	struct zwp_linux_explicit_synchronization_v1 *sync =
@@ -264,7 +270,8 @@ TEST(get_release_on_destroyed_surface_raises_error)
 	return RESULT_OK;
 }
 
-TEST(get_release_after_commit_succeeds)
+static enum test_result_code
+get_release_after_commit_succeeds(struct wet_testsuite_data *suite_data)
 {
 	struct client *client = create_test_client();
 	struct zwp_linux_explicit_synchronization_v1 *sync =
@@ -330,7 +337,8 @@ struct zwp_linux_buffer_release_v1_listener buffer_release_listener = {
  * release events.
  */
 
-TEST(get_release_events_are_emitted_for_different_buffers)
+static enum test_result_code
+get_release_events_are_emitted_for_different_buffers(struct wet_testsuite_data *suite_data)
 {
 	struct client *client = create_test_client();
 	struct zwp_linux_explicit_synchronization_v1 *sync =
@@ -399,7 +407,8 @@ TEST(get_release_events_are_emitted_for_different_buffers)
 	return RESULT_OK;
 }
 
-TEST(get_release_events_are_emitted_for_same_buffer_on_surface)
+static enum test_result_code
+get_release_events_are_emitted_for_same_buffer_on_surface(struct wet_testsuite_data *suite_data)
 {
 	struct client *client = create_test_client();
 	struct zwp_linux_explicit_synchronization_v1 *sync =
@@ -464,7 +473,8 @@ TEST(get_release_events_are_emitted_for_same_buffer_on_surface)
 	return RESULT_OK;
 }
 
-TEST(get_release_events_are_emitted_for_same_buffer_on_different_surfaces)
+static enum test_result_code
+get_release_events_are_emitted_for_same_buffer_on_different_surfaces(struct wet_testsuite_data *suite_data)
 {
 	struct client *client = create_test_client();
 	struct surface *other_surface = create_test_surface(client);
@@ -549,3 +559,16 @@ TEST(get_release_events_are_emitted_for_same_buffer_on_different_surfaces)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(second_surface_synchronization_on_surface_raises_error),
+	TESTFN(set_acquire_fence_with_invalid_fence_raises_error),
+	TESTFN(set_acquire_fence_on_destroyed_surface_raises_error),
+	TESTFN(second_buffer_release_in_commit_raises_error),
+	TESTFN(get_release_without_buffer_raises_commit_error),
+	TESTFN(get_release_on_destroyed_surface_raises_error),
+	TESTFN(get_release_after_commit_succeeds),
+	TESTFN(get_release_events_are_emitted_for_different_buffers),
+	TESTFN(get_release_events_are_emitted_for_same_buffer_on_surface),
+	TESTFN(get_release_events_are_emitted_for_same_buffer_on_different_surfaces),
+);
