@@ -1724,9 +1724,10 @@ this_is_an_unwanted_case(void)
 /*
  * Test that various SHM pixel formats result in correct coloring on screen.
  */
-TEST_P(client_buffer_shm, client_buffer_cases)
+static enum test_result_code
+client_buffer_shm(struct wet_testsuite_data *suite_data,
+		  const struct client_buffer_case *cb_case)
 {
-	const struct client_buffer_case *cb_case = data;
 	const struct setup_args *args = &my_setup_args[get_test_fixture_index()];
 	enum test_result_code res;
 
@@ -1748,9 +1749,10 @@ TEST_P(client_buffer_shm, client_buffer_cases)
 /*
  * Test that various DRM pixel formats result in correct coloring on screen.
  */
-TEST_P(client_buffer_drm, client_buffer_cases)
+static enum test_result_code
+client_buffer_drm(struct wet_testsuite_data *suite_data,
+		  const struct client_buffer_case *cb_case)
 {
-	const struct client_buffer_case *cb_case = data;
 	const struct setup_args *args = &my_setup_args[get_test_fixture_index()];
 	enum test_result_code res;
 
@@ -1778,3 +1780,8 @@ TEST_P(client_buffer_drm, client_buffer_cases)
 
 	return skip_is_just_fine(res);
 }
+
+DECLARE_TEST_LIST(
+	TESTFN_ARG(client_buffer_shm, client_buffer_cases),
+	TESTFN_ARG(client_buffer_drm, client_buffer_cases),
+);
