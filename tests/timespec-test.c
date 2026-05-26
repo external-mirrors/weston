@@ -29,7 +29,8 @@
 #include "weston-test-client-helper.h"
 #include "weston-test-assert.h"
 
-TEST(test_timespec_sub)
+static enum test_result_code
+test_timespec_sub(struct wet_testsuite_data *suite_data)
 {
 	struct timespec a, b, r;
 
@@ -44,7 +45,8 @@ TEST(test_timespec_sub)
 	return RESULT_OK;
 }
 
-TEST(test_timespec_to_nsec)
+static enum test_result_code
+test_timespec_to_nsec(struct wet_testsuite_data *suite_data)
 {
 	struct timespec a;
 
@@ -55,7 +57,8 @@ TEST(test_timespec_to_nsec)
 	return RESULT_OK;
 }
 
-TEST(test_timespec_to_usec)
+static enum test_result_code
+test_timespec_to_usec(struct wet_testsuite_data *suite_data)
 {
 	struct timespec a;
 
@@ -66,7 +69,8 @@ TEST(test_timespec_to_usec)
 	return RESULT_OK;
 }
 
-TEST(test_timespec_to_msec)
+static enum test_result_code
+test_timespec_to_msec(struct wet_testsuite_data *suite_data)
 {
 	struct timespec a;
 
@@ -77,7 +81,8 @@ TEST(test_timespec_to_msec)
 	return RESULT_OK;
 }
 
-TEST(test_timespec_to_proto)
+static enum test_result_code
+test_timespec_to_proto(struct wet_testsuite_data *suite_data)
 {
 	struct timespec a;
 	uint32_t tv_sec_hi;
@@ -108,14 +113,16 @@ TEST(test_timespec_to_proto)
 	return RESULT_OK;
 }
 
-TEST(test_millihz_to_nsec)
+static enum test_result_code
+test_millihz_to_nsec(struct wet_testsuite_data *suite_data)
 {
 	test_assert_u64_eq(millihz_to_nsec(60000), 16666666);
 
 	return RESULT_OK;
 }
 
-TEST(test_timespec_add_nsec)
+static enum test_result_code
+test_timespec_add_nsec(struct wet_testsuite_data *suite_data)
 {
 	struct timespec a, r;
 
@@ -175,7 +182,8 @@ TEST(test_timespec_add_nsec)
 	return RESULT_OK;
 }
 
-TEST(test_timespec_add_msec)
+static enum test_result_code
+test_timespec_add_msec(struct wet_testsuite_data *suite_data)
 {
 	struct timespec a, r;
 
@@ -188,7 +196,8 @@ TEST(test_timespec_add_msec)
 	return RESULT_OK;
 }
 
-TEST(test_timespec_sub_to_nsec)
+static enum test_result_code
+test_timespec_sub_to_nsec(struct wet_testsuite_data *suite_data)
 {
 	struct timespec a, b;
 
@@ -201,7 +210,8 @@ TEST(test_timespec_sub_to_nsec)
 	return RESULT_OK;
 }
 
-TEST(test_timespec_sub_to_msec)
+static enum test_result_code
+test_timespec_sub_to_msec(struct wet_testsuite_data *suite_data)
 {
 	struct timespec a, b;
 
@@ -214,7 +224,8 @@ TEST(test_timespec_sub_to_msec)
 	return RESULT_OK;
 }
 
-TEST(test_timespec_from_nsec)
+static enum test_result_code
+test_timespec_from_nsec(struct wet_testsuite_data *suite_data)
 {
 	struct timespec a;
 
@@ -237,7 +248,8 @@ TEST(test_timespec_from_nsec)
 	return RESULT_OK;
 }
 
-TEST(test_timespec_from_usec)
+static enum test_result_code
+test_timespec_from_usec(struct wet_testsuite_data *suite_data)
 {
 	struct timespec a;
 
@@ -260,7 +272,8 @@ TEST(test_timespec_from_usec)
 	return RESULT_OK;
 }
 
-TEST(test_timespec_from_msec)
+static enum test_result_code
+test_timespec_from_msec(struct wet_testsuite_data *suite_data)
 {
 	struct timespec a;
 
@@ -283,7 +296,8 @@ TEST(test_timespec_from_msec)
 	return RESULT_OK;
 }
 
-TEST(test_timespec_from_proto)
+static enum test_result_code
+test_timespec_from_proto(struct wet_testsuite_data *suite_data)
 {
 	struct timespec a;
 
@@ -302,7 +316,8 @@ TEST(test_timespec_from_proto)
 	return RESULT_OK;
 }
 
-TEST(test_timespec_is_zero)
+static enum test_result_code
+test_timespec_is_zero(struct wet_testsuite_data *suite_data)
 {
 	struct timespec zero = { 0 };
 	struct timespec non_zero_sec = { .tv_sec = 1, .tv_nsec = 0 };
@@ -315,7 +330,8 @@ TEST(test_timespec_is_zero)
 	return RESULT_OK;
 }
 
-TEST(test_timespec_eq)
+static enum test_result_code
+test_timespec_eq(struct wet_testsuite_data *suite_data)
 {
 	struct timespec a = { .tv_sec = 2, .tv_nsec = 1 };
 	struct timespec b = { .tv_sec = -1, .tv_nsec = 2 };
@@ -328,3 +344,22 @@ TEST(test_timespec_eq)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(test_timespec_sub),
+	TESTFN(test_timespec_to_nsec),
+	TESTFN(test_timespec_to_usec),
+	TESTFN(test_timespec_to_msec),
+	TESTFN(test_timespec_to_proto),
+	TESTFN(test_millihz_to_nsec),
+	TESTFN(test_timespec_add_nsec),
+	TESTFN(test_timespec_add_msec),
+	TESTFN(test_timespec_sub_to_nsec),
+	TESTFN(test_timespec_sub_to_msec),
+	TESTFN(test_timespec_from_nsec),
+	TESTFN(test_timespec_from_usec),
+	TESTFN(test_timespec_from_msec),
+	TESTFN(test_timespec_from_proto),
+	TESTFN(test_timespec_is_zero),
+	TESTFN(test_timespec_eq),
+);
