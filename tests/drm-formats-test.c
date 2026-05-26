@@ -70,7 +70,8 @@ format_array_add_format_and_modifiers(struct weston_drm_format_array *formats,
         }
 }
 
-TEST(basic_operations)
+static enum test_result_code
+basic_operations(struct wet_testsuite_data *suite_data)
 {
         struct weston_drm_format_array format_array;
         struct weston_drm_format *fmt;
@@ -100,7 +101,8 @@ TEST(basic_operations)
 	return RESULT_OK;
 }
 
-TEST(compare_arrays_same_content)
+static enum test_result_code
+compare_arrays_same_content(struct wet_testsuite_data *suite_data)
 {
         struct weston_drm_format_array format_array_A, format_array_B;
         uint32_t formats[] = {1, 2, 3, 4, 5};
@@ -131,7 +133,8 @@ TEST(compare_arrays_same_content)
 	return RESULT_OK;
 }
 
-TEST(compare_arrays_exclusive_content)
+static enum test_result_code
+compare_arrays_exclusive_content(struct wet_testsuite_data *suite_data)
 {
         struct weston_drm_format_array format_array_A, format_array_B;
         uint32_t formats_A[] = {1, 2, 3, 4, 5};
@@ -154,7 +157,8 @@ TEST(compare_arrays_exclusive_content)
 	return RESULT_OK;
 }
 
-TEST(replace_array)
+static enum test_result_code
+replace_array(struct wet_testsuite_data *suite_data)
 {
         struct weston_drm_format_array format_array_A, format_array_B;
         uint32_t formats[] = {1, 2, 3, 4, 5};
@@ -177,7 +181,8 @@ TEST(replace_array)
 	return RESULT_OK;
 }
 
-TEST(remove_from_array)
+static enum test_result_code
+remove_from_array(struct wet_testsuite_data *suite_data)
 {
         struct weston_drm_format_array format_array_A, format_array_B, format_array_C;
         uint32_t formats_A[] = {1, 2, 3, 4, 5};
@@ -208,7 +213,8 @@ TEST(remove_from_array)
 	return RESULT_OK;
 }
 
-TEST(join_arrays)
+static enum test_result_code
+join_arrays(struct wet_testsuite_data *suite_data)
 {
         struct weston_drm_format_array format_array_A, format_array_B;
         struct weston_drm_format_array format_array_C;
@@ -246,7 +252,8 @@ TEST(join_arrays)
 	return RESULT_OK;
 }
 
-TEST(join_arrays_same_content)
+static enum test_result_code
+join_arrays_same_content(struct wet_testsuite_data *suite_data)
 {
         struct weston_drm_format_array format_array_A, format_array_B;
         uint32_t formats[] = {1, 2, 3, 4, 5};
@@ -280,7 +287,8 @@ TEST(join_arrays_same_content)
 	return RESULT_OK;
 }
 
-TEST(join_arrays_exclusive_content)
+static enum test_result_code
+join_arrays_exclusive_content(struct wet_testsuite_data *suite_data)
 {
         struct weston_drm_format_array format_array_A, format_array_B;
         struct weston_drm_format_array format_array_C;
@@ -309,7 +317,8 @@ TEST(join_arrays_exclusive_content)
 	return RESULT_OK;
 }
 
-TEST(join_arrays_modifier_invalid)
+static enum test_result_code
+join_arrays_modifier_invalid(struct wet_testsuite_data *suite_data)
 {
         struct weston_drm_format_array format_array_A, format_array_B;
         struct weston_drm_format_array format_array_C;
@@ -339,7 +348,8 @@ TEST(join_arrays_modifier_invalid)
 	return RESULT_OK;
 }
 
-TEST(intersect_arrays)
+static enum test_result_code
+intersect_arrays(struct wet_testsuite_data *suite_data)
 {
         struct weston_drm_format_array format_array_A, format_array_B;
         struct weston_drm_format_array format_array_C;
@@ -373,7 +383,8 @@ TEST(intersect_arrays)
 	return RESULT_OK;
 }
 
-TEST(intersect_arrays_same_content)
+static enum test_result_code
+intersect_arrays_same_content(struct wet_testsuite_data *suite_data)
 {
         struct weston_drm_format_array format_array_A, format_array_B;
         uint32_t formats[] = {1, 2, 3, 4, 5};
@@ -405,7 +416,8 @@ TEST(intersect_arrays_same_content)
 	return RESULT_OK;
 }
 
-TEST(intersect_arrays_exclusive_formats)
+static enum test_result_code
+intersect_arrays_exclusive_formats(struct wet_testsuite_data *suite_data)
 {
         struct weston_drm_format_array format_array_A, format_array_B;
         uint64_t formats_A[] = {1, 2, 3, 4, 5};
@@ -430,7 +442,8 @@ TEST(intersect_arrays_exclusive_formats)
 	return RESULT_OK;
 }
 
-TEST(intersect_arrays_exclusive_modifiers)
+static enum test_result_code
+intersect_arrays_exclusive_modifiers(struct wet_testsuite_data *suite_data)
 {
         struct weston_drm_format_array format_array_A, format_array_B;
         uint64_t modifiers_A[] = {1, 2, 3, 4, 5};
@@ -457,7 +470,8 @@ TEST(intersect_arrays_exclusive_modifiers)
 	return RESULT_OK;
 }
 
-TEST(subtract_arrays)
+static enum test_result_code
+subtract_arrays(struct wet_testsuite_data *suite_data)
 {
         struct weston_drm_format_array format_array_A, format_array_B;
         struct weston_drm_format_array format_array_C;
@@ -493,7 +507,8 @@ TEST(subtract_arrays)
 	return RESULT_OK;
 }
 
-TEST(subtract_arrays_same_content)
+static enum test_result_code
+subtract_arrays_same_content(struct wet_testsuite_data *suite_data)
 {
         struct weston_drm_format_array format_array_A, format_array_B;
         uint32_t formats[] = {1, 2, 3, 4, 5};
@@ -518,7 +533,8 @@ TEST(subtract_arrays_same_content)
 	return RESULT_OK;
 }
 
-TEST(subtract_arrays_exclusive_formats)
+static enum test_result_code
+subtract_arrays_exclusive_formats(struct wet_testsuite_data *suite_data)
 {
         struct weston_drm_format_array format_array_A, format_array_B;
         struct weston_drm_format_array format_array_C;
@@ -549,7 +565,8 @@ TEST(subtract_arrays_exclusive_formats)
 	return RESULT_OK;
 }
 
-TEST(subtract_arrays_exclusive_modifiers)
+static enum test_result_code
+subtract_arrays_exclusive_modifiers(struct wet_testsuite_data *suite_data)
 {
         struct weston_drm_format_array format_array_A, format_array_B;
         struct weston_drm_format_array format_array_C;
@@ -580,7 +597,8 @@ TEST(subtract_arrays_exclusive_modifiers)
 	return RESULT_OK;
 }
 
-TEST(subtract_arrays_modifier_invalid)
+static enum test_result_code
+subtract_arrays_modifier_invalid(struct wet_testsuite_data *suite_data)
 {
         struct weston_drm_format_array format_array_A, format_array_B;
         uint64_t modifier_invalid[] = {DRM_FORMAT_MOD_INVALID};
@@ -607,3 +625,24 @@ TEST(subtract_arrays_modifier_invalid)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(basic_operations),
+	TESTFN(compare_arrays_same_content),
+	TESTFN(compare_arrays_exclusive_content),
+	TESTFN(replace_array),
+	TESTFN(remove_from_array),
+	TESTFN(join_arrays),
+	TESTFN(join_arrays_same_content),
+	TESTFN(join_arrays_exclusive_content),
+	TESTFN(join_arrays_modifier_invalid),
+	TESTFN(intersect_arrays),
+	TESTFN(intersect_arrays_same_content),
+	TESTFN(intersect_arrays_exclusive_formats),
+	TESTFN(intersect_arrays_exclusive_modifiers),
+	TESTFN(subtract_arrays),
+	TESTFN(subtract_arrays_same_content),
+	TESTFN(subtract_arrays_exclusive_formats),
+	TESTFN(subtract_arrays_exclusive_modifiers),
+	TESTFN(subtract_arrays_modifier_invalid),
+);
