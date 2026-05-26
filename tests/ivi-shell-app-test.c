@@ -176,7 +176,8 @@ get_ivi_application(struct client *client)
 	return iviapp;
 }
 
-TEST(ivi_application_exists)
+static enum test_result_code
+ivi_application_exists(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct ivi_application *iviapp;
@@ -192,3 +193,7 @@ TEST(ivi_application_exists)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(ivi_application_exists),
+);
