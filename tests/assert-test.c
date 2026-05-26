@@ -65,7 +65,8 @@ my_type_cmp(const struct my_type *a, const struct my_type *b)
 #define weston_assert_my_type_lt(compositor, a, b) \
 	weston_assert_fn_(compositor, my_type_cmp, a, b, const struct my_type *, "my_type %p", <)
 
-TEST(asserts_custom)
+static enum test_result_code
+asserts_custom(struct wet_testsuite_data *suite_data)
 {
 	/* Unused by the macros for now, so let's just use NULL. */
 	struct weston_compositor *compositor = NULL;
@@ -86,7 +87,8 @@ TEST(asserts_custom)
 	return RESULT_OK;
 }
 
-TEST(asserts_boolean)
+static enum test_result_code
+asserts_boolean(struct wet_testsuite_data *suite_data)
 {
 	/* Unused by the macros for now, so let's just use NULL. */
 	struct weston_compositor *compositor = NULL;
@@ -110,7 +112,8 @@ TEST(asserts_boolean)
 	return RESULT_OK;
 }
 
-TEST(asserts_list)
+static enum test_result_code
+asserts_list(struct wet_testsuite_data *suite_data)
 {
 	/* Unused by the macros for now, so let's just use NULL. */
 	struct weston_compositor *compositor = NULL;
@@ -139,7 +142,8 @@ TEST(asserts_list)
 	return RESULT_OK;
 }
 
-TEST(asserts_pointer)
+static enum test_result_code
+asserts_pointer(struct wet_testsuite_data *suite_data)
 {
 	/* Unused by the macros for now, so let's just use NULL. */
 	struct weston_compositor *compositor = NULL;
@@ -172,7 +176,8 @@ TEST(asserts_pointer)
 	return RESULT_OK;
 }
 
-TEST(asserts_string)
+static enum test_result_code
+asserts_string(struct wet_testsuite_data *suite_data)
 {
 	/* Unused by the macros for now, so let's just use NULL. */
 	struct weston_compositor *compositor = NULL;
@@ -192,7 +197,8 @@ TEST(asserts_string)
 	return RESULT_OK;
 }
 
-TEST(asserts_bitmask)
+static enum test_result_code
+asserts_bitmask(struct wet_testsuite_data *suite_data)
 {
 	/* Unused by the macros for now, so let's just use NULL. */
 	struct weston_compositor *compositor = NULL;
@@ -212,7 +218,8 @@ TEST(asserts_bitmask)
 	return RESULT_OK;
 }
 
-TEST(asserts_misc)
+static enum test_result_code
+asserts_misc(struct wet_testsuite_data *suite_data)
 {
 	/* Unused by the macros for now, so let's just use NULL. */
 	struct weston_compositor *compositor = NULL;
@@ -232,7 +239,8 @@ TEST(asserts_misc)
 	return RESULT_OK;
 }
 
-TEST(asserts_floating_point)
+static enum test_result_code
+asserts_floating_point(struct wet_testsuite_data *suite_data)
 {
 	/* Unused by the macros for now, so let's just use NULL. */
 	struct weston_compositor *compositor = NULL;
@@ -319,7 +327,8 @@ TEST(asserts_floating_point)
 	return RESULT_OK;
 }
 
-TEST(asserts_unsigned_int)
+static enum test_result_code
+asserts_unsigned_int(struct wet_testsuite_data *suite_data)
 {
 	/* Unused by the macros for now, so let's just use NULL. */
 	struct weston_compositor *compositor = NULL;
@@ -512,7 +521,8 @@ TEST(asserts_unsigned_int)
 	return RESULT_OK;
 }
 
-TEST(asserts_signed_int)
+static enum test_result_code
+asserts_signed_int(struct wet_testsuite_data *suite_data)
 {
 	/* Unused by the macros for now, so let's just use NULL. */
 	struct weston_compositor *compositor = NULL;
@@ -704,3 +714,16 @@ TEST(asserts_signed_int)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(asserts_custom),
+	TESTFN(asserts_boolean),
+	TESTFN(asserts_list),
+	TESTFN(asserts_pointer),
+	TESTFN(asserts_string),
+	TESTFN(asserts_bitmask),
+	TESTFN(asserts_misc),
+	TESTFN(asserts_floating_point),
+	TESTFN(asserts_unsigned_int),
+	TESTFN(asserts_signed_int),
+);
