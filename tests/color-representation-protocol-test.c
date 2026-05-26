@@ -48,7 +48,8 @@ DECLARE_FIXTURE_SETUP(fixture_setup);
 /*
  * Test that the SURFACE_EXISTS error is send by the compositor.
  */
-TEST(color_presentation_protocol_surface_exists)
+static enum test_result_code
+color_presentation_protocol_surface_exists(struct wet_testsuite_data *suite_data)
 {
 	struct wp_color_representation_surface_v1 *color_representation_surface;
 	struct wp_color_representation_surface_v1 *color_representation_surface_2;
@@ -81,7 +82,8 @@ TEST(color_presentation_protocol_surface_exists)
  * Test that a color representation can successfully be recreated after
  * destruction without e.g. triggering a SURFACE_EXISTS error.
  */
-TEST(color_presentation_protocol_surface_recreate)
+static enum test_result_code
+color_presentation_protocol_surface_recreate(struct wet_testsuite_data *suite_data)
 {
 	struct wp_color_representation_surface_v1 *color_representation_surface;
 	struct wp_color_representation_surface_v1 *color_representation_surface_2;
@@ -159,9 +161,10 @@ static const struct coefficients_case coefficients_cases[] = {
  * format, matrix coefficients and quantization range are send by the compositor
  * as required by the protocol.
  */
-TEST_P(color_presentation_protocol_valid_coefficients, coefficients_cases)
+static enum test_result_code
+color_presentation_protocol_valid_coefficients(struct wet_testsuite_data *suite_data,
+					       const struct coefficients_case *coefficients_case)
 {
-	const struct coefficients_case *coefficients_case = data;
 	struct wp_color_representation_surface_v1 *color_representation_surface;
 	struct client *client;
 	struct wl_surface *surface;
@@ -213,9 +216,10 @@ static const struct alpha_mode_case alpha_mode_cases[] = {
 /*
  * Test that PREMULTIPLIED_ELECTRICAL is the only alpha mode currently supported.
  */
-TEST_P(color_presentation_protocol_alpha_mode, alpha_mode_cases)
+static enum test_result_code
+color_presentation_protocol_alpha_mode(struct wet_testsuite_data *suite_data,
+				       const struct alpha_mode_case *alpha_mode_case)
 {
-	const struct alpha_mode_case *alpha_mode_case = data;
 	struct wp_color_representation_surface_v1 *color_representation_surface;
 	struct client *client;
 
@@ -260,9 +264,10 @@ static const struct chroma_location_case chroma_location_cases[] = {
 /*
  * Test that all chroma location values are accepted, but not invalid values.
  */
-TEST_P(color_presentation_protocol_chroma_location, chroma_location_cases)
+static enum test_result_code
+color_presentation_protocol_chroma_location(struct wet_testsuite_data *suite_data,
+					    const struct chroma_location_case *chroma_location_case)
 {
-	const struct chroma_location_case *chroma_location_case = data;
 	struct wp_color_representation_surface_v1 *color_representation_surface;
 	struct client *client;
 
@@ -289,3 +294,11 @@ TEST_P(color_presentation_protocol_chroma_location, chroma_location_cases)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(color_presentation_protocol_surface_exists),
+	TESTFN(color_presentation_protocol_surface_recreate),
+	TESTFN_ARG(color_presentation_protocol_valid_coefficients, coefficients_cases),
+	TESTFN_ARG(color_presentation_protocol_alpha_mode, alpha_mode_cases),
+	TESTFN_ARG(color_presentation_protocol_chroma_location, chroma_location_cases),
+);
