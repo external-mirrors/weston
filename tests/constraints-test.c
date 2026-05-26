@@ -194,7 +194,8 @@ constraint_deinit(struct constraints *cs)
 	}
 }
 
-TEST(constraints_events)
+static enum test_result_code
+constraints_events(struct wet_testsuite_data *suite_data)
 {
 	static struct constraints cs;
 	struct client *client;
@@ -236,7 +237,8 @@ TEST(constraints_events)
 	return RESULT_OK;
 }
 
-TEST(constraints_confined_boundaries_input_region)
+static enum test_result_code
+constraints_confined_boundaries_input_region(struct wet_testsuite_data *suite_data)
 {
 	static struct constraints cs;
 	struct client *client;
@@ -292,7 +294,8 @@ TEST(constraints_confined_boundaries_input_region)
 	return RESULT_OK;
 }
 
-TEST(constraints_locked_boundaries_input_region)
+static enum test_result_code
+constraints_locked_boundaries_input_region(struct wet_testsuite_data *suite_data)
 {
 	static struct constraints cs;
 	struct client *client;
@@ -330,7 +333,8 @@ TEST(constraints_locked_boundaries_input_region)
 	return RESULT_OK;
 }
 
-TEST(constraints_already_constrained)
+static enum test_result_code
+constraints_already_constrained(struct wet_testsuite_data *suite_data)
 {
 	static struct constraints cs;
 	struct client *client;
@@ -394,7 +398,8 @@ TEST(constraints_already_constrained)
  * we are interested in: enable the constraint on activation only when it comes
  * from a pointer click inside the surface.
  */
-TEST(constraints_shell_activate_input)
+static enum test_result_code
+constraints_shell_activate_input(struct wet_testsuite_data *suite_data)
 {
 	static struct constraints cs;
 	struct client *client;
@@ -427,7 +432,8 @@ TEST(constraints_shell_activate_input)
 	return RESULT_OK;
 }
 
-TEST(constraints_pointer_focus)
+static enum test_result_code
+constraints_pointer_focus(struct wet_testsuite_data *suite_data)
 {
 	static struct constraints cs;
 	struct client *client;
@@ -460,3 +466,12 @@ TEST(constraints_pointer_focus)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(constraints_events),
+	TESTFN(constraints_confined_boundaries_input_region),
+	TESTFN(constraints_locked_boundaries_input_region),
+	TESTFN(constraints_already_constrained),
+	TESTFN(constraints_shell_activate_input),
+	TESTFN(constraints_pointer_focus),
+);
