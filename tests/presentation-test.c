@@ -196,7 +196,8 @@ feedback_destroy(struct feedback *fb)
 	free(fb);
 }
 
-TEST(test_presentation_feedback_simple)
+static enum test_result_code
+test_presentation_feedback_simple(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct feedback *fb;
@@ -226,3 +227,7 @@ TEST(test_presentation_feedback_simple)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(test_presentation_feedback_simple),
+);
