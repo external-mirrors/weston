@@ -83,7 +83,9 @@ init_tests(struct weston_compositor *compositor)
 						      sizeof(my_test_api)), 0);
 }
 
-PLUGIN_TEST(plugin_registry_test)
+static enum test_result_code
+plugin_registry_test(struct wet_testsuite_data *suite_data,
+		     struct weston_compositor *compositor)
 {
 	/* struct weston_compositor *compositor; */
 	const struct my_api *api;
@@ -105,3 +107,7 @@ PLUGIN_TEST(plugin_registry_test)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN_PLUGIN(plugin_registry_test),
+);
