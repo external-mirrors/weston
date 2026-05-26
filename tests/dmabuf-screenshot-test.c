@@ -81,7 +81,8 @@ surface_commit_color(struct client *client, struct wl_surface *surface,
 	return buf;
 }
 
-TEST(screenshot)
+static enum test_result_code
+screenshot(struct wet_testsuite_data *suite_data)
 {
         struct client *client;
         struct wl_subcompositor *subco;
@@ -162,3 +163,7 @@ TEST(screenshot)
 
         return match ? RESULT_OK : RESULT_FAIL;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(screenshot),
+);
