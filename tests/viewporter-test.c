@@ -56,7 +56,8 @@ set_source(struct wp_viewport *vp, int x, int y, int w, int h)
 				   wl_fixed_from_int(w), wl_fixed_from_int(h));
 }
 
-TEST(test_viewporter_double_create)
+static enum test_result_code
+test_viewporter_double_create(struct wet_testsuite_data *suite_data)
 {
 	struct wp_viewporter *viewporter;
 	struct wp_viewport *vp[2];
@@ -95,9 +96,10 @@ static const struct bad_source_rect_args bad_source_rect_args[] = {
 	{  5,  6,  -1,  -1 },
 };
 
-TEST_P(test_viewporter_bad_source_rect, bad_source_rect_args)
+static enum test_result_code
+test_viewporter_bad_source_rect(struct wet_testsuite_data *suite_data,
+				const struct bad_source_rect_args *args)
 {
-	const struct bad_source_rect_args *args = data;
 	struct client *client;
 	struct wp_viewport *vp;
 
@@ -118,7 +120,8 @@ TEST_P(test_viewporter_bad_source_rect, bad_source_rect_args)
 	return RESULT_OK;
 }
 
-TEST(test_viewporter_unset_source_rect)
+static enum test_result_code
+test_viewporter_unset_source_rect(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct wp_viewport *vp;
@@ -150,9 +153,10 @@ static const struct bad_destination_args bad_destination_args[] = {
 	{  20,  -1 },
 };
 
-TEST_P(test_viewporter_bad_destination_size, bad_destination_args)
+static enum test_result_code
+test_viewporter_bad_destination_size(struct wet_testsuite_data *suite_data,
+				     const struct bad_destination_args *args)
 {
-	const struct bad_destination_args *args = data;
 	struct client *client;
 	struct wp_viewport *vp;
 
@@ -172,7 +176,8 @@ TEST_P(test_viewporter_bad_destination_size, bad_destination_args)
 	return RESULT_OK;
 }
 
-TEST(test_viewporter_unset_destination_size)
+static enum test_result_code
+test_viewporter_unset_destination_size(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct wp_viewport *vp;
@@ -205,9 +210,10 @@ static const struct nonint_destination_args nonint_destination_args[] = {
 #undef F
 };
 
-TEST_P(test_viewporter_non_integer_destination_size, nonint_destination_args)
+static enum test_result_code
+test_viewporter_non_integer_destination_size(struct wet_testsuite_data *suite_data,
+					     const struct nonint_destination_args *args)
 {
-	const struct nonint_destination_args *args = data;
 	struct client *client;
 	struct wp_viewport *vp;
 
@@ -323,7 +329,8 @@ setup_source_vs_buffer(struct client *client,
 /* epsilon of wl_fixed_t */
 #define EPS 1
 
-TEST(test_viewporter_source_buffer_params)
+static enum test_result_code
+test_viewporter_source_buffer_params(struct wet_testsuite_data *suite_data)
 {
 	const int max_scale = 2;
 
@@ -401,9 +408,10 @@ static const struct source_buffer_args bad_source_buffer_args[] = {
 #undef F
 };
 
-TEST_P(test_viewporter_source_outside_buffer, bad_source_buffer_args)
+static enum test_result_code
+test_viewporter_source_outside_buffer(struct wet_testsuite_data *suite_data,
+				      const struct source_buffer_args *args)
 {
-	const struct source_buffer_args *args = data;
 	struct client *client;
 	struct wp_viewport *vp;
 
@@ -463,9 +471,10 @@ static const struct source_buffer_args good_source_buffer_args[] = {
 #undef F
 };
 
-TEST_P(test_viewporter_source_inside_buffer, good_source_buffer_args)
+static enum test_result_code
+test_viewporter_source_inside_buffer(struct wet_testsuite_data *suite_data,
+				     const struct source_buffer_args *args)
 {
-	const struct source_buffer_args *args = data;
 	struct client *client;
 	struct wp_viewport *vp;
 
@@ -484,7 +493,8 @@ TEST_P(test_viewporter_source_inside_buffer, good_source_buffer_args)
 #undef MRG
 #undef EPS
 
-TEST(test_viewporter_outside_null_buffer)
+static enum test_result_code
+test_viewporter_outside_null_buffer(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct wp_viewport *vp;
@@ -522,7 +532,8 @@ TEST(test_viewporter_outside_null_buffer)
 	return RESULT_OK;
 }
 
-TEST(test_viewporter_no_surface_set_source)
+static enum test_result_code
+test_viewporter_no_surface_set_source(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct wp_viewport *vp;
@@ -544,7 +555,8 @@ TEST(test_viewporter_no_surface_set_source)
 	return RESULT_OK;
 }
 
-TEST(test_viewporter_no_surface_set_destination)
+static enum test_result_code
+test_viewporter_no_surface_set_destination(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct wp_viewport *vp;
@@ -566,7 +578,8 @@ TEST(test_viewporter_no_surface_set_destination)
 	return RESULT_OK;
 }
 
-TEST(test_viewporter_no_surface_destroy)
+static enum test_result_code
+test_viewporter_no_surface_destroy(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct wp_viewport *vp;
@@ -583,3 +596,19 @@ TEST(test_viewporter_no_surface_destroy)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(test_viewporter_double_create),
+	TESTFN_ARG(test_viewporter_bad_source_rect, bad_source_rect_args),
+	TESTFN(test_viewporter_unset_source_rect),
+	TESTFN_ARG(test_viewporter_bad_destination_size, bad_destination_args),
+	TESTFN(test_viewporter_unset_destination_size),
+	TESTFN_ARG(test_viewporter_non_integer_destination_size, nonint_destination_args),
+	TESTFN(test_viewporter_source_buffer_params),
+	TESTFN_ARG(test_viewporter_source_outside_buffer, bad_source_buffer_args),
+	TESTFN_ARG(test_viewporter_source_inside_buffer, good_source_buffer_args),
+	TESTFN(test_viewporter_outside_null_buffer),
+	TESTFN(test_viewporter_no_surface_set_source),
+	TESTFN(test_viewporter_no_surface_set_destination),
+	TESTFN(test_viewporter_no_surface_destroy),
+);
