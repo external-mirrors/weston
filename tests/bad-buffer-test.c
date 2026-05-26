@@ -168,7 +168,8 @@ create_bad_shm_buffer(struct client *client, int width, int height)
 	return buffer;
 }
 
-TEST(test_truncated_shm_file)
+static enum test_result_code
+test_truncated_shm_file(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	struct wl_buffer *bad_buffer;
@@ -197,3 +198,7 @@ TEST(test_truncated_shm_file)
 
 	return RESULT_OK;
 }
+
+DECLARE_TEST_LIST(
+	TESTFN(test_truncated_shm_file),
+);
