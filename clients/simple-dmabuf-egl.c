@@ -50,6 +50,7 @@
 #include "xdg-shell-client-protocol.h"
 #include "linux-dmabuf-unstable-v1-client-protocol.h"
 #include "weston-direct-display-client-protocol.h"
+#include "weston-restricted-buffer-client-protocol.h"
 #include "linux-explicit-synchronization-unstable-v1-client-protocol.h"
 
 #include <EGL/egl.h>
@@ -66,6 +67,7 @@
 #define OPT_MANDELBROT    (1 << 2)  /* render mandelbrot */
 #define OPT_DIRECT_DISPLAY     (1 << 3)  /* direct-display */
 #define OPT_PROTECTED_MEMORY   (1 << 4)  /* Allocate in protected memory */
+#define OPT_RESTRICTED_BUFFER  (1 << 5)  /* Use the weston-restricted-buffer protocol */
 
 #define MAX_BUFFER_PLANES 4
 
@@ -76,6 +78,7 @@ struct display {
 	struct xdg_wm_base *wm_base;
 	struct zwp_linux_dmabuf_v1 *dmabuf;
 	struct weston_direct_display_v1 *direct_display;
+	struct weston_restricted_buffer_v1 *restricted_buffer;
 	struct zwp_linux_explicit_synchronization_v1 *explicit_sync;
 	uint32_t format;
 	bool format_supported;
@@ -401,6 +404,14 @@ create_dmabuf_buffer(struct display *display, struct buffer *buffer,
 
 	if ((opts & OPT_DIRECT_DISPLAY) && display->direct_display)
 		weston_direct_display_v1_enable(display->direct_display, params);
+
+	if (opts & OPT_RESTRICTED_BUFFER) {
+		if (!display->restricted_buffer) {
+			fprintf(stderr, "error: restricted buffer protocol unavailable\n");
+			goto error;
+		}
+		weston_restricted_buffer_v1_enable(display->restricted_buffer, params);
+	}
 
 	for (i = 0; i < buffer->plane_count; ++i) {
 		zwp_linux_buffer_params_v1_add(params,
@@ -1084,6 +1095,9 @@ registry_handle_global(void *data, struct wl_registry *registry,
 		d->direct_display = wl_registry_bind(registry,
 						     id, &weston_direct_display_v1_interface,
 						     version);
+	} else if (strcmp(interface, "weston_restricted_buffer_v1") == 0) {
+		d->restricted_buffer = wl_registry_bind(registry, id,
+							&weston_restricted_buffer_v1_interface, 1);
 	}
 }
 
@@ -1117,6 +1131,9 @@ destroy_display(struct display *display)
 
 	if (display->direct_display)
 		weston_direct_display_v1_destroy(display->direct_display);
+
+	if (display->restricted_buffer)
+		weston_restricted_buffer_v1_destroy(display->restricted_buffer);
 
 	if (display->explicit_sync)
 		zwp_linux_explicit_synchronization_v1_destroy(display->explicit_sync);
@@ -1499,7 +1516,10 @@ print_usage_and_exit(void)
 		"displayed inverted as GL uses a\n\t\tdifferent texture "
 		"coordinate system\n"
 		"\t'-p,--protected'"
-		"\n\t\tAllocate the buffer in protected memory\n");
+		"\n\t\tAllocate the buffer in protected memory\n"
+		"\t'-r,--restricted-buffer'"
+		"\n\t\tenables the weston-restricted-buffer extension to tell weston"
+		"\n\t\tthe buffer contains restricted content\n");
 	exit(0);
 }
 
@@ -1537,11 +1557,12 @@ main(int argc, char **argv)
 		{"mandelbrot",       no_argument,	0,  'm' },
 		{"direct-display",   no_argument,	0,  'g' },
 		{"protected",        no_argument,	0,  'p' },
+		{"restricted-buffer",no_argument,	0,  'r' },
 		{"help",             no_argument      , 0,  'h' },
 		{0, 0, 0, 0}
 	};
 
-	while ((c = getopt_long(argc, argv, "hi:d:s:e:f:mgp",
+	while ((c = getopt_long(argc, argv, "hi:d:s:e:f:mgpr",
 				long_options, &option_index)) != -1) {
 		switch (c) {
 		case 'i':
@@ -1569,6 +1590,9 @@ main(int argc, char **argv)
 			break;
 		case 'p':
 			opts |= OPT_PROTECTED_MEMORY;
+			break;
+		case 'r':
+			opts |= OPT_RESTRICTED_BUFFER;
 			break;
 		default:
 			print_usage_and_exit();

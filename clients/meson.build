@@ -98,6 +98,8 @@ simple_clients = [
 			xdg_shell_protocol_c,
 			weston_direct_display_client_protocol_h,
 			weston_direct_display_protocol_c,
+			weston_restricted_buffer_client_protocol_h,
+			weston_restricted_buffer_protocol_c,
 		],
 		'dep_objs': [
 			dep_wayland_client,
