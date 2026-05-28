@@ -293,7 +293,7 @@ is_pnode_solid_buffer_fully_opaque(struct weston_paint_node *pnode)
 	if (!pnode->simple_transform)
 		return false;
 
-	return (pnode->view->alpha == 1.0f &&
+	return (pnode->view_alpha == 1.0f &&
 	        pnode->solid.a == 1.0f);
 }
 
@@ -311,7 +311,7 @@ is_pnode_fully_transparent(struct weston_paint_node *pnode)
 	if (pnode->draw_solid && pnode->solid.a == 0.0f)
 		return true;
 
-	return (pnode->view->alpha == 0.0f);
+	return (pnode->view_alpha == 0.0f);
 }
 
 /* Paint nodes contain filter and transform information that needs to be
@@ -346,6 +346,9 @@ paint_node_update_early(struct weston_paint_node *pnode)
 		if (pnode->simple_transform)
 			paint_node_update_rectangles(pnode);
 	}
+
+	if (view_dirty)
+		pnode->view_alpha = pnode->view->alpha;
 
 	pnode->draw_solid = false;
 	pnode->censored = false;
@@ -392,9 +395,6 @@ paint_node_update_early(struct weston_paint_node *pnode)
 	if (view_dirty)
 		pnode->on_cursor_layer =
 			pnode->view->layer_link.layer == &compositor->cursor_layer;
-
-	if (view_dirty)
-		pnode->view_alpha = pnode->view->alpha;
 
 	pnode->output->paint_node_changes |= pnode->status;
 	pnode->status &= ~(WESTON_PAINT_NODE_VIEW_DIRTY | \
