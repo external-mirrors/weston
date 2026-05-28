@@ -52,10 +52,10 @@ typedef enum test_result_code (*weston_test_run_plugin_fn)(struct wet_testsuite_
 
 /** Test program entry
  *
- * Each invocation of TEST(), TEST_P(), or PLUGIN_TEST() will create one
- * more weston_test_entry in a custom named section in the final binary.
- * Iterating through the section then allows to iterate through all
- * the defined tests.
+ * Arrays of entries are created with macros \c TESTFN(), \c TESTFN_ARG()
+ * and \c TESTFN_PLUGIN() inside a \c DECLARE_TEST_LIST() arguments.
+ * The array of entries lists all test functions in a test program for the
+ * test harness to iterate through.
  *
  * \ingroup testharness_private
  */
@@ -69,7 +69,7 @@ struct weston_test_entry {
 	const void *table_data;
 	size_t element_size;
 	int n_elements;
-} __attribute__ ((aligned (64)));
+};
 
 /** Add a test function with no parameters
  *
@@ -157,6 +157,13 @@ struct weston_test_entry {
 	.n_elements = 1,						\
 }
 
+struct weston_test_entry_list {
+	const struct weston_test_entry *array;
+	size_t len;
+};
+
+extern const struct weston_test_entry_list weston_test_entry_list_;
+
 /** Declare the list of tests in a test program
  *
  * When the fixture setup is using \c weston_test_harness_execute_standalone()
@@ -170,9 +177,12 @@ struct weston_test_entry {
  * \ingroup testharness
  */
 #define DECLARE_TEST_LIST(...)						\
-	__attribute__ ((used, section ("test_section")))		\
-	const struct weston_test_entry test_list[] = {			\
+	static const struct weston_test_entry test_list[] = {		\
 		__VA_ARGS__						\
+	};								\
+	const struct weston_test_entry_list weston_test_entry_list_ = {	\
+		.array = test_list,					\
+		.len = ARRAY_LENGTH(test_list),				\
 	}
 
 void
