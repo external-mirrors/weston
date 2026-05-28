@@ -65,6 +65,7 @@
 #define OPT_IMPLICIT_SYNC (1 << 1)  /* force implicit sync */
 #define OPT_MANDELBROT    (1 << 2)  /* render mandelbrot */
 #define OPT_DIRECT_DISPLAY     (1 << 3)  /* direct-display */
+#define OPT_PROTECTED_MEMORY   (1 << 4)  /* Allocate in protected memory */
 
 #define MAX_BUFFER_PLANES 4
 
@@ -82,6 +83,7 @@ struct display {
 	int modifiers_count;
 	int req_dmabuf_immediate;
 	bool use_explicit_sync;
+	bool use_protected_content;
 	struct {
 		EGLDisplay display;
 		EGLContext context;
@@ -244,7 +246,7 @@ static const struct zwp_linux_buffer_params_v1_listener params_listener = {
 static bool
 create_fbo_for_buffer(struct display *display, struct buffer *buffer)
 {
-	static const int general_attribs = 3;
+	static const int general_attribs = 4;
 	static const int plane_attribs = 5;
 	static const int entries_per_attrib = 2;
 	EGLint attribs[(general_attribs + plane_attribs * MAX_BUFFER_PLANES) *
@@ -257,6 +259,11 @@ create_fbo_for_buffer(struct display *display, struct buffer *buffer)
 	attribs[atti++] = buffer->height;
 	attribs[atti++] = EGL_LINUX_DRM_FOURCC_EXT;
 	attribs[atti++] = buffer->format;
+
+	if (display->use_protected_content) {
+		attribs[atti++] = EGL_PROTECTED_CONTENT_EXT;
+		attribs[atti++] = EGL_TRUE;
+	}
 
 #define ADD_PLANE_ATTRIBS(plane_idx) { \
 	attribs[atti++] = EGL_DMA_BUF_PLANE ## plane_idx ## _FD_EXT; \
@@ -332,12 +339,16 @@ create_dmabuf_buffer(struct display *display, struct buffer *buffer,
 	static uint32_t flags = 0;
 	struct zwp_linux_buffer_params_v1 *params;
 	int i;
+	uint32_t bo_flags = GBM_BO_USE_RENDERING;
 
 	buffer->display = display;
 	buffer->width = width;
 	buffer->height = height;
 	buffer->format = display->format;
 	buffer->release_fence_fd = -1;
+
+	if (opts & OPT_PROTECTED_MEMORY)
+		bo_flags |= GBM_BO_USE_PROTECTED;
 
 	if (display->modifiers_count > 0) {
 		buffer->bo = gbm_bo_create_with_modifiers2(display->gbm.device,
@@ -346,7 +357,7 @@ create_dmabuf_buffer(struct display *display, struct buffer *buffer,
 							   buffer->format,
 							   display->modifiers,
 							   display->modifiers_count,
-							   GBM_BO_USE_RENDERING);
+							   bo_flags);
 		if (buffer->bo)
 			buffer->modifier = gbm_bo_get_modifier(buffer->bo);
 	}
@@ -356,7 +367,7 @@ create_dmabuf_buffer(struct display *display, struct buffer *buffer,
 					   buffer->width,
 					   buffer->height,
 					   buffer->format,
-					   GBM_BO_USE_RENDERING);
+					   bo_flags);
 		buffer->modifier = DRM_FORMAT_MOD_INVALID;
 	}
 
@@ -1133,9 +1144,9 @@ destroy_display(struct display *display)
 static bool
 display_set_up_egl(struct display *display)
 {
-	static const EGLint context_attribs[] = {
+	static EGLint context_attribs[5] = {
 		EGL_CONTEXT_CLIENT_VERSION, 2,
-		EGL_NONE
+		EGL_NONE, EGL_NONE, EGL_NONE
 	};
 	EGLint major, minor, ret, count;
 	const char *egl_extensions = NULL;
@@ -1187,6 +1198,16 @@ display_set_up_egl(struct display *display)
 	if (weston_check_egl_extension(egl_extensions,
 					"EGL_KHR_no_config_context")) {
 		display->egl.has_no_config_context = true;
+	}
+
+	if (display->use_protected_content) {
+		if (!weston_check_egl_extension(egl_extensions,
+						"EGL_EXT_protected_content")) {
+			fprintf(stderr, "EGL_EXT_protected_content not supported\n");
+			goto error;
+		}
+		context_attribs[2] = EGL_PROTECTED_CONTENT_EXT;
+		context_attribs[3] = EGL_TRUE;
 	}
 
 	if (display->egl.has_no_config_context) {
@@ -1387,6 +1408,8 @@ create_display(char const *drm_render_node, uint32_t format, int opts)
 	display->format = format;
 	display->req_dmabuf_immediate = opts & OPT_IMMEDIATE;
 
+	display->use_protected_content = opts & OPT_PROTECTED_MEMORY;
+
 	display->registry = wl_display_get_registry(display->display);
 	wl_registry_add_listener(display->registry,
 				 &registry_listener, display);
@@ -1474,7 +1497,9 @@ print_usage_and_exit(void)
 		"\n\t\tenables weston-direct-display extension to attempt "
 		"direct scan-out;\n\t\tnote this will cause the image to be "
 		"displayed inverted as GL uses a\n\t\tdifferent texture "
-		"coordinate system\n");
+		"coordinate system\n"
+		"\t'-p,--protected'"
+		"\n\t\tAllocate the buffer in protected memory\n");
 	exit(0);
 }
 
@@ -1511,11 +1536,12 @@ main(int argc, char **argv)
 		{"format",           required_argument, 0,  'f' },
 		{"mandelbrot",       no_argument,	0,  'm' },
 		{"direct-display",   no_argument,	0,  'g' },
+		{"protected",        no_argument,	0,  'p' },
 		{"help",             no_argument      , 0,  'h' },
 		{0, 0, 0, 0}
 	};
 
-	while ((c = getopt_long(argc, argv, "hi:d:s:e:f:mg",
+	while ((c = getopt_long(argc, argv, "hi:d:s:e:f:mgp",
 				long_options, &option_index)) != -1) {
 		switch (c) {
 		case 'i':
@@ -1540,6 +1566,9 @@ main(int argc, char **argv)
 			break;
 		case 'f':
 			format = strtoul(optarg, NULL, 0);
+			break;
+		case 'p':
+			opts |= OPT_PROTECTED_MEMORY;
 			break;
 		default:
 			print_usage_and_exit();
