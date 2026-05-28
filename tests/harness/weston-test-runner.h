@@ -71,98 +71,6 @@ struct weston_test_entry {
 	int n_elements;
 } __attribute__ ((aligned (64)));
 
-#define TEST_BEGIN(name, arg)						\
-	static enum test_result_code					\
-	name(struct wet_testsuite_data *_wet_suite_data, arg)
-
-#define TEST_BEGIN_NO_ARG(name)						\
-	static enum test_result_code					\
-	name(struct wet_testsuite_data *_wet_suite_data)
-
-#define NO_ARG_TEST(func)						\
-	static enum test_result_code					\
-	func(struct wet_testsuite_data *);				\
-									\
-	const struct weston_test_entry test##func			\
-		__attribute__ ((used, section ("test_section"))) =	\
-	{								\
-		.name = #func,						\
-		.run.plain = func,					\
-		.n_elements = 1,					\
-	};								\
-									\
-	TEST_BEGIN_NO_ARG(func)
-
-#define ARG_TEST(func, test_data)					\
-	static enum test_result_code					\
-	func(struct wet_testsuite_data *, const void *);		\
-									\
-	const struct weston_test_entry test##func			\
-		__attribute__ ((used, section ("test_section"))) =	\
-	{								\
-		.name = #func,						\
-		.run.arg = func,					\
-		.table_data = test_data,				\
-		.element_size = sizeof(test_data[0]),			\
-		.n_elements = ARRAY_LENGTH(test_data),			\
-	};								\
-	TEST_BEGIN(func, const void *data)
-
-/** Add a test with no parameters
- *
- * This defines one test as a new function. Use this macro in place of the
- * function signature and put the function body after this.
- *
- * \param name Name for the test, must be a valid function name.
- *
- * \ingroup testharness
- */
-#define TEST(name) NO_ARG_TEST(name)
-
-/** Add an array driven test with a parameter
- *
- * This defines an array of tests as a new function. Use this macro in place
- * of the function signature and put the function body after this. The function
- * will be executed once for each element in \c data_array, passing the
- * element as the argument <tt>void *data</tt> to the function.
- *
- * This macro is not usable if fixture setup is using
- * weston_test_harness_execute_as_plugin().
- *
- * \param name Name for the test, must be a valid function name.
- * \param data_array A static const array of any type. The length will be
- * recorded automatically.
- *
- * \ingroup testharness
- */
-#define TEST_P(name, data_array) ARG_TEST(name, data_array)
-
-/** Add a test with weston_compositor argument
- *
- * This defines one test as a new function. Use this macro in place of the
- * function signature and put the function body after this. The function
- * will have one argument <tt>struct weston_compositor *compositor</tt>.
- *
- * This macro is only usable if fixture setup is using
- * weston_test_harness_execute_as_plugin().
- *
- * \param func Name for the test, must be a valid function name.
- *
- * \ingroup testharness
- */
-#define PLUGIN_TEST(func)						\
-	static enum test_result_code func(struct wet_testsuite_data *,	\
-					  struct weston_compositor *);	\
-									\
-	const struct weston_test_entry test##func			\
-		__attribute__ ((used, section ("test_section"))) =	\
-	{								\
-		.name = #func,						\
-		.run.plugin = func,					\
-		.n_elements = 1,					\
-	};								\
-	TEST_BEGIN(func, struct weston_compositor *compositor)
-
 /** Add a test function with no parameters
  *
  * This adds the given function into the list of tests. Must be used
@@ -266,16 +174,6 @@ struct weston_test_entry {
 	const struct weston_test_entry test_list[] = {			\
 		__VA_ARGS__						\
 	}
-
-/** Get test suite data structure
- *
- * This returns the shared test suite data structure, to be used in
- * any test which is declared with TEST(), TEST_P(), or PLUGIN_TEST().
- *
- * \return Test suite data structure
- * \ingroup testharness
- */
-#define TEST_GET_SUITE_DATA() _wet_suite_data
 
 void
 testlog(const char *fmt, ...) WL_PRINTF(1, 2);
