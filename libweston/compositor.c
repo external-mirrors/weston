@@ -495,7 +495,7 @@ paint_node_update_late(struct weston_paint_node *pnode)
 		               };
 	} else if (buffer->direct_display && !pnode->censored) {
 		pnode->draw_solid = true;
-		pnode->is_fully_opaque = (pnode->view->alpha == 1.0f) &&
+		pnode->is_fully_opaque = (pnode->view_alpha == 1.0f) &&
 					 pnode->simple_transform;
 		pnode->is_fully_blended = !pnode->is_fully_opaque;
 		get_placeholder_color(pnode, &pnode->solid);
@@ -3502,7 +3502,7 @@ paint_node_update_visible(struct weston_paint_node *pnode,
 
 	if (pnode->is_fully_opaque)
 		pixman_region32_union(opaque, opaque, &pnode->visible);
-	else if (view->alpha == 1.0)
+	else if (pnode->view_alpha == 1.0)
 		pixman_region32_union(opaque, opaque, &view->transform.opaque);
 
 	/* This might not be the only paint node that contributes to this
