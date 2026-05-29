@@ -265,7 +265,6 @@ weston_surface_attach(struct weston_surface *surface,
 	if (!old_buffer ||
 	    buffer->pixel_format != old_buffer->pixel_format ||
 	    buffer->format_modifier != old_buffer->format_modifier) {
-		surface->is_opaque = pixel_format_is_opaque(buffer->pixel_format);
 		status |= WESTON_SURFACE_DIRTY_BUFFER_PARAMS;
 		pnode_changes |= WESTON_PAINT_NODE_BUFFER_PARAMS_DIRTY;
 	}
@@ -376,7 +375,6 @@ weston_surface_apply_state(struct weston_surface *surface,
 {
 	WESTON_TRACE_ANNOTATE_FUNC(("surface state flow", &state->flow));
 	struct weston_view *view;
-	pixman_region32_t opaque;
 	enum weston_surface_status status = state->status;
 
 	assert(!surface->compositor->latched);
@@ -462,10 +460,25 @@ weston_surface_apply_state(struct weston_surface *surface,
 	/* wl_surface.set_opaque_region */
 	if (status & (WESTON_SURFACE_DIRTY_SIZE |
 		      WESTON_SURFACE_DIRTY_BUFFER_PARAMS)) {
+		pixman_region32_t opaque;
+
 		pixman_region32_init(&opaque);
-		pixman_region32_intersect_rect(&opaque, &state->opaque,
-					       0, 0,
-					       surface->width, surface->height);
+
+		surface->is_opaque =
+			surface->buffer_ref.buffer &&
+			pixel_format_is_opaque(surface->buffer_ref.buffer->pixel_format);
+
+		if (surface->is_opaque) {
+			/* Opaque region hint ignored, as whole surface is opaque. */
+			pixman_region32_fini(&opaque);
+			pixman_region32_init_rect(&opaque,
+						  0, 0,
+						  surface->width, surface->height);
+		} else {
+			pixman_region32_intersect_rect(&opaque, &state->opaque,
+						       0, 0,
+						       surface->width, surface->height);
+		}
 
 		if (!pixman_region32_equal(&opaque, &surface->opaque)) {
 			pixman_region32_copy(&surface->opaque, &opaque);
