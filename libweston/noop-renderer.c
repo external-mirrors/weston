@@ -137,6 +137,11 @@ noop_renderer_init(struct weston_compositor *ec)
 	renderer->base.destroy = noop_renderer_destroy;
 	renderer->base.type = WESTON_RENDERER_NOOP;
 	ec->renderer = &renderer->base;
+	ec->capabilities |=
+		WESTON_CAP_ROTATION_ANY |
+		WESTON_CAP_VIEW_CLIP_MASK |
+		WESTON_CAP_COLOR_OPS |
+		WESTON_CAP_COLOR_REP;
 
 	return 0;
 }
