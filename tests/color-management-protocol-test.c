@@ -121,7 +121,6 @@ fixture_setup(struct weston_test_harness *harness)
 	struct compositor_setup setup;
 
 	compositor_setup_defaults(&setup);
-	setup.renderer = WESTON_RENDERER_GL;
 	setup.shell = SHELL_TEST_DESKTOP;
 	setup.refresh = HIGHEST_OUTPUT_REFRESH; /* create_client_and_test_surface() */
 	setup.logging_scopes = "log,color-lcms-profiles";
