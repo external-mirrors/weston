@@ -156,4 +156,10 @@ weston_ini_setup_(struct compositor_setup *setup, ...);
 char *
 cfgln(const char *fmt, ...);
 
+struct weston_color_profile_params;
+
+char *
+cfg_color_profile_params(const char *name,
+			 const struct weston_color_profile_params *p);
+
 #endif /* WESTON_TEST_FIXTURE_COMPOSITOR_H */

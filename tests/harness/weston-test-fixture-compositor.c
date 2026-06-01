@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Collabora, Ltd.
+ * Copyright 2019, 2026 Collabora, Ltd.
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -38,10 +38,15 @@
 
 #include "shared/helpers.h"
 #include "shared/string-helpers.h"
+#include "shared/xalloc.h"
+#include "color_util.h"
 #include "weston-test-fixture-compositor.h"
 #include "weston-test-assert.h"
 #include "weston.h"
 #include "tests/test-config.h"
+
+#include "color.h"
+#include "color-properties.h"
 
 static_assert(WET_MAIN_RET_MISSING_CAPS == RESULT_SKIP,
 	      "wet_main() return value for skip is wrong");
@@ -513,3 +518,150 @@ cfgln(const char *fmt, ...)
 	return str;
 }
 
+
+static const char *
+primaries_to_name(const struct weston_color_primaries_info *info)
+{
+	switch (info->primaries) {
+	case WESTON_PRIMARIES_CICP_SRGB:
+		return "srgb";
+	case WESTON_PRIMARIES_CICP_PAL_M:
+		return "pal_m";
+	case WESTON_PRIMARIES_CICP_PAL:
+		return "pal";
+	case WESTON_PRIMARIES_CICP_NTSC:
+		return "ntsc";
+	case WESTON_PRIMARIES_CICP_GENERIC_FILM:
+		return "generic_film";
+	case WESTON_PRIMARIES_CICP_BT2020:
+		return "bt2020";
+	case WESTON_PRIMARIES_CICP_CIE1931_XYZ:
+		return "cie1931_xyz";
+	case WESTON_PRIMARIES_CICP_DCI_P3:
+		return "dci_p3";
+	case WESTON_PRIMARIES_CICP_DISPLAY_P3:
+		return "display_p3";
+	case WESTON_PRIMARIES_ADOBE_RGB:
+		return "adobe_rgb";
+	}
+
+	return "ERROR!";
+}
+
+static const char *
+tf_to_name(const struct weston_color_tf_info *info)
+{
+	switch (info->tf) {
+	case WESTON_TF_BT1886:
+		return "bt1886";
+	case WESTON_TF_GAMMA22:
+		return "gamma22";
+	case WESTON_TF_GAMMA28:
+		return "gamma28";
+	case WESTON_TF_ST240:
+		return "st240";
+	case WESTON_TF_ST428:
+		return "st428";
+	case WESTON_TF_ST2084_PQ:
+		return "st2084";
+	case WESTON_TF_EXT_LINEAR:
+		return "linear";
+	case WESTON_TF_LOG_100:
+		return "log100";
+	case WESTON_TF_LOG_316:
+		return "log316";
+	case WESTON_TF_XVYCC:
+		return "xvycc";
+	case WESTON_TF_HLG:
+		return "hlg";
+	/* The following cannot be set by 'tf_named' key. */
+	case WESTON_TF_SRGB:
+	case WESTON_TF_EXT_SRGB:
+	case WESTON_TF_POWER:
+		break;
+	}
+
+	return "ERROR!";
+}
+
+static void
+xy_to_config(const char *pfx, const char *key, struct weston_CIExy c, FILE *fp)
+{
+	fprintf(fp, "%s_%s=%f %f\n", pfx, key, c.x, c.y);
+}
+
+static void
+gamut_to_config(const char *pfx, struct weston_color_gamut g, FILE *fp)
+{
+	static const char *prim_keys[] = { "red", "green", "blue" };
+	unsigned i;
+
+	for (i = 0; i < 3; i++)
+		xy_to_config(pfx, prim_keys[i], g.primary[i], fp);
+	xy_to_config(pfx, "white", g.white_point, fp);
+}
+
+/** Write a color-profile section
+ *
+ * \param name Value for the 'name' key in the section.
+ * \param p Image description parameters.
+ * \return A malloc'd string containing the new config section. Usable
+ * in place of a \c cfgln() call in \c weston_ini_setup() arguments.
+ *
+ * The image description parameters must be fully populated as defined for
+ * struct weston_color_profile_params.
+ *
+ * \ingroup testharness
+ */
+char *
+cfg_color_profile_params(const char *name,
+			 const struct weston_color_profile_params *p)
+{
+	size_t len;
+	char *conf;
+	FILE *fp;
+	int ret_close;
+
+	fp = open_memstream(&conf, &len);
+	abort_oom_if_null(fp);
+
+	fprintf(fp, "[color-profile]\n"
+		"name=%s\n", name);
+
+	switch (p->tf.info->tf) {
+	case WESTON_TF_POWER:
+		fprintf(fp, "tf_power=%f\n", p->tf.params[0]);
+		break;
+	default:
+		fprintf(fp, "tf_named=%s\n", tf_to_name(p->tf.info));
+		break;
+	}
+
+	if (p->primaries_info) {
+		fprintf(fp, "prim_named=%s\n", primaries_to_name(p->primaries_info));
+	} else {
+		gamut_to_config("prim", p->primaries, fp);
+	}
+
+	gamut_to_config("target", p->target_primaries, fp);
+
+	fprintf(fp, "min_lum=%f\n", p->min_luminance);
+	fprintf(fp, "ref_lum=%f\n", p->reference_white_luminance);
+	fprintf(fp, "max_lum=%f\n", p->max_luminance);
+
+	if (p->target_min_luminance >= 0.0f)
+		fprintf(fp, "target_min_lum=%f\n", p->target_min_luminance);
+	if (p->target_max_luminance >= 0.0f)
+		fprintf(fp, "target_max_lum=%f\n", p->target_max_luminance);
+
+	if (p->maxFALL >= 0.0f)
+		fprintf(fp, "max_fall=%f\n", p->maxFALL);
+	if (p->maxCLL >= 0.0f)
+		fprintf(fp, "max_cll=%f\n", p->maxCLL);
+
+	ret_close = fclose(fp);
+	if (!test_assert_int_eq(ret_close, 0))
+		abort();
+
+	return conf;
+}
