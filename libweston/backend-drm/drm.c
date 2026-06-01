@@ -1231,9 +1231,13 @@ drm_repaint_flush_device(struct drm_device *device)
 		 */
 		if (tmp->reused_state) {
 			failed_reuse = true;
-			tmp->force_rebuild_state = true;
 			device->reused_state_failures++;
 		}
+
+		/* Even if we weren't reusing state, we can't reuse this one
+		 * next repaint, so make sure we don't try.
+		 */
+		tmp->force_rebuild_state = true;
 	}
 
 	if (failed_reuse)
