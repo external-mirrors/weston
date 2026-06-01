@@ -921,12 +921,17 @@ redraw(struct window *window)
 		window->initial_frame_time = time;
 		window->benchmark_time = time;
 	}
-	if (time - window->benchmark_time > (benchmark_interval * 1000)) {
-		printf("%d frames in %d seconds: %f fps\n",
-		       window->frames,
-		       benchmark_interval,
-		       (float) window->frames / benchmark_interval);
-		window->benchmark_time = time;
+	if (time - window->benchmark_time >= (benchmark_interval * 1000)) {
+		window->benchmark_time += benchmark_interval * 1000;
+		/* We slept for too long, don't print anything and just restart */
+		if (window->benchmark_time + benchmark_interval * 1000 < time) {
+			window->benchmark_time = time;
+		} else {
+			printf("%d frames in %d seconds: %f fps\n",
+                               window->frames,
+                               benchmark_interval,
+                               (float) window->frames / benchmark_interval);
+		}
 		window->frames = 0;
 		if (window->toggled_tearing)
 			set_tearing(window, window->tear_enabled ^ true);
