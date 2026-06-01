@@ -1459,6 +1459,57 @@ set_max_fall_twice(struct wet_testsuite_data *suite_data)
 	return RESULT_OK;
 }
 
+static enum test_result_code
+unset_image_description(struct wet_testsuite_data *suite_data)
+{
+	struct client *client;
+	struct color_manager_client *cm;
+	struct wp_color_management_surface_v1 *cm_surface;
+	struct wp_image_description_creator_params_v1 *creator;
+	struct image_description *image_desc;
+
+	client = create_client_and_test_surface(0, 0, 100, 100);
+	cm = color_manager_get(client);
+
+	/* Create a simple image description. */
+	creator = color_manager_create_param(cm);
+	wp_image_description_creator_params_v1_set_primaries_named(creator, WP_COLOR_MANAGER_V1_PRIMARIES_SRGB);
+	wp_image_description_creator_params_v1_set_tf_named(creator, WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_GAMMA22);
+	image_desc = image_description_from_param(creator);
+	creator = NULL;
+	image_description_wait_until_ready(client, image_desc);
+
+	/* Set it on the surface so we get something to unset. */
+	cm_surface = wp_color_manager_v1_get_surface(cm->manager_proxy, client->surface->wl_surface);
+	wp_color_management_surface_v1_set_image_description(cm_surface,
+							     image_desc->proxy,
+							     WP_COLOR_MANAGER_V1_RENDER_INTENT_PERCEPTUAL);
+	wl_surface_commit(client->surface->wl_surface);
+	client_roundtrip(client);
+
+	/* Explicit unset */
+	wp_color_management_surface_v1_unset_image_description(cm_surface);
+	wl_surface_commit(client->surface->wl_surface);
+	client_roundtrip(client);
+
+	/* Set it again on the surface. */
+	wp_color_management_surface_v1_set_image_description(cm_surface,
+							     image_desc->proxy,
+							     WP_COLOR_MANAGER_V1_RENDER_INTENT_PERCEPTUAL);
+	wl_surface_commit(client->surface->wl_surface);
+	client_roundtrip(client);
+
+	/* Implicit unset */
+	wp_color_management_surface_v1_destroy(cm_surface);
+	wl_surface_commit(client->surface->wl_surface);
+	client_roundtrip(client);
+
+	image_description_destroy(image_desc);
+	client_destroy(client);
+
+	return RESULT_OK;
+}
+
 DECLARE_TEST_LIST(
 	TESTFN(create_image_description_before_setting_icc_file),
 	TESTFN(set_unreadable_icc_fd),
@@ -1490,4 +1541,5 @@ DECLARE_TEST_LIST(
 	TESTFN(set_target_luminance_twice),
 	TESTFN(set_max_cll_twice),
 	TESTFN(set_max_fall_twice),
+	TESTFN(unset_image_description),
 );
