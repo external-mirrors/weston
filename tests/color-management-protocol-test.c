@@ -1510,6 +1510,32 @@ unset_image_description(struct wet_testsuite_data *suite_data)
 	return RESULT_OK;
 }
 
+static enum test_result_code
+unset_inert_surface_image_description(struct wet_testsuite_data *suite_data)
+{
+	struct client *client;
+	struct color_manager_client *cm;
+	struct wp_color_management_surface_v1 *cm_surface;
+
+	client = create_client_and_test_surface(100, 100, 100, 100);
+	cm = color_manager_get(client);
+
+	/* Destroy the wl_surface, making cm_surface inert. */
+	cm_surface = wp_color_manager_v1_get_surface(cm->manager_proxy, client->surface->wl_surface);
+	surface_destroy(client->surface);
+	client->surface = NULL;
+
+	/* Unset image description on inert surface. */
+	wp_color_management_surface_v1_unset_image_description(cm_surface);
+	expect_protocol_error(client, &wp_color_management_surface_v1_interface,
+			      WP_COLOR_MANAGEMENT_SURFACE_V1_ERROR_INERT);
+
+	wp_color_management_surface_v1_destroy(cm_surface);
+	client_destroy(client);
+
+	return RESULT_OK;
+}
+
 DECLARE_TEST_LIST(
 	TESTFN(create_image_description_before_setting_icc_file),
 	TESTFN(set_unreadable_icc_fd),
@@ -1542,4 +1568,5 @@ DECLARE_TEST_LIST(
 	TESTFN(set_max_cll_twice),
 	TESTFN(set_max_fall_twice),
 	TESTFN(unset_image_description),
+	TESTFN(unset_inert_surface_image_description),
 );
