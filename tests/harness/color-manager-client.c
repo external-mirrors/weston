@@ -572,6 +572,7 @@ image_descr_info_done(void *data,
 {
 	struct image_description_info *info = data;
 
+	test_assert_false(info->done);
 	info->done = true;
 	testlog("Image description info %p done:\n", wp_image_description_info_v1);
 
