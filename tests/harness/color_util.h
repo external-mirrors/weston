@@ -170,3 +170,39 @@ rgb_diff_stat_update(struct rgb_diff_stat *stat,
 void
 rgb_diff_stat_print(const struct rgb_diff_stat *stat,
 		    const char *title, unsigned scaling_bits);
+
+#define NO_VALUE -1.f
+
+#define D65 { 0.3127f, 0.3290f }
+#define prim_bt709 ((struct weston_color_gamut){		\
+	.primary = {						\
+		{ 0.640f, 0.330f },				\
+		{ 0.300f, 0.600f },				\
+		{ 0.150f, 0.060f },				\
+	},							\
+	.white_point = D65,					\
+})
+#define prim_bt2020 ((struct weston_color_gamut){		\
+	.primary = {						\
+		{ 0.708f, 0.292f },				\
+		{ 0.170f, 0.797f },				\
+		{ 0.131f, 0.046f },				\
+	},							\
+	.white_point = D65,					\
+})
+#define prim_display_p3 ((struct weston_color_gamut){		\
+	.primary = {						\
+		{ 0.680f, 0.320f },				\
+		{ 0.265f, 0.690f },				\
+		{ 0.150f, 0.060f },				\
+	},							\
+	.white_point = D65,					\
+})
+#define prim_hp_5dq99aa ((struct weston_color_gamut){		\
+	.primary = {						\
+		{ 0.6650f, 0.3261f },				\
+		{ 0.2890f, 0.6435f },				\
+		{ 0.1494f, 0.0507f },				\
+	},							\
+	.white_point = { 0.3134f, 0.3291f },			\
+})
