@@ -106,6 +106,19 @@ image_description_wait_until_ready(struct client *client,
 void
 image_description_destroy(struct image_description *image_desc);
 
+enum image_descr_info_event {
+	IMAGE_DESCR_INFO_EVENT_ICC_FD = 1,
+	IMAGE_DESCR_INFO_EVENT_PRIMARIES_NAMED,
+	IMAGE_DESCR_INFO_EVENT_PRIMARIES,
+	IMAGE_DESCR_INFO_EVENT_TF_NAMED,
+	IMAGE_DESCR_INFO_EVENT_TF_POWER_EXP,
+	IMAGE_DESCR_INFO_EVENT_LUMINANCES,
+	IMAGE_DESCR_INFO_EVENT_TARGET_PRIMARIES,
+	IMAGE_DESCR_INFO_EVENT_TARGET_MAXCLL,
+	IMAGE_DESCR_INFO_EVENT_TARGET_MAXFALL,
+	IMAGE_DESCR_INFO_EVENT_TARGET_LUMINANCE,
+};
+
 struct image_description_info {
 	struct wp_image_description_info_v1 *wp_image_description_info;
 

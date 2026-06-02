@@ -38,19 +38,6 @@
 #include "shared/helpers.h"
 #include "shared/xalloc.h"
 
-enum image_descr_info_event {
-	IMAGE_DESCR_INFO_EVENT_ICC_FD = 1,
-	IMAGE_DESCR_INFO_EVENT_PRIMARIES_NAMED,
-	IMAGE_DESCR_INFO_EVENT_PRIMARIES,
-	IMAGE_DESCR_INFO_EVENT_TF_NAMED,
-	IMAGE_DESCR_INFO_EVENT_TF_POWER_EXP,
-	IMAGE_DESCR_INFO_EVENT_LUMINANCES,
-	IMAGE_DESCR_INFO_EVENT_TARGET_PRIMARIES,
-	IMAGE_DESCR_INFO_EVENT_TARGET_MAXCLL,
-	IMAGE_DESCR_INFO_EVENT_TARGET_MAXFALL,
-	IMAGE_DESCR_INFO_EVENT_TARGET_LUMINANCE,
-};
-
 static void
 cm_supported_intent(void *data, struct wp_color_manager_v1 *wp_color_manager_v1,
 		    uint32_t render_intent)
