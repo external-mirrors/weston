@@ -581,7 +581,6 @@ image_descr_info_done(void *data,
 	if (has_bit(info->events_received, IMAGE_DESCR_INFO_EVENT_ICC_FD)) {
 		testlog("    ICC file: fd %d, icc size %u.\n",
 			info->icc_fd, info->icc_size);
-		close(info->icc_fd);
 		return;
 	}
 
