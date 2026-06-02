@@ -232,7 +232,7 @@ weston_cm_send_tf(struct cm_image_desc_info *cm_image_desc_info,
 		break;
 	case WESTON_TF_POWER:
 		wp_image_description_info_v1_send_tf_power(cm_image_desc_info->owner,
-							   tf->params[0]);
+							   round(tf->params[0] * 10000.f));
 	}
 }
 
