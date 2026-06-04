@@ -1183,6 +1183,35 @@ connector_add_prop(drmModeAtomicReq *req, const struct drm_connector *connector,
 }
 
 static int
+connector_add_prop_enum(drmModeAtomicReq *req,
+			const struct drm_connector *connector,
+			enum wdrm_connector_property prop,
+			uint32_t wdrm_enum_value)
+{
+	struct drm_device *device = connector->device;
+	struct drm_backend *b = device->backend;
+	struct weston_compositor *comp = b->compositor;
+	const struct drm_property_info *info = &connector->props[prop];
+	const struct drm_property_enum_info *eni;
+	uint32_t connector_id = connector->connector_id;
+	int ret;
+
+	weston_assert_u32_lt(comp, wdrm_enum_value, info->num_enum_values);
+	eni = &info->enum_values[wdrm_enum_value];
+
+	drm_debug(b, "\t\t\t[CONN:%lu] %lu (%s) -> %s (0x%llx)\n",
+		  (unsigned long) connector_id,
+		  (unsigned long) info->prop_id, info->name,
+		  eni->name, (unsigned long long) eni->value);
+
+	if (info->prop_id == 0 || !eni->valid)
+		return -1;
+
+	ret = drmModeAtomicAddProperty(req, connector_id, info->prop_id, eni->value);
+	return (ret <= 0) ? -1 : 0;
+}
+
+static int
 plane_add_prop(drmModeAtomicReq *req, struct drm_plane *plane,
 	       enum wdrm_plane_property prop, uint64_t val)
 {
@@ -1273,9 +1302,6 @@ drm_connector_set_hdcp_property(struct drm_connector *connector,
 	int ret;
 	enum wdrm_content_protection_state drm_protection;
 	enum wdrm_hdcp_content_type drm_cp_type;
-	struct drm_property_enum_info *enum_info;
-	uint64_t prop_val;
-	struct drm_property_info *props = connector->props;
 
 	get_drm_protection_from_weston(protection, &drm_protection,
 				       &drm_cp_type);
@@ -1292,19 +1318,17 @@ drm_connector_set_hdcp_property(struct drm_connector *connector,
 	    drm_cp_type != WDRM_HDCP_CONTENT_TYPE0)
 			return;
 
-	enum_info = props[WDRM_CONNECTOR_CONTENT_PROTECTION].enum_values;
-	prop_val = enum_info[drm_protection].value;
-	ret = connector_add_prop(req, connector,
-				 WDRM_CONNECTOR_CONTENT_PROTECTION, prop_val);
+	ret = connector_add_prop_enum(req, connector,
+				      WDRM_CONNECTOR_CONTENT_PROTECTION,
+				      drm_protection);
 	assert(ret == 0);
 
 	if (!drm_connector_has_prop(connector, WDRM_CONNECTOR_HDCP_CONTENT_TYPE))
 		return;
 
-	enum_info = props[WDRM_CONNECTOR_HDCP_CONTENT_TYPE].enum_values;
-	prop_val = enum_info[drm_cp_type].value;
-	ret = connector_add_prop(req, connector,
-				 WDRM_CONNECTOR_HDCP_CONTENT_TYPE, prop_val);
+	ret = connector_add_prop_enum(req, connector,
+				      WDRM_CONNECTOR_HDCP_CONTENT_TYPE,
+				      drm_cp_type);
 	assert(ret == 0);
 }
 
@@ -1347,17 +1371,12 @@ drm_connector_set_content_type(struct drm_connector *connector,
 			       enum wdrm_content_type content_type,
 			       drmModeAtomicReq *req)
 {
-	struct drm_property_enum_info *enum_info;
-	uint64_t prop_val;
-	struct drm_property_info *props = connector->props;
-
 	if (!drm_connector_has_prop(connector, WDRM_CONNECTOR_CONTENT_TYPE))
 		return 0;
 
-	enum_info = props[WDRM_CONNECTOR_CONTENT_TYPE].enum_values;
-	prop_val = enum_info[content_type].value;
-	return connector_add_prop(req, connector,
-				  WDRM_CONNECTOR_CONTENT_TYPE, prop_val);
+	return connector_add_prop_enum(req, connector,
+				       WDRM_CONNECTOR_CONTENT_TYPE,
+				       content_type);
 }
 
 static int
@@ -1365,12 +1384,6 @@ drm_connector_set_colorspace(struct drm_connector *connector,
 			     enum wdrm_colorspace colorspace,
 			     drmModeAtomicReq *req)
 {
-	const struct drm_property_info *info;
-	const struct drm_property_enum_info *enum_info;
-
-	assert(colorspace >= 0);
-	assert(colorspace < WDRM_COLORSPACE__COUNT);
-
 	if (!drm_connector_has_prop(connector, WDRM_CONNECTOR_COLORSPACE)) {
 		if (colorspace == WDRM_COLORSPACE_DEFAULT)
 			return 0;
@@ -1378,12 +1391,9 @@ drm_connector_set_colorspace(struct drm_connector *connector,
 		return -1;
 	}
 
-	info = &connector->props[WDRM_CONNECTOR_COLORSPACE];
-	enum_info = &info->enum_values[colorspace];
-	assert(enum_info->valid);
-
-	return connector_add_prop(req, connector,
-				  WDRM_CONNECTOR_COLORSPACE, enum_info->value);
+	return connector_add_prop_enum(req, connector,
+				       WDRM_CONNECTOR_COLORSPACE,
+				       colorspace);
 }
 
 static enum wdrm_underscan
@@ -1442,8 +1452,6 @@ drm_connector_set_underscan(struct drm_connector *connector,
 			    drmModeAtomicReq *req)
 {
 	struct weston_output *woutput = &output->base;
-	const struct drm_property_info *info;
-	const struct drm_property_enum_info *enum_info;
 	enum wdrm_underscan underscan;
 	uint32_t hborder = 0, vborder = 0;
 	int ret = 0;
@@ -1455,10 +1463,8 @@ drm_connector_set_underscan(struct drm_connector *connector,
 		return 0;
 
 	underscan = get_drm_underscan_from_weston_output(woutput);
-	info = &connector->props[WDRM_CONNECTOR_UNDERSCAN];
-	enum_info = &info->enum_values[underscan];
-	ret |= connector_add_prop(req, connector, WDRM_CONNECTOR_UNDERSCAN,
-				  enum_info->value);
+	ret |= connector_add_prop_enum(req, connector,
+				       WDRM_CONNECTOR_UNDERSCAN, underscan);
 
 	if (woutput->underscan != WESTON_UNDERSCAN_OFF) {
 		hborder = woutput->underscan_hborder;
