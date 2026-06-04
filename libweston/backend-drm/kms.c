@@ -1282,6 +1282,33 @@ colorop_add_prop(drmModeAtomicReq *req, const struct drm_colorop *colorop,
 	return (ret <= 0) ? -1 : 0;
 }
 
+static int
+colorop_add_prop_enum(drmModeAtomicReq *req, const struct drm_colorop *colorop,
+		      enum wdrm_colorop_property prop, uint32_t wdrm_enum_value)
+{
+	struct drm_plane *plane = colorop->pipeline->plane;
+	struct drm_device *device = plane->device;
+	struct drm_backend *b = device->backend;
+	struct weston_compositor *comp = b->compositor;
+	const struct drm_property_info *info = &colorop->props[prop];
+	const struct drm_property_enum_info *eni;
+	int ret;
+
+	weston_assert_u32_lt(comp, wdrm_enum_value, info->num_enum_values);
+	eni = &info->enum_values[wdrm_enum_value];
+
+	drm_debug(b, "\t\t\t[COLOROP:%lu] %lu (%s) -> %s (0x%llx)\n",
+		  (unsigned long) colorop->id,
+		  (unsigned long) info->prop_id, info->name,
+		  eni->name, (unsigned long long) eni->value);
+
+	if (info->prop_id == 0 || !eni->valid)
+		return -1;
+
+	ret = drmModeAtomicAddProperty(req, colorop->id, info->prop_id, eni->value);
+	return (ret <= 0) ? -1 : 0;
+}
+
 static bool
 drm_connector_has_prop(struct drm_connector *connector,
 		       enum wdrm_connector_property prop)
@@ -1599,22 +1626,6 @@ colorop_program(drmModeAtomicReq *req, const struct drm_colorop *colorop,
 }
 
 static bool
-set_interp(drmModeAtomicReq *req, const struct drm_colorop *colorop,
-	   enum wdrm_colorop_property interp_prop, uint64_t interp_val)
-{
-	const struct drm_property_info *info = &colorop->props[interp_prop];
-	int ret;
-
-	if (info->enum_values[interp_val].valid) {
-		ret = colorop_add_prop(req, colorop, interp_prop, interp_val);
-		if (ret >= 0)
-			return true;
-	}
-
-	return false;
-}
-
-static bool
 drm_colorop_program(drmModeAtomicReq *req, struct drm_colorop_state *colorop_state,
 		    const char *indent, char **err_msg)
 {
@@ -1635,18 +1646,22 @@ drm_colorop_program(drmModeAtomicReq *req, struct drm_colorop_state *colorop_sta
 		prop_val = colorop_state->object.matrix_blob_id;
 		return colorop_program(req, colorop, colorop_prop, prop_val, err_msg);
 	case COLOROP_OBJECT_TYPE_3x1D_LUT:
-		if (!set_interp(req, colorop, WDRM_COLOROP_LUT1D_INTERPOLATION,
-				WDRM_COLOROP_LUT1D_INTERPOLATION_LINEAR))
+		if (colorop_add_prop_enum(req, colorop,
+					  WDRM_COLOROP_LUT1D_INTERPOLATION,
+					  WDRM_COLOROP_LUT1D_INTERPOLATION_LINEAR) < 0) {
 			drm_debug(b, "%s[colorop] linear LUT1D interpolation not supported or failed to set;\n"
 				     "%susing current value set on driver\n", indent, indent);
+		}
 		colorop_prop = WDRM_COLOROP_DATA;
 		prop_val = colorop_state->object.lut_3x1d_blob_id;
 		return colorop_program(req, colorop, colorop_prop, prop_val, err_msg);
 	case COLOROP_OBJECT_TYPE_3D_LUT:
-		if (!set_interp(req, colorop, WDRM_COLOROP_LUT3D_INTERPOLATION,
-				WDRM_COLOROP_LUT3D_INTERPOLATION_TETRAHEDRAL))
+		if (colorop_add_prop_enum(req, colorop,
+					  WDRM_COLOROP_LUT3D_INTERPOLATION,
+					  WDRM_COLOROP_LUT3D_INTERPOLATION_TETRAHEDRAL) < 0) {
 			drm_debug(b, "%s[colorop] tetrahedral LUT3D interpolation not supported or failed to set;\n"
 				     "%susing current value set on driver\n", indent, indent);
+		}
 		colorop_prop = WDRM_COLOROP_DATA;
 		prop_val = colorop_state->object.lut_3d_blob_id;
 		return colorop_program(req, colorop, colorop_prop, prop_val, err_msg);
