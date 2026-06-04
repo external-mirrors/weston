@@ -62,6 +62,7 @@ struct setup_args {
 	size_t dmabuf_format_num;
 
 	bool gl_force_import_yuv_fallback;
+	bool use_restricted_buffer;
 };
 
 /* Formats supported by llvmpipe as of Mesa 25.0.4 */
@@ -160,6 +161,7 @@ static const struct setup_args my_setup_args[] = {
 		.dmabuf_format_must_pass = gl_dmabuf_format_must_pass,
 		.dmabuf_format_num = ARRAY_LENGTH(gl_dmabuf_format_must_pass),
 		.gl_force_import_yuv_fallback = false,
+		.use_restricted_buffer = false,
 	},
 	{
 		.meta.name = "GL force-import-yuv-fallback",
@@ -168,6 +170,7 @@ static const struct setup_args my_setup_args[] = {
 		.dmabuf_format_must_pass = gl_dmabuf_format_must_pass,
 		.dmabuf_format_num = ARRAY_LENGTH(gl_dmabuf_format_must_pass),
 		.gl_force_import_yuv_fallback = true,
+		.use_restricted_buffer = false,
 	},
 	{
 		.renderer = WESTON_RENDERER_VULKAN,
@@ -177,6 +180,16 @@ static const struct setup_args my_setup_args[] = {
 		.shm_format_num = ARRAY_LENGTH(vulkan_shm_format_must_pass),
 		.dmabuf_format_must_pass = vulkan_dmabuf_format_must_pass,
 		.dmabuf_format_num = ARRAY_LENGTH(vulkan_dmabuf_format_must_pass),
+		.use_restricted_buffer = false,
+	},
+	{
+		.meta.name = "GL restricted buffer",
+		.renderer = WESTON_RENDERER_GL,
+		.logging_scopes = "log,gl-renderer-paint-nodes,gl-shader-generator",
+		.dmabuf_format_must_pass = gl_dmabuf_format_must_pass,
+		.dmabuf_format_num = ARRAY_LENGTH(gl_dmabuf_format_must_pass),
+		.gl_force_import_yuv_fallback = false,
+		.use_restricted_buffer = true,
 	},
 };
 
@@ -211,6 +224,7 @@ struct client_buffer_case {
 	struct client_buffer *(*create_buffer)(struct client *client,
 					       uint32_t drm_format,
 					       enum buffer_type type,
+					       enum weston_buffer_restriction restriction,
 					       pixman_image_t *rgb_image);
 };
 
@@ -219,17 +233,20 @@ struct client_buffer_create_data {
 	enum buffer_type type;
 	int width;
 	int height;
+	enum weston_buffer_restriction restriction;
 };
 
 static struct client_buffer_create_data
 create_init(uint32_t drm_format, enum buffer_type type,
-	    const struct image_header *ih)
+	    const struct image_header *ih,
+	    enum weston_buffer_restriction restriction)
 {
 	return (struct client_buffer_create_data){
 		.fmt = pixel_format_get_info(drm_format),
 		.type = type,
 		.width = ih->width,
 		.height = ih->height,
+		.restriction = restriction,
 	};
 }
 
@@ -238,6 +255,12 @@ client_buffer_create(struct client *client,
 		     struct client_buffer_create_data *create_data)
 {
 	struct client_buffer *buf = NULL;
+	struct weston_restricted_buffer_v1 *restricted = NULL;
+
+	if (create_data->restriction == WESTON_BUFFER_RESTRICTION_YES) {
+		test_assert_ptr_not_null(client->restricted_buffer);
+		restricted = client->restricted_buffer;
+	}
 
 	switch (create_data->type) {
 		case BUFFER_TYPE_SHM: {
@@ -263,7 +286,7 @@ client_buffer_create(struct client *client,
 			}
 
 			buf = client_buffer_util_create_dmabuf_buffer(client->wl_display,
-								      client->dmabuf, NULL,
+								      client->dmabuf, restricted,
 								      create_data->fmt,
 								      create_data->width,
 								      create_data->height);
@@ -294,6 +317,7 @@ static struct client_buffer *
 rgba4444_create_buffer(struct client *client,
 		       uint32_t drm_format,
 		       enum buffer_type type,
+		       enum weston_buffer_restriction restriction,
 		       pixman_image_t *rgb_image)
 {
 	static const int swizzles[][4] = {
@@ -304,7 +328,8 @@ rgba4444_create_buffer(struct client *client,
 	};
 
 	struct image_header src = image_header_from(rgb_image);
-	struct client_buffer_create_data args = create_init(drm_format, type, &src);
+	struct client_buffer_create_data args = create_init(drm_format, type, &src,
+							    restriction);
 	struct client_buffer *buf;
 	bool is_opaque;
 	int idx, x, y;
@@ -391,10 +416,12 @@ static struct client_buffer *
 rgba5551_create_buffer(struct client *client,
 		       uint32_t drm_format,
 		       enum buffer_type type,
+		       enum weston_buffer_restriction restriction,
 		       pixman_image_t *rgb_image)
 {
 	struct image_header src = image_header_from(rgb_image);
-	struct client_buffer_create_data args = create_init(drm_format, type, &src);
+	struct client_buffer_create_data args = create_init(drm_format, type, &src,
+							    restriction);
 	struct client_buffer *buf;
 
 	int x, y;
@@ -447,10 +474,12 @@ static struct client_buffer *
 rgb565_create_buffer(struct client *client,
 		     uint32_t drm_format,
 		     enum buffer_type type,
+		     enum weston_buffer_restriction restriction,
 		     pixman_image_t *rgb_image)
 {
 	struct image_header src = image_header_from(rgb_image);
-	struct client_buffer_create_data args = create_init(drm_format, type, &src);
+	struct client_buffer_create_data args = create_init(drm_format, type, &src,
+							    restriction);
 	struct client_buffer *buf;
 	int x, y;
 
@@ -493,10 +522,12 @@ static struct client_buffer *
 rgb888_create_buffer(struct client *client,
 		     uint32_t drm_format,
 		     enum buffer_type type,
+		     enum weston_buffer_restriction restriction,
 		     pixman_image_t *rgb_image)
 {
 	struct image_header src = image_header_from(rgb_image);
-	struct client_buffer_create_data args = create_init(drm_format, type, &src);
+	struct client_buffer_create_data args = create_init(drm_format, type, &src,
+							    restriction);
 	struct client_buffer *buf;
 	int x, y;
 
@@ -552,6 +583,7 @@ static struct client_buffer *
 rgba8888_create_buffer(struct client *client,
 		       uint32_t drm_format,
 		       enum buffer_type type,
+		       enum weston_buffer_restriction restriction,
 		       pixman_image_t *rgb_image)
 {
 	static const int swizzles[][4] = {
@@ -562,7 +594,8 @@ rgba8888_create_buffer(struct client *client,
 	};
 
 	struct image_header src = image_header_from(rgb_image);
-	struct client_buffer_create_data args = create_init(drm_format, type, &src);
+	struct client_buffer_create_data args = create_init(drm_format, type, &src,
+							    restriction);
 	struct client_buffer *buf;
 	bool is_opaque;
 	int idx, x, y;
@@ -649,10 +682,12 @@ static struct client_buffer *
 rgba2101010_create_buffer(struct client *client,
 			  uint32_t drm_format,
 			  enum buffer_type type,
+			  enum weston_buffer_restriction restriction,
 			  pixman_image_t *rgb_image)
 {
 	struct image_header src = image_header_from(rgb_image);
-	struct client_buffer_create_data args = create_init(drm_format, type, &src);
+	struct client_buffer_create_data args = create_init(drm_format, type, &src,
+							    restriction);
 	struct client_buffer *buf;
 	int x, y;
 	uint32_t a;
@@ -707,6 +742,7 @@ static struct client_buffer *
 rgba16161616_create_buffer(struct client *client,
 			   uint32_t drm_format,
 			   enum buffer_type type,
+			   enum weston_buffer_restriction restriction,
 			   pixman_image_t *rgb_image)
 {
 	static const int swizzles[][4] = {
@@ -715,7 +751,8 @@ rgba16161616_create_buffer(struct client *client,
 	};
 
 	struct image_header src = image_header_from(rgb_image);
-	struct client_buffer_create_data args = create_init(drm_format, type, &src);
+	struct client_buffer_create_data args = create_init(drm_format, type, &src,
+							    restriction);
 	struct client_buffer *buf;
 	bool is_opaque;
 	int idx, x, y;
@@ -809,6 +846,7 @@ static struct client_buffer *
 rgba16161616f_create_buffer(struct client *client,
 			    uint32_t drm_format,
 			    enum buffer_type type,
+			    enum weston_buffer_restriction restriction,
 			    pixman_image_t *rgb_image)
 {
 	static const int swizzles[][4] = {
@@ -817,7 +855,8 @@ rgba16161616f_create_buffer(struct client *client,
 	};
 
 	struct image_header src = image_header_from(rgb_image);
-	struct client_buffer_create_data args = create_init(drm_format, type, &src);
+	struct client_buffer_create_data args = create_init(drm_format, type, &src,
+							    restriction);
 	struct client_buffer *buf;
 	bool is_opaque;
 	int idx, x, y;
@@ -972,10 +1011,12 @@ static struct client_buffer *
 y_u_v_create_buffer(struct client *client,
 		    uint32_t drm_format,
 		    enum buffer_type type,
+		    enum weston_buffer_restriction restriction,
 		    pixman_image_t *rgb_image)
 {
 	struct image_header src = image_header_from(rgb_image);
-	struct client_buffer_create_data args = create_init(drm_format, type, &src);
+	struct client_buffer_create_data args = create_init(drm_format, type, &src,
+							    restriction);
 	struct client_buffer *buf;
 	int x, y;
 	uint32_t *rgb_row;
@@ -1071,6 +1112,7 @@ static struct client_buffer *
 nv12_create_buffer(struct client *client,
 		   uint32_t drm_format,
 		   enum buffer_type type,
+		   enum weston_buffer_restriction restriction,
 		   pixman_image_t *rgb_image)
 {
 	static const int swizzles[][2] = {
@@ -1078,7 +1120,8 @@ nv12_create_buffer(struct client *client,
 		{ 1, 0 }  /* NV21 */
 	};
 	struct image_header src = image_header_from(rgb_image);
-	struct client_buffer_create_data args = create_init(drm_format, type, &src);
+	struct client_buffer_create_data args = create_init(drm_format, type, &src,
+							    restriction);
 	struct client_buffer *buf;
 	int idx, x, y;
 	uint32_t *rgb_row;
@@ -1158,6 +1201,7 @@ static struct client_buffer *
 nv16_create_buffer(struct client *client,
 		   uint32_t drm_format,
 		   enum buffer_type type,
+		   enum weston_buffer_restriction restriction,
 		   pixman_image_t *rgb_image)
 {
 	static const int swizzles[][2] = {
@@ -1165,7 +1209,8 @@ nv16_create_buffer(struct client *client,
 		{ 1, 0 }  /* NV61 */
 	};
 	struct image_header src = image_header_from(rgb_image);
-	struct client_buffer_create_data args = create_init(drm_format, type, &src);
+	struct client_buffer_create_data args = create_init(drm_format, type, &src,
+							    restriction);
 	struct client_buffer *buf;
 	int idx, x, y;
 	uint32_t *rgb_row;
@@ -1245,6 +1290,7 @@ static struct client_buffer *
 nv24_create_buffer(struct client *client,
 		   uint32_t drm_format,
 		   enum buffer_type type,
+		   enum weston_buffer_restriction restriction,
 		   pixman_image_t *rgb_image)
 {
 	static const int swizzles[][2] = {
@@ -1252,7 +1298,8 @@ nv24_create_buffer(struct client *client,
 		{ 1, 0 }  /* NV42 */
 	};
 	struct image_header src = image_header_from(rgb_image);
-	struct client_buffer_create_data args = create_init(drm_format, type, &src);
+	struct client_buffer_create_data args = create_init(drm_format, type, &src,
+							    restriction);
 	struct client_buffer *buf;
 	int idx, x, y;
 	uint32_t *rgb_row;
@@ -1327,6 +1374,7 @@ static struct client_buffer *
 yuyv_create_buffer(struct client *client,
 		   uint32_t drm_format,
 		   enum buffer_type type,
+		   enum weston_buffer_restriction restriction,
 		   pixman_image_t *rgb_image)
 {
 	static const int swizzles[][4] = {
@@ -1336,7 +1384,8 @@ yuyv_create_buffer(struct client *client,
 		{ 1, 2, 3, 0 }  /* VYUY */
 	};
 	struct image_header src = image_header_from(rgb_image);
-	struct client_buffer_create_data args = create_init(drm_format, type, &src);
+	struct client_buffer_create_data args = create_init(drm_format, type, &src,
+							    restriction);
 	struct client_buffer *buf;
 	int idx, x, y;
 	uint32_t *rgb_row;
@@ -1403,10 +1452,12 @@ static struct client_buffer *
 xyuv8888_create_buffer(struct client *client,
 		       uint32_t drm_format,
 		       enum buffer_type type,
+		       enum weston_buffer_restriction restriction,
 		       pixman_image_t *rgb_image)
 {
 	struct image_header src = image_header_from(rgb_image);
-	struct client_buffer_create_data args = create_init(drm_format, type, &src);
+	struct client_buffer_create_data args = create_init(drm_format, type, &src,
+							    restriction);
 	struct client_buffer *buf;
 	int x, y;
 	uint32_t *rgb_row;
@@ -1471,10 +1522,12 @@ static struct client_buffer *
 p016_create_buffer(struct client *client,
 		   uint32_t drm_format,
 		   enum buffer_type type,
+		   enum weston_buffer_restriction restriction,
 		   pixman_image_t *rgb_image)
 {
 	struct image_header src = image_header_from(rgb_image);
-	struct client_buffer_create_data args = create_init(drm_format, type, &src);
+	struct client_buffer_create_data args = create_init(drm_format, type, &src,
+							    restriction);
 	struct client_buffer *buf;
 	int depth, x, y;
 	uint32_t *rgb_row;
@@ -1620,7 +1673,8 @@ static const struct client_buffer_case client_buffer_cases[] = {
 
 static enum test_result_code
 test_client_buffer(const struct client_buffer_case *cb_case,
-		   enum buffer_type type)
+		   enum buffer_type type,
+		   enum weston_buffer_restriction restriction)
 {
 	enum test_result_code res = RESULT_SKIP;
 	char *fname;
@@ -1658,13 +1712,19 @@ test_client_buffer(const struct client_buffer_case *cb_case,
 	client = create_client();
 	client->surface = create_test_surface(client);
 
-	buf = cb_case->create_buffer(client, cb_case->drm_format, type, img);
+	buf = cb_case->create_buffer(client, cb_case->drm_format, type, restriction, img);
 	if (buf) {
 		show_window_with_client_buffer(client, buf);
 
-		match = verify_screen_content(client, "client-buffer",
-					      cb_case->ref_seq_no, NULL, 0,
-					      NULL, NO_DECORATIONS);
+		if (restriction == WESTON_BUFFER_RESTRICTION_YES) {
+			match = verify_screen_content(client, "restricted-client-buffer",
+						      0, NULL, 0,
+						      NULL, NO_DECORATIONS);
+		} else {
+			match = verify_screen_content(client, "client-buffer",
+						      cb_case->ref_seq_no, NULL, 0,
+						      NULL, NO_DECORATIONS);
+		}
 		res = match ? RESULT_OK : RESULT_FAIL;
 
 		client_buffer_util_destroy_buffer(buf);
@@ -1736,7 +1796,8 @@ client_buffer_shm(struct wet_testsuite_data *suite_data,
 
 	testlog("%s: format %s\n", get_test_name(), cb_case->drm_format_name);
 
-	res = test_client_buffer(cb_case, BUFFER_TYPE_SHM);
+	res = test_client_buffer(cb_case, BUFFER_TYPE_SHM,
+				 WESTON_BUFFER_RESTRICTION_NO);
 	if (res == RESULT_SKIP) {
 		test_assert_false(format_must_pass(cb_case->drm_format,
 						   args->shm_format_must_pass,
@@ -1755,6 +1816,7 @@ client_buffer_drm(struct wet_testsuite_data *suite_data,
 {
 	const struct setup_args *args = &my_setup_args[get_test_fixture_index()];
 	enum test_result_code res;
+	enum weston_buffer_restriction restriction = WESTON_BUFFER_RESTRICTION_NO;
 
 	if (args->gl_force_import_yuv_fallback) {
 		const struct pixel_format_info *info;
@@ -1771,7 +1833,10 @@ client_buffer_drm(struct wet_testsuite_data *suite_data,
 		return RESULT_SKIP;
 	}
 
-	res = test_client_buffer(cb_case, BUFFER_TYPE_DMABUF);
+	if (args->use_restricted_buffer)
+		restriction = WESTON_BUFFER_RESTRICTION_YES;
+
+	res = test_client_buffer(cb_case, BUFFER_TYPE_DMABUF, restriction);
 	if (res == RESULT_SKIP) {
 		test_assert_false(format_must_pass(cb_case->drm_format,
 						   args->dmabuf_format_must_pass,
