@@ -1234,6 +1234,33 @@ plane_add_prop(drmModeAtomicReq *req, struct drm_plane *plane,
 }
 
 static int
+plane_add_prop_enum(drmModeAtomicReq *req, const struct drm_plane *plane,
+		    enum wdrm_plane_property prop, uint32_t wdrm_enum_value)
+{
+	struct drm_device *device = plane->device;
+	struct drm_backend *b = device->backend;
+	struct weston_compositor *comp = b->compositor;
+	const struct drm_property_info *info = &plane->props[prop];
+	const struct drm_property_enum_info *eni;
+	int ret;
+
+	weston_assert_u32_lt(comp, wdrm_enum_value, info->num_enum_values);
+	eni = &info->enum_values[wdrm_enum_value];
+
+	drm_debug(b, "\t\t\t[PLANE:%lu] %lu (%s) -> %s (0x%llx)\n",
+		  (unsigned long) plane->plane_id,
+		  (unsigned long) info->prop_id, info->name,
+		  eni->name, (unsigned long long) eni->value);
+
+	if (info->prop_id == 0 || !eni->valid)
+		return -1;
+
+	ret = drmModeAtomicAddProperty(req, plane->plane_id, info->prop_id,
+				       eni->value);
+	return (ret <= 0) ? -1 : 0;
+}
+
+static int
 colorop_add_prop(drmModeAtomicReq *req, const struct drm_colorop *colorop,
 		 enum wdrm_colorop_property prop, uint64_t val)
 {
@@ -1494,8 +1521,8 @@ drm_plane_set_color_encoding(struct drm_plane *plane,
 
 	assert(drm_plane_supports_color_encoding(plane, color_encoding));
 
-	return plane_add_prop(req, plane, WDRM_PLANE_COLOR_ENCODING,
-			      color_encoding);
+	return plane_add_prop_enum(req, plane, WDRM_PLANE_COLOR_ENCODING,
+				   color_encoding);
 }
 
 static int
@@ -1541,7 +1568,8 @@ drm_plane_set_color_range(struct drm_plane *plane,
 
 	assert(drm_plane_supports_color_range(plane, color_range));
 
-	return plane_add_prop(req, plane, WDRM_PLANE_COLOR_RANGE, color_range);
+	return plane_add_prop_enum(req, plane, WDRM_PLANE_COLOR_RANGE,
+				   color_range);
 }
 
 static bool
