@@ -1600,20 +1600,29 @@ drm_plane_set_color_range(struct drm_plane *plane,
 }
 
 static bool
+colorop_enforce(drmModeAtomicReq *req, const struct drm_colorop *colorop,
+		char **err_msg)
+{
+	int ret;
+
+	if (!colorop->can_bypass)
+		return true;
+
+	ret = colorop_add_prop(req, colorop, WDRM_COLOROP_BYPASS, 0);
+	if (ret == 0)
+		return true;
+
+	str_printf(err_msg, "failed to set colorop id %u bypass to false",
+			    colorop->id);
+	return false;
+}
+
+static bool
 colorop_program(drmModeAtomicReq *req, const struct drm_colorop *colorop,
 		enum wdrm_colorop_property colorop_prop,
 		uint64_t prop_val, char **err_msg)
 {
 	int ret;
-
-	if (colorop->can_bypass) {
-		ret = colorop_add_prop(req, colorop, WDRM_COLOROP_BYPASS, 0);
-		if (ret < 0) {
-			str_printf(err_msg, "failed to set colorop id %u bypass == false",
-					    colorop->id);
-			return false;
-		}
-	}
 
 	ret = colorop_add_prop(req, colorop, colorop_prop, prop_val);
 	if (ret < 0) {
@@ -1635,6 +1644,9 @@ drm_colorop_program(drmModeAtomicReq *req, struct drm_colorop_state *colorop_sta
 	struct weston_compositor *compositor = pipeline->plane->base.compositor;
 	enum wdrm_colorop_property colorop_prop;
 	uint64_t prop_val;
+
+	if (!colorop_enforce(req, colorop, err_msg))
+		return false;
 
 	switch (colorop_state->object.type) {
 	case COLOROP_OBJECT_TYPE_CURVE:
