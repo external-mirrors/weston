@@ -185,7 +185,7 @@ drm_offload_fullscreen(struct wet_testsuite_data *suite_data)
 	test_assert_int_gt(xdg_surface->configure.height, 0);
 
 	buffer = client_buffer_util_create_dmabuf_buffer(client->wl_display,
-							 client->dmabuf,
+							 client->dmabuf, NULL,
 							 fmt_info,
 							 xdg_surface->configure.width,
 							 xdg_surface->configure.height);
@@ -247,7 +247,7 @@ drm_offload_fullscreen_transparent_overlay(struct wet_testsuite_data *suite_data
 	test_assert_int_gt(xdg_surface->configure.height, 0);
 
 	buffer = client_buffer_util_create_dmabuf_buffer(client->wl_display,
-							 client->dmabuf,
+							 client->dmabuf, NULL,
 							 fmt_info,
 							 xdg_surface->configure.width,
 							 xdg_surface->configure.height);
@@ -325,7 +325,7 @@ drm_offload_fullscreen_black_background(struct wet_testsuite_data *suite_data)
 	test_assert_int_gt(xdg_surface->configure.height, 0);
 
 	buffer = client_buffer_util_create_dmabuf_buffer(client->wl_display,
-							 client->dmabuf,
+							 client->dmabuf, NULL,
 							 fmt_info,
 							 xdg_surface->configure.width - 100,
 							 xdg_surface->configure.height - 100);
@@ -406,7 +406,7 @@ drm_offload_fullscreen_semi_transparent_black_background(struct wet_testsuite_da
 						surface);
 	overlay_buffer =
 		client_buffer_util_create_dmabuf_buffer(client->wl_display,
-							client->dmabuf,
+							client->dmabuf, NULL,
 							fmt_info,
 							100,
 							100);
@@ -492,7 +492,7 @@ drm_offload_fullscreen_semi_transparent_white_background(struct wet_testsuite_da
 						surface);
 	overlay_buffer =
 		client_buffer_util_create_dmabuf_buffer(client->wl_display,
-							client->dmabuf,
+							client->dmabuf, NULL,
 							fmt_info,
 							100,
 							100);
@@ -583,7 +583,7 @@ drm_offload_fullscreen_black_background_black_subsurface_underlay(struct wet_tes
 						surface);
 	overlay_buffer =
 		client_buffer_util_create_dmabuf_buffer(client->wl_display,
-							client->dmabuf,
+							client->dmabuf, NULL,
 							fmt_info,
 							100,
 							100);
@@ -653,7 +653,7 @@ drm_offload_fullscreen_black_background_black_subsurface_overlay(struct wet_test
 	test_assert_int_gt(xdg_surface->configure.height, 0);
 
 	buffer = client_buffer_util_create_dmabuf_buffer(client->wl_display,
-							 client->dmabuf,
+							 client->dmabuf, NULL,
 							 fmt_info,
 							 xdg_surface->configure.width - 100,
 							 xdg_surface->configure.height - 100);
@@ -758,7 +758,7 @@ drm_offload_fullscreen_black_background_red_subsurface_underlay(struct wet_tests
 						surface);
 	overlay_buffer =
 		client_buffer_util_create_dmabuf_buffer(client->wl_display,
-							client->dmabuf,
+							client->dmabuf, NULL,
 							fmt_info,
 							100,
 							100);
@@ -819,7 +819,7 @@ drm_offload_windowed(struct wet_testsuite_data *suite_data)
 	test_assert_int_eq(xdg_surface->configure.height, 0);
 
 	buffer = client_buffer_util_create_dmabuf_buffer(client->wl_display,
-							 client->dmabuf,
+							 client->dmabuf, NULL,
 							 fmt_info,
 							 100,
 							 100);

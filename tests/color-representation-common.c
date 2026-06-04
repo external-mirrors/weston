@@ -180,7 +180,7 @@ create_and_fill_nv12_buffer_with_cake(struct client *client,
 		break;
 	case CLIENT_BUFFER_TYPE_DMABUF:
 		buffer = client_buffer_util_create_dmabuf_buffer(client->wl_display,
-			client->dmabuf,
+			client->dmabuf, NULL,
 			fmt_info,
 			width,
 			height);

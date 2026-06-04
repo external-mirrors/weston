@@ -34,6 +34,7 @@ struct wl_buffer;
 struct wl_shm;
 struct wl_display;
 struct zwp_linux_dmabuf_v1;
+struct weston_restricted_buffer_v1;
 
 #define MAX_DMABUF_PLANES 4
 
@@ -71,6 +72,7 @@ client_buffer_util_create_shm_buffer(struct wl_shm *shm,
 struct client_buffer *
 client_buffer_util_create_dmabuf_buffer(struct wl_display *display,
 					struct zwp_linux_dmabuf_v1 *dmabuf,
+					struct weston_restricted_buffer_v1 *restricted,
 					const struct pixel_format_info *fmt,
 					int width,
 					int height);

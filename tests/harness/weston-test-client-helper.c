@@ -531,7 +531,7 @@ create_buffer(struct client *client, int width, int height, uint32_t drm_format,
 		    return NULL;
 
 		buf->buf = client_buffer_util_create_dmabuf_buffer(client->wl_display,
-								   client->dmabuf,
+								   client->dmabuf, NULL,
 								   pfmt,
 								   width,
 								   height);

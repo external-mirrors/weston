@@ -141,7 +141,7 @@ screenshot_create_udmabuf(struct screenshooter_app *app,
 	buffer = xzalloc(sizeof *buffer);
 
 	buffer->buf = client_buffer_util_create_dmabuf_buffer(app->display,
-							      app->dmabuf,
+							      app->dmabuf, NULL,
 							      fmt,
 							      width,
 							      height);

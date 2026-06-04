@@ -35,6 +35,7 @@
 #include <wayland-client.h>
 
 #include "linux-dmabuf-unstable-v1-client-protocol.h"
+#include "weston-restricted-buffer-client-protocol.h"
 #include "pixel-formats.h"
 #include "shared/os-compatibility.h"
 #include "shared/weston-drm-fourcc.h"
@@ -308,6 +309,7 @@ static const struct zwp_linux_buffer_params_v1_listener params_listener = {
 struct client_buffer *
 client_buffer_util_create_dmabuf_buffer(struct wl_display *display,
 					struct zwp_linux_dmabuf_v1 *dmabuf,
+					struct weston_restricted_buffer_v1 *restricted,
 					const struct pixel_format_info *fmt,
 					int width,
 					int height)
@@ -394,6 +396,9 @@ client_buffer_util_create_dmabuf_buffer(struct wl_display *display,
 	zwp_linux_buffer_params_v1_add_listener(params,
 						&params_listener,
 						&create_data);
+
+	if (restricted)
+		weston_restricted_buffer_v1_enable(restricted, params);
 
 	zwp_linux_buffer_params_v1_create(params,
 					  buf->width,

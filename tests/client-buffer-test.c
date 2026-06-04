@@ -263,7 +263,7 @@ client_buffer_create(struct client *client,
 			}
 
 			buf = client_buffer_util_create_dmabuf_buffer(client->wl_display,
-								      client->dmabuf,
+								      client->dmabuf, NULL,
 								      create_data->fmt,
 								      create_data->width,
 								      create_data->height);
