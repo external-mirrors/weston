@@ -1032,7 +1032,8 @@ gl_renderer_create_renderbuffer(struct weston_output *output,
 static EGLImageKHR
 import_simple_dmabuf(struct gl_renderer *,
 		     const struct dmabuf_attributes *,
-		     const struct weston_color_representation *);
+		     const struct weston_color_representation *,
+		     enum weston_buffer_restriction restriction);
 
 static weston_renderbuffer_t
 gl_renderer_create_renderbuffer_dmabuf(struct weston_output *output,
@@ -1050,7 +1051,8 @@ gl_renderer_create_renderbuffer_dmabuf(struct weston_output *output,
 	info = pixel_format_get_info(attributes->format);
 	assert(info->color_model != COLOR_MODEL_YUV);
 
-	image = import_simple_dmabuf(gr, attributes, NULL);
+	image = import_simple_dmabuf(gr, attributes, NULL,
+				     WESTON_BUFFER_RESTRICTION_NO);
 	if (image == EGL_NO_IMAGE_KHR) {
 		weston_log("Failed to import dmabuf\n");
 		return NULL;
@@ -1570,7 +1572,8 @@ gl_renderer_do_capture_tasks(struct gl_renderer *gr,
 				continue;
 			}
 
-			image = import_simple_dmabuf(gr, &dmabuf->attributes, NULL);
+			image = import_simple_dmabuf(gr, &dmabuf->attributes, NULL,
+						     WESTON_BUFFER_RESTRICTION_NO);
 			if (image == EGL_NO_IMAGE_KHR) {
 				weston_capture_task_retire_failed(ct, "GL: failed to import dma-buf buffer");
 				continue;
@@ -1827,7 +1830,8 @@ ensure_color_egl_image(struct gl_surface_state *gs,
 
 		image = import_simple_dmabuf(gb->gr,
 					     &dmabuf->attributes,
-					     color_rep);
+					     color_rep,
+					     WESTON_BUFFER_RESTRICTION_NO);
 		if (image == EGL_NO_IMAGE_KHR)
 			return NULL;
 
@@ -3805,10 +3809,12 @@ gl_renderer_destroy_dmabuf(struct linux_dmabuf_buffer *dmabuf)
 static EGLImageKHR
 import_simple_dmabuf(struct gl_renderer *gr,
 		     const struct dmabuf_attributes *attributes,
-		     const struct weston_color_representation *color_rep)
+		     const struct weston_color_representation *color_rep,
+		     enum weston_buffer_restriction restriction)
 {
+	struct weston_compositor *comp = gr->compositor;
 	const struct pixel_format_info *info;
-	EGLint attribs[53];
+	EGLint attribs[55];
 	int atti = 0;
 	bool has_modifier;
 
@@ -3828,6 +3834,12 @@ import_simple_dmabuf(struct gl_renderer *gr,
 	attribs[atti++] = attributes->format;
 	attribs[atti++] = EGL_IMAGE_PRESERVED_KHR;
 	attribs[atti++] = EGL_TRUE;
+
+	if (restriction != WESTON_BUFFER_RESTRICTION_NO) {
+		weston_assert_true(comp, comp->renderer_restricted_context);
+		attribs[atti++] = EGL_PROTECTED_CONTENT_EXT;
+		attribs[atti++] = EGL_TRUE;
+	}
 
 	if (attributes->modifier != DRM_FORMAT_MOD_INVALID) {
 		if (!egl_display_has(gr, EXTENSION_EXT_IMAGE_DMA_BUF_IMPORT_MODIFIERS))
@@ -3944,7 +3956,8 @@ import_dmabuf_single_plane(struct gl_renderer *gr,
 			   const struct pixel_format_info *info,
 			   int idx,
 			   const struct dmabuf_attributes *attributes,
-			   const struct yuv_plane_descriptor *descriptor)
+			   const struct yuv_plane_descriptor *descriptor,
+			   enum weston_buffer_restriction restriction)
 {
 	const struct pixel_format_info *plane_info;
 	struct dmabuf_attributes plane;
@@ -3965,7 +3978,7 @@ import_dmabuf_single_plane(struct gl_renderer *gr,
 	plane_info = pixel_format_get_info(plane.format);
 	assert(plane_info->color_model != COLOR_MODEL_YUV);
 
-	image = import_simple_dmabuf(gr, &plane, NULL);
+	image = import_simple_dmabuf(gr, &plane, NULL, restriction);
 	if (image == EGL_NO_IMAGE_KHR) {
 		weston_log("Failed to import plane %d as %.4s\n",
 		           descriptor->plane_index,
@@ -3978,7 +3991,8 @@ import_dmabuf_single_plane(struct gl_renderer *gr,
 
 static bool
 import_yuv_dmabuf(struct gl_renderer *gr, struct gl_buffer_state *gb,
-		  struct dmabuf_attributes *attributes)
+		  struct dmabuf_attributes *attributes,
+		  enum weston_buffer_restriction restriction)
 {
 	unsigned i;
 	int j;
@@ -4021,7 +4035,8 @@ import_yuv_dmabuf(struct gl_renderer *gr, struct gl_buffer_state *gb,
 			   format->plane[j].swizzles.array);
 
 		gb->images[j] = import_dmabuf_single_plane(gr, info, j, attributes,
-		                                           &format->plane[j]);
+		                                           &format->plane[j],
+							   restriction);
 		if (gb->images[j] == EGL_NO_IMAGE_KHR) {
 			while (--j >= 0) {
 				gr->destroy_image(gb->gr->egl_display,
@@ -4148,7 +4163,8 @@ import_dmabuf(struct gl_renderer *gr,
 	color_rep = weston_fill_color_representation(&color_rep, info);
 
 	egl_image = import_simple_dmabuf(gr, &dmabuf->attributes,
-					 &color_rep);
+					 &color_rep,
+					 dmabuf->restriction);
 	if (egl_image != EGL_NO_IMAGE_KHR) {
 		const GLint swizzles[] = { GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA };
 		GLenum target = choose_texture_target(gr, &dmabuf->attributes);
@@ -4173,7 +4189,7 @@ import_dmabuf(struct gl_renderer *gr,
 	}
 
 import_yuv:
-	if (!import_yuv_dmabuf(gr, gb, &dmabuf->attributes)) {
+	if (!import_yuv_dmabuf(gr, gb, &dmabuf->attributes, dmabuf->restriction)) {
 		destroy_buffer_state(gb);
 		return NULL;
 	}
@@ -4822,8 +4838,19 @@ gl_renderer_create_window_surface(struct gl_renderer *gr,
 				  const struct pixel_format_info *const *formats,
 				  unsigned formats_count)
 {
+	struct weston_compositor *comp = gr->compositor;
 	EGLSurface egl_surface = EGL_NO_SURFACE;
 	EGLConfig egl_config;
+	EGLint window_attribs[3];
+	uint32_t nattr = 0;
+
+	if (comp->renderer_restricted_context) {
+		weston_assert_true(comp, egl_display_has(gr, EXTENSION_EXT_PROTECTED_CONTENT));
+		window_attribs[nattr++] = EGL_PROTECTED_CONTENT_EXT;
+		window_attribs[nattr++] = EGL_TRUE;
+	}
+	weston_assert_u32_lt(comp, nattr, ARRAY_LENGTH(window_attribs));
+	window_attribs[nattr] = EGL_NONE;
 
 	egl_config = gl_renderer_get_egl_config(gr, EGL_WINDOW_BIT,
 						formats, formats_count);
@@ -4836,7 +4863,7 @@ gl_renderer_create_window_surface(struct gl_renderer *gr,
 		egl_surface = gr->create_platform_window(gr->egl_display,
 							 egl_config,
 							 window_for_platform,
-							 NULL);
+							 window_attribs);
 	else
 		egl_surface = eglCreateWindowSurface(gr->egl_display,
 						     egl_config,
@@ -5317,11 +5344,6 @@ gl_renderer_display_create(struct weston_compositor *ec,
 	int ret, nformats, i, j;
 	bool supported;
 
-	if (ec->renderer_restricted_context) {
-		weston_log("GL renderer does not support restricted context\n");
-		return -1;
-	}
-
 	gr = zalloc(sizeof *gr);
 	if (gr == NULL)
 		return -1;
@@ -5368,6 +5390,12 @@ gl_renderer_display_create(struct weston_compositor *ec,
 
 	if (gl_renderer_setup_egl_extensions(ec) < 0)
 		goto fail_with_error;
+
+	if (ec->renderer_restricted_context &&
+	    !egl_display_has(gr, EXTENSION_EXT_PROTECTED_CONTENT)) {
+		weston_log("GL can not provide a restricted context\n");
+		goto fail_terminate;
+	}
 
 	if (egl_display_has(gr, EXTENSION_WL_BIND_WAYLAND_DISPLAY)) {
 		gr->display_bound = gr->bind_display(gr->egl_display,
@@ -5560,7 +5588,7 @@ gl_renderer_setup(struct weston_compositor *ec)
 	EGLint context_attribs[16] = {
 		EGL_CONTEXT_CLIENT_VERSION, 0,
 	};
-	unsigned int nattr = 2;
+	uint32_t nattr = 2;
 
 	if (!eglBindAPI(EGL_OPENGL_ES_API)) {
 		weston_log("failed to bind EGL_OPENGL_ES_API\n");
@@ -5580,7 +5608,12 @@ gl_renderer_setup(struct weston_compositor *ec)
 		context_attribs[nattr++] = EGL_CONTEXT_PRIORITY_HIGH_IMG;
 	}
 
-	assert(nattr < ARRAY_LENGTH(context_attribs));
+	if (ec->renderer_restricted_context) {
+		weston_assert_true(ec, egl_display_has(gr, EXTENSION_EXT_PROTECTED_CONTENT));
+		context_attribs[nattr++] = EGL_PROTECTED_CONTENT_EXT;
+		context_attribs[nattr++] = EGL_TRUE;
+	}
+	weston_assert_u32_lt(ec, nattr, ARRAY_LENGTH(context_attribs));
 	context_attribs[nattr] = EGL_NONE;
 
 	/* try to create an OpenGLES 3 context first */

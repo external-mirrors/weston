@@ -121,6 +121,7 @@ enum egl_display_extension_flag {
 	EXTENSION_KHR_WAIT_SYNC                      = 1ull << 14,
 	EXTENSION_MESA_CONFIGLESS_CONTEXT            = 1ull << 15,
 	EXTENSION_WL_BIND_WAYLAND_DISPLAY            = 1ull << 16,
+	EXTENSION_EXT_PROTECTED_CONTENT              = 1ull << 17,
 };
 
 /* Keep in sync with gl-renderer.c. */

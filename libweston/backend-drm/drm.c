@@ -3483,6 +3483,14 @@ drm_output_create(struct weston_backend *backend, const char *name)
 	struct drm_device *device;
 	struct drm_output *output;
 
+#ifndef BUILD_DRM_GBM
+	/* Without GBM, we have no way to request a protected allocation */
+	if (b->compositor->renderer_restricted_context) {
+		weston_log("DRM: Restricted context required, but no way to handle protected memory\n");
+		return NULL;
+	}
+#endif
+
 	device = drm_device_find_by_output(b->compositor, name);
 	if (!device)
 		return NULL;
@@ -3499,6 +3507,8 @@ drm_output_create(struct weston_backend *backend, const char *name)
 	output->max_bpc = 16;
 #ifdef BUILD_DRM_GBM
 	output->gbm_bo_flags = GBM_BO_USE_SCANOUT | GBM_BO_USE_RENDERING;
+	if (b->compositor->renderer_restricted_context)
+		output->gbm_bo_flags |= GBM_BO_USE_PROTECTED;
 #endif
 
 	weston_output_init(&output->base, b->compositor, name);

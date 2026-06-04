@@ -88,6 +88,7 @@ static const struct gl_extension_table display_table[] = {
 	EXT("EGL_KHR_wait_sync", EXTENSION_KHR_WAIT_SYNC),
 	EXT("EGL_MESA_configless_context", EXTENSION_MESA_CONFIGLESS_CONTEXT),
 	EXT("EGL_WL_bind_wayland_display", EXTENSION_WL_BIND_WAYLAND_DISPLAY),
+	EXT("EGL_EXT_protected_content", EXTENSION_EXT_PROTECTED_CONTENT),
 	{ NULL, 0, 0 }
 };
 
