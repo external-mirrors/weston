@@ -1007,6 +1007,10 @@ handle_global(void *data, struct wl_registry *registry,
 		client->alpha_modifier =
 			wl_registry_bind(registry, id,
 					 &wp_alpha_modifier_v1_interface, 1);
+	} else if (strcmp(interface, weston_restricted_buffer_v1_interface.name) == 0) {
+		client->restricted_buffer =
+			wl_registry_bind(registry, id,
+					 &weston_restricted_buffer_v1_interface, 1);
 	}
 }
 
@@ -1321,6 +1325,8 @@ client_destroy(struct client *client)
 		wp_viewporter_destroy(client->viewporter);
 	if (client->presentation)
 		wp_presentation_destroy(client->presentation);
+	if (client->restricted_buffer)
+		weston_restricted_buffer_v1_destroy(client->restricted_buffer);
 	if (client->single_pixel_manager)
 		wp_single_pixel_buffer_manager_v1_destroy(client->single_pixel_manager);
 	if (client->color_representation)

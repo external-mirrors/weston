@@ -48,6 +48,7 @@
 #include "weston-testsuite-data.h"
 #include "fifo-v1-client-protocol.h"
 #include "commit-timing-v1-client-protocol.h"
+#include "weston-restricted-buffer-client-protocol.h"
 
 struct color_manager_client;
 
@@ -70,6 +71,7 @@ struct client {
 	struct wp_viewporter *viewporter;
 	struct wp_color_representation_manager_v1 *color_representation;
 	struct color_manager_client *color_manager;
+	struct weston_restricted_buffer_v1 *restricted_buffer;
 
 	struct test *test;
 	struct wp_fifo_manager_v1 *fifo_manager;

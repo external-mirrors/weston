@@ -49,6 +49,8 @@ lib_test_client = static_library(
 		weston_test_protocol_c,
 		weston_output_capture_client_protocol_h,
 		weston_output_capture_protocol_c,
+		weston_restricted_buffer_client_protocol_h,
+		weston_restricted_buffer_protocol_c,
 		viewporter_client_protocol_h,
 		viewporter_protocol_c,
 		xdg_shell_client_protocol_h,
