@@ -409,9 +409,9 @@ drm_colorop_matrix_blob_destroy_handler(struct wl_listener *l, void *data)
 	drm_colorop_matrix_blob_destroy(mat);
 }
 
-static struct drm_colorop_matrix_blob *
-drm_colorop_matrix_blob_search(struct drm_device *device,
-			       struct weston_color_transform *xform)
+static const struct drm_colorop_matrix_blob *
+drm_colorop_matrix_blob_search(const struct drm_device *device,
+			       const struct weston_color_transform *xform)
 {
 	struct drm_colorop_matrix_blob *mat;
 
@@ -469,13 +469,13 @@ drm_colorop_matrix_blob_create(struct drm_device *device,
 	return colorop_mat;
 }
 
-static struct drm_colorop_matrix_blob *
+static const struct drm_colorop_matrix_blob *
 drm_colorop_matrix_blob_from_mapping(struct drm_device *device,
 				     struct weston_color_transform *xform)
 {
 	struct drm_backend *b = device->backend;
 	struct weston_color_mapping *mapping = &xform->mapping;
-	struct drm_colorop_matrix_blob *colorop_mat;
+	const struct drm_colorop_matrix_blob *colorop_mat;
 	struct drm_color_ctm_3x4 *mat_3x4;
 	unsigned int row, col;
 	float val;
@@ -969,7 +969,7 @@ mapping_create_colorop_state(struct drm_color_pipeline_state *pipeline_state,
 	struct weston_compositor *compositor = pipeline->plane->base.compositor;
 	struct drm_device *device = pipeline->plane->device;
 	struct weston_color_mapping *mapping = &xform->mapping;
-	struct drm_colorop_matrix_blob *mat_blob;
+	const struct drm_colorop_matrix_blob *mat_blob;
 	struct drm_colorop_state_object so = { 0 };
 	struct drm_colorop *colorop;
 
