@@ -1087,12 +1087,12 @@ err:
 }
 
 static int
-crtc_add_prop(drmModeAtomicReq *req, struct drm_crtc *crtc,
+crtc_add_prop(drmModeAtomicReq *req, const struct drm_crtc *crtc,
 	      enum wdrm_crtc_property prop, uint64_t val)
 {
 	struct drm_device *device = crtc->device;
 	struct drm_backend *b = device->backend;
-	struct drm_property_info *info = &crtc->props_crtc[prop];
+	const struct drm_property_info *info = &crtc->props_crtc[prop];
 	int ret;
 
 	drm_debug(b, "\t\t\t[CRTC:%lu] %lu (%s) -> %llu (0x%llx)\n",
@@ -1127,10 +1127,10 @@ crtc_add_prop(drmModeAtomicReq *req, struct drm_crtc *crtc,
  * like this and which do not.
  */
 static int
-crtc_add_prop_zero_ok(drmModeAtomicReq *req, struct drm_crtc *crtc,
+crtc_add_prop_zero_ok(drmModeAtomicReq *req, const struct drm_crtc *crtc,
 		      enum wdrm_crtc_property prop, uint64_t val)
 {
-	struct drm_property_info *info = &crtc->props_crtc[prop];
+	const struct drm_property_info *info = &crtc->props_crtc[prop];
 
 	if (info->prop_id == 0 && val == 0)
 		return 0;
@@ -1148,12 +1148,12 @@ drm_crtc_supports_background_color(struct drm_crtc *crtc)
 }
 
 static int
-connector_add_prop(drmModeAtomicReq *req, struct drm_connector *connector,
+connector_add_prop(drmModeAtomicReq *req, const struct drm_connector *connector,
 		   enum wdrm_connector_property prop, uint64_t val)
 {
 	struct drm_device *device = connector->device;
 	struct drm_backend *b = device->backend;
-	struct drm_property_info *info = &connector->props[prop];
+	const struct drm_property_info *info = &connector->props[prop];
 	uint32_t connector_id = connector->connector_id;
 	int ret;
 
@@ -1192,13 +1192,13 @@ plane_add_prop(drmModeAtomicReq *req, struct drm_plane *plane,
 }
 
 static int
-colorop_add_prop(drmModeAtomicReq *req, struct drm_colorop *colorop,
+colorop_add_prop(drmModeAtomicReq *req, const struct drm_colorop *colorop,
 		 enum wdrm_colorop_property prop, uint64_t val)
 {
 	struct drm_plane *plane = colorop->pipeline->plane;
 	struct drm_device *device = plane->device;
 	struct drm_backend *b = device->backend;
-	struct drm_property_info *info = &colorop->props[prop];
+	const struct drm_property_info *info = &colorop->props[prop];
 	int ret;
 
 	drm_debug(b, "\t\t\t[COLOROP:%lu] %lu (%s) -> %llu (0x%llx)\n",
