@@ -126,6 +126,7 @@ fixture_setup(struct weston_test_harness *harness, const struct setup_args *arg)
 				 cfgln("[core]"),
 				 cfgln("color-management=%s", truefalse(arg->color_management)),
 				 cfgln("output-straight-alpha=%s", truefalse(arg->output_straight_alpha)));
+		setup.test_quirks.required_capabilities |= WESTON_CAP_COLOR_OPS;
 	}
 
 	return weston_test_harness_execute_as_client(harness, &setup);

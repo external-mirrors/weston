@@ -323,6 +323,7 @@ fixture_setup(struct weston_test_harness *harness, const struct setup_args *arg)
 	setup.shell = SHELL_TEST_DESKTOP;
 	setup.logging_scopes = "log,color-lcms-profiles,color-lcms-transformations,color-lcms-optimizer";
 	setup.refresh = HIGHEST_OUTPUT_REFRESH;
+	setup.test_quirks.required_capabilities |= WESTON_CAP_COLOR_OPS;
 
 	file_name = output_filename_for_fixture(THIS_TEST_NAME, harness,
 						arg->meta.name, "icm");

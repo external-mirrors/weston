@@ -5471,16 +5471,16 @@ wet_main(int argc, char *argv[], const struct weston_testsuite_data *test_data)
 		goto out;
 	}
 
-	if (weston_compositor_backends_loaded(wet.compositor) < 0)
-		goto out;
-
-	wet_handle_mirror_outputs(&wet);
-
 	if (test_data && !check_compositor_capabilities(wet.compositor,
 				test_data->test_quirks.required_capabilities)) {
 		ret = WET_MAIN_RET_MISSING_CAPS;
 		goto out;
 	}
+
+	if (weston_compositor_backends_loaded(wet.compositor) < 0)
+		goto out;
+
+	wet_handle_mirror_outputs(&wet);
 
 	weston_compositor_flush_heads_changed(wet.compositor);
 	if (wet.init_failed)
