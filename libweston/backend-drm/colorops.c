@@ -346,9 +346,9 @@ out:
 	return clut;
 }
 
-static struct drm_colorop_clut_blob *
-drm_colorop_clut_blob_search(struct drm_device *device,
-			     struct weston_color_transform *xform,
+static const struct drm_colorop_clut_blob *
+drm_colorop_clut_blob_search(const struct drm_device *device,
+			     const struct weston_color_transform *xform,
 			     uint32_t clut_len, uint32_t shaper_len)
 {
 	struct drm_colorop_clut_blob *clut;
@@ -361,14 +361,14 @@ drm_colorop_clut_blob_search(struct drm_device *device,
 	return NULL;
 }
 
-static struct drm_colorop_clut_blob *
+static const struct drm_colorop_clut_blob *
 drm_colorop_clut_blob_from_xform(struct drm_device *device,
 				 struct weston_color_transform *xform,
 				 uint32_t len_shaper, uint32_t len_clut)
 {
 	float *cm_shaper = NULL;
 	float *cm_clut = NULL;
-	struct drm_colorop_clut_blob *colorop_clut = NULL;
+	const struct drm_colorop_clut_blob *colorop_clut = NULL;
 
 	colorop_clut = drm_colorop_clut_blob_search(device, xform, len_shaper, len_clut);
 	if (colorop_clut)
@@ -1070,7 +1070,7 @@ drm_color_pipeline_state_from_xform_decomposed(struct drm_color_pipeline *pipeli
 	struct drm_colorop *colorop_shaper, *colorop_clut;
 	struct drm_colorop_state_object so_clut = { 0 };
 	struct drm_colorop_state_object so_shaper = { 0 };
-	struct drm_colorop_clut_blob *clut;
+	const struct drm_colorop_clut_blob *clut;
 
 	/* Find colorop for shaper (3x1D LUT). */
 	colorop_shaper = search_colorop_type(pipeline,
