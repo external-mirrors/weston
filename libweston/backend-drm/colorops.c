@@ -702,7 +702,7 @@ is_colorop_compatible_with_curve(struct weston_compositor *compositor,
 }
 
 static const struct drm_colorop *
-search_colorop_compatible_curve(struct drm_color_pipeline *pipeline,
+search_colorop_compatible_curve(const struct drm_color_pipeline *pipeline,
 				const struct drm_colorop *previous_colorop,
 				struct weston_color_curve *curve,
 				enum lowering_curve_policy policy)
@@ -747,7 +747,7 @@ search_colorop_compatible_curve(struct drm_color_pipeline *pipeline,
 }
 
 static const struct drm_colorop *
-search_colorop_type(struct drm_color_pipeline *pipeline,
+search_colorop_type(const struct drm_color_pipeline *pipeline,
 		    const struct drm_colorop *previous_colorop,
 		    enum wdrm_colorop_type type)
 {
@@ -852,7 +852,7 @@ multiplier_create_colorop_state(struct drm_color_pipeline_state *pipeline_state,
 				const struct drm_colorop *last_colorop,
 				float multiplier)
 {
-	struct drm_color_pipeline *pipeline = pipeline_state->pipeline;
+	const struct drm_color_pipeline *pipeline = pipeline_state->pipeline;
 	struct drm_colorop_state_object so = { 0 };
 	const struct drm_colorop *colorop;
 	bool found = false;
@@ -887,7 +887,7 @@ curve_create_colorop_state(struct drm_color_pipeline_state *pipeline_state,
 			   enum weston_color_curve_step curve_step,
 			   enum lowering_curve_policy policy)
 {
-	struct drm_color_pipeline *pipeline = pipeline_state->pipeline;
+	const struct drm_color_pipeline *pipeline = pipeline_state->pipeline;
 	struct weston_compositor *compositor = pipeline->plane->base.compositor;
 	struct drm_device *device = pipeline->plane->device;
 	const struct drm_colorop_3x1d_lut_blob *lut_blob;
@@ -966,7 +966,7 @@ mapping_create_colorop_state(struct drm_color_pipeline_state *pipeline_state,
 			     const struct drm_colorop *previous_colorop,
 			     struct weston_color_transform *xform)
 {
-	struct drm_color_pipeline *pipeline = pipeline_state->pipeline;
+	const struct drm_color_pipeline *pipeline = pipeline_state->pipeline;
 	struct weston_compositor *compositor = pipeline->plane->base.compositor;
 	struct drm_device *device = pipeline->plane->device;
 	struct weston_color_mapping *mapping = &xform->mapping;

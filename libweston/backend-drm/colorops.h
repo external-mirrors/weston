@@ -109,7 +109,7 @@ struct drm_color_pipeline {
 };
 
 struct drm_color_pipeline_state {
-	struct drm_color_pipeline *pipeline;
+	const struct drm_color_pipeline *pipeline;
 
 	/* struct drm_colorop_state::link */
 	struct wl_list colorop_state_list;

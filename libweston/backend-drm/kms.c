@@ -1609,7 +1609,7 @@ drm_color_pipeline_program(drmModeAtomicReq *req,
 			   struct drm_color_pipeline_state *pipeline_state,
 			   const char *indent)
 {
-	struct drm_color_pipeline *pipeline = pipeline_state->pipeline;
+	const struct drm_color_pipeline *pipeline = pipeline_state->pipeline;
 	struct drm_plane *plane = pipeline->plane;
 	struct drm_backend *b = plane->device->backend;
 	struct drm_colorop_state *colorop_state;
