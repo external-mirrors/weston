@@ -1618,45 +1618,27 @@ colorop_enforce(drmModeAtomicReq *req, const struct drm_colorop *colorop,
 }
 
 static bool
-colorop_program(drmModeAtomicReq *req, const struct drm_colorop *colorop,
-		enum wdrm_colorop_property colorop_prop,
-		uint64_t prop_val, char **err_msg)
-{
-	int ret;
-
-	ret = colorop_add_prop(req, colorop, colorop_prop, prop_val);
-	if (ret < 0) {
-		str_printf(err_msg, "failed to program colorop id %u type %s",
-				    colorop->id, drm_colorop_type_to_str(colorop));
-		return false;
-	}
-
-	return true;
-}
-
-static bool
 drm_colorop_program(drmModeAtomicReq *req, struct drm_colorop_state *colorop_state,
 		    const char *indent, char **err_msg)
 {
 	const struct drm_colorop *colorop = colorop_state->colorop;
+	const struct drm_colorop_state_object *value = &colorop_state->object;
 	struct drm_color_pipeline *pipeline = colorop->pipeline;
 	struct drm_backend *b = pipeline->plane->device->backend;
-	struct weston_compositor *compositor = pipeline->plane->base.compositor;
-	enum wdrm_colorop_property colorop_prop;
-	uint64_t prop_val;
+	int ret = -1;
 
 	if (!colorop_enforce(req, colorop, err_msg))
 		return false;
 
-	switch (colorop_state->object.type) {
+	switch (value->type) {
 	case COLOROP_OBJECT_TYPE_CURVE:
-		return colorop_add_prop_enum(req, colorop,
-					     WDRM_COLOROP_CURVE_1D,
-					     colorop_state->object.curve);
+		ret = colorop_add_prop_enum(req, colorop,
+					    WDRM_COLOROP_CURVE_1D, value->curve);
+		break;
 	case COLOROP_OBJECT_TYPE_MATRIX:
-		colorop_prop = WDRM_COLOROP_DATA;
-		prop_val = colorop_state->object.matrix_blob_id;
-		return colorop_program(req, colorop, colorop_prop, prop_val, err_msg);
+		ret = colorop_add_prop(req, colorop,
+				       WDRM_COLOROP_DATA, value->matrix_blob_id);
+		break;
 	case COLOROP_OBJECT_TYPE_3x1D_LUT:
 		if (colorop_add_prop_enum(req, colorop,
 					  WDRM_COLOROP_LUT1D_INTERPOLATION,
@@ -1664,9 +1646,9 @@ drm_colorop_program(drmModeAtomicReq *req, struct drm_colorop_state *colorop_sta
 			drm_debug(b, "%s[colorop] linear LUT1D interpolation not supported or failed to set;\n"
 				     "%susing current value set on driver\n", indent, indent);
 		}
-		colorop_prop = WDRM_COLOROP_DATA;
-		prop_val = colorop_state->object.lut_3x1d_blob_id;
-		return colorop_program(req, colorop, colorop_prop, prop_val, err_msg);
+		ret = colorop_add_prop(req, colorop,
+				       WDRM_COLOROP_DATA, value->lut_3x1d_blob_id);
+		break;
 	case COLOROP_OBJECT_TYPE_3D_LUT:
 		if (colorop_add_prop_enum(req, colorop,
 					  WDRM_COLOROP_LUT3D_INTERPOLATION,
@@ -1674,16 +1656,22 @@ drm_colorop_program(drmModeAtomicReq *req, struct drm_colorop_state *colorop_sta
 			drm_debug(b, "%s[colorop] tetrahedral LUT3D interpolation not supported or failed to set;\n"
 				     "%susing current value set on driver\n", indent, indent);
 		}
-		colorop_prop = WDRM_COLOROP_DATA;
-		prop_val = colorop_state->object.lut_3d_blob_id;
-		return colorop_program(req, colorop, colorop_prop, prop_val, err_msg);
+		ret = colorop_add_prop(req, colorop,
+				       WDRM_COLOROP_DATA, value->lut_3d_blob_id);
+		break;
  	case COLOROP_OBJECT_TYPE_MULTIPLIER:
-		colorop_prop = WDRM_COLOROP_MULTIPLIER;
-		prop_val = colorop_state->object.multiplier;
-		return colorop_program(req, colorop, colorop_prop, prop_val, err_msg);
+		ret = colorop_add_prop(req, colorop,
+				       WDRM_COLOROP_MULTIPLIER, value->multiplier);
+		break;
 	}
-	weston_assert_not_reached(compositor,
-				  "unknown drm_colorop_state object type");
+
+	if (ret < 0) {
+		str_printf(err_msg, "failed to program colorop id %u type %s",
+				    colorop->id, drm_colorop_type_to_str(colorop));
+		return false;
+	}
+
+	return true;
 }
 
 static struct drm_colorop_state *
