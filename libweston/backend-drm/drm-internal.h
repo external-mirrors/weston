@@ -868,17 +868,17 @@ drm_output_set_mode(struct weston_output *base,
 		    const char *modeline);
 
 void
-drm_property_info_populate(struct drm_device *device,
+drm_property_info_populate(const struct drm_device *device,
 		           const struct drm_property_info *src,
 			   struct drm_property_info *info,
 			   unsigned int num_infos,
-			   drmModeObjectProperties *props);
+			   const drmModeObjectProperties *props);
 uint64_t
-drm_property_get_value(struct drm_property_info *info,
+drm_property_get_value(const struct drm_property_info *info,
 		       const drmModeObjectProperties *props,
 		       uint64_t def);
-uint64_t *
-drm_property_get_range_values(struct drm_property_info *info,
+const uint64_t *
+drm_property_get_range_values(const struct drm_property_info *info,
 			      const drmModeObjectProperties *props);
 int
 drm_plane_populate_formats(struct drm_plane *plane, const drmModePlane *kplane,

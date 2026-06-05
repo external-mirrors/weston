@@ -389,7 +389,7 @@ enum drm_state_apply_mode {
  * @param def Value to return if property is not found
  */
 uint64_t
-drm_property_get_value(struct drm_property_info *info,
+drm_property_get_value(const struct drm_property_info *info,
 		       const drmModeObjectProperties *props,
 		       uint64_t def)
 {
@@ -437,8 +437,8 @@ drm_property_get_value(struct drm_property_info *info,
  * @param info Internal structure for property to look up
  * @param props Raw KMS properties for the target object
  */
-uint64_t *
-drm_property_get_range_values(struct drm_property_info *info,
+const uint64_t *
+drm_property_get_range_values(const struct drm_property_info *info,
 			      const drmModeObjectProperties *props)
 {
 	unsigned int i;
@@ -571,11 +571,11 @@ wdrm_vrr_enabled_from_output(struct drm_output *drm_output)
  * @param props DRM object properties for the object
  */
 void
-drm_property_info_populate(struct drm_device *device,
+drm_property_info_populate(const struct drm_device *device,
 		           const struct drm_property_info *src,
 			   struct drm_property_info *info,
 			   unsigned int num_infos,
-			   drmModeObjectProperties *props)
+			   const drmModeObjectProperties *props)
 {
 	drmModePropertyRes *prop;
 	unsigned i, j;

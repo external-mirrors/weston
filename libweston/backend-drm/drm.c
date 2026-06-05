@@ -1428,8 +1428,8 @@ drm_plane_create(struct drm_device *device, const drmModePlane *kplane)
 	struct weston_compositor *compositor = b->compositor;
 	struct drm_plane *plane, *tmp;
 	drmModeObjectProperties *props;
-	uint64_t *zpos_range_values;
-	uint64_t *alpha_range_values;
+	const uint64_t *zpos_range_values;
+	const uint64_t *alpha_range_values;
 
 	plane = zalloc(sizeof(*plane));
 	if (!plane) {
