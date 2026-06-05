@@ -5051,16 +5051,22 @@ surface_set_opaque_region(struct wl_client *client,
 {
 	struct weston_surface *surface = wl_resource_get_user_data(resource);
 	struct weston_region *region;
+	pixman_region32_t opaque;
 
+	pixman_region32_init(&opaque);
+
+	/* If no region_resource, opaque region set is empty. */
 	if (region_resource) {
 		region = wl_resource_get_user_data(region_resource);
-		pixman_region32_copy(&surface->pending.opaque,
-				     &region->region);
-	} else {
-		pixman_region32_clear(&surface->pending.opaque);
+		pixman_region32_copy(&opaque, &region->region);
 	}
 
-	surface->pending.status |= WESTON_SURFACE_DIRTY_BUFFER_PARAMS;
+	if (!pixman_region32_equal(&opaque, &surface->pending.opaque)) {
+		surface->pending.status |= WESTON_SURFACE_DIRTY_BUFFER_PARAMS;
+		pixman_region32_copy(&surface->pending.opaque, &opaque);
+	}
+
+	pixman_region32_fini(&opaque);
 }
 
 static void

@@ -460,35 +460,26 @@ weston_surface_apply_state(struct weston_surface *surface,
 	/* wl_surface.set_opaque_region */
 	if (status & (WESTON_SURFACE_DIRTY_SIZE |
 		      WESTON_SURFACE_DIRTY_BUFFER_PARAMS)) {
-		pixman_region32_t opaque;
-
-		pixman_region32_init(&opaque);
-
 		surface->is_opaque =
 			surface->buffer_ref.buffer &&
 			pixel_format_is_opaque(surface->buffer_ref.buffer->pixel_format);
 
 		if (surface->is_opaque) {
 			/* Opaque region hint ignored, as whole surface is opaque. */
-			pixman_region32_fini(&opaque);
-			pixman_region32_init_rect(&opaque,
+			pixman_region32_fini(&surface->opaque);
+			pixman_region32_init_rect(&surface->opaque,
 						  0, 0,
 						  surface->width, surface->height);
 		} else {
-			pixman_region32_intersect_rect(&opaque, &state->opaque,
+			pixman_region32_intersect_rect(&surface->opaque, &state->opaque,
 						       0, 0,
 						       surface->width, surface->height);
 		}
 
-		if (!pixman_region32_equal(&opaque, &surface->opaque)) {
-			pixman_region32_copy(&surface->opaque, &opaque);
-			wl_list_for_each(view, &surface->views, surface_link) {
-				weston_view_geometry_dirty_internal(view);
-				weston_view_update_transform(view);
-			}
+		wl_list_for_each(view, &surface->views, surface_link) {
+			weston_view_geometry_dirty_internal(view);
+			weston_view_update_transform(view);
 		}
-
-		pixman_region32_fini(&opaque);
 	}
 
 	/* wl_surface.set_input_region */
