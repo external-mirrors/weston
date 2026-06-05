@@ -620,7 +620,7 @@ drm_colorop_create(struct drm_color_pipeline *pipeline, uint32_t colorop_id,
  * \return The colorop type as a string.
  */
 const char *
-drm_colorop_type_to_str(struct drm_colorop *colorop)
+drm_colorop_type_to_str(const struct drm_colorop *colorop)
 {
 	return colorop->props[WDRM_COLOROP_TYPE].enum_values[colorop->type].name;
 }

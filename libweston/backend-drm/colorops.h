@@ -140,7 +140,7 @@ drm_colorop_3x1d_lut_blob_search(const struct drm_device *device,
 				 uint32_t lut_len);
 
 const char *
-drm_colorop_type_to_str(struct drm_colorop *colorop);
+drm_colorop_type_to_str(const struct drm_colorop *colorop);
 
 void
 drm_plane_populate_color_pipelines(struct drm_plane *plane,
@@ -185,7 +185,7 @@ drm_colorop_3x1d_lut_blob_search(struct drm_device *device,
 }
 
 static inline const char *
-drm_colorop_type_to_str(struct drm_colorop *colorop)
+drm_colorop_type_to_str(const struct drm_colorop *colorop)
 {
 	return "undefined";
 }
