@@ -94,7 +94,7 @@ struct drm_colorop_state_object {
 };
 
 struct drm_colorop_state {
-	struct drm_colorop *colorop;
+	const struct drm_colorop *colorop;
 	/* struct drm_color_pipeline_state::colorop_state_list */
 	struct wl_list link;
 

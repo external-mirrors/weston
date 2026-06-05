@@ -625,11 +625,12 @@ drm_colorop_type_to_str(const struct drm_colorop *colorop)
 	return colorop->props[WDRM_COLOROP_TYPE].enum_values[colorop->type].name;
 }
 
-static struct drm_colorop *
-drm_colorop_iterate(struct drm_color_pipeline *pipeline, struct drm_colorop *iter)
+static const struct drm_colorop *
+drm_colorop_iterate(const struct drm_color_pipeline *pipeline,
+		    const struct drm_colorop *iter)
 {
-	struct wl_list *list = &pipeline->colorop_list;
-	struct wl_list *node;
+	const struct wl_list *list = &pipeline->colorop_list;
+	const struct wl_list *node;
 
 	if (iter)
 		node = iter->link.next;
@@ -639,16 +640,16 @@ drm_colorop_iterate(struct drm_color_pipeline *pipeline, struct drm_colorop *ite
 	if (node == list)
 		return NULL;
 
-	return container_of(node, struct drm_colorop, link);
+	return container_of(node, const struct drm_colorop, link);
 }
 
 static bool
 is_colorop_compatible_with_curve(struct weston_compositor *compositor,
-				 struct drm_colorop *colorop,
+				 const struct drm_colorop *colorop,
 				 struct weston_color_curve *curve)
 {
 	struct weston_color_curve_parametric param;
-	struct drm_property_info *prop_info;
+	const struct drm_property_info *prop_info;
 	enum wdrm_colorop_curve_1d curve_type;
 	struct colorop_curve_scaler scaler;
 	bool ret;
@@ -700,14 +701,14 @@ is_colorop_compatible_with_curve(struct weston_compositor *compositor,
 	return false;
 }
 
-static struct drm_colorop *
+static const struct drm_colorop *
 search_colorop_compatible_curve(struct drm_color_pipeline *pipeline,
-				struct drm_colorop *previous_colorop,
+				const struct drm_colorop *previous_colorop,
 				struct weston_color_curve *curve,
 				enum lowering_curve_policy policy)
 {
 	struct drm_backend *b = pipeline->plane->device->backend;
-	struct drm_colorop *colorop = previous_colorop;
+	const struct drm_colorop *colorop = previous_colorop;
 
 	/**
 	 * Identity curve should not need a colorop, so calling this func for
@@ -745,12 +746,12 @@ search_colorop_compatible_curve(struct drm_color_pipeline *pipeline,
 	return NULL;
 }
 
-static struct drm_colorop *
+static const struct drm_colorop *
 search_colorop_type(struct drm_color_pipeline *pipeline,
-		    struct drm_colorop *previous_colorop,
+		    const struct drm_colorop *previous_colorop,
 		    enum wdrm_colorop_type type)
 {
-	struct drm_colorop *colorop = previous_colorop;
+	const struct drm_colorop *colorop = previous_colorop;
 
 	while ((colorop = drm_colorop_iterate(pipeline, colorop))) {
 		if (colorop->type == type)
@@ -765,7 +766,7 @@ search_colorop_type(struct drm_color_pipeline *pipeline,
 
 static struct drm_colorop_state *
 drm_colorop_state_create(struct drm_color_pipeline_state *pipeline_state,
-			 struct drm_colorop *colorop,
+			 const struct drm_colorop *colorop,
 			 struct drm_colorop_state_object so)
 {
 	struct drm_colorop_state *colorop_state;
@@ -822,12 +823,12 @@ drm_color_pipeline_state_destroy(struct drm_color_pipeline_state *state)
 }
 
 static uint64_t
-prop_val_from_curve(struct drm_device *device, struct drm_colorop *colorop,
+prop_val_from_curve(struct drm_device *device, const struct drm_colorop *colorop,
 		    struct weston_color_curve *curve)
 {
 	struct weston_compositor *compositor = device->backend->compositor;
 	enum wdrm_colorop_curve_1d curve_type;
-	struct drm_property_enum_info *prop_info;
+	const struct drm_property_enum_info *prop_info;
 	struct colorop_curve_scaler scaler;
 
 	weston_assert_u32_eq(compositor, curve->type,
@@ -847,13 +848,13 @@ prop_val_from_curve(struct drm_device *device, struct drm_colorop *colorop,
 
 static struct drm_colorop_state *
 multiplier_create_colorop_state(struct drm_color_pipeline_state *pipeline_state,
-				struct drm_colorop *first_colorop,
-				struct drm_colorop *last_colorop,
+				const struct drm_colorop *first_colorop,
+				const struct drm_colorop *last_colorop,
 				float multiplier)
 {
 	struct drm_color_pipeline *pipeline = pipeline_state->pipeline;
 	struct drm_colorop_state_object so = { 0 };
-	struct drm_colorop *colorop;
+	const struct drm_colorop *colorop;
 	bool found = false;
 
 	/**
@@ -881,7 +882,7 @@ multiplier_create_colorop_state(struct drm_color_pipeline_state *pipeline_state,
 
 static struct drm_colorop_state *
 curve_create_colorop_state(struct drm_color_pipeline_state *pipeline_state,
-			   struct drm_colorop *previous_colorop,
+			   const struct drm_colorop *previous_colorop,
 			   struct weston_color_transform *xform,
 			   enum weston_color_curve_step curve_step,
 			   enum lowering_curve_policy policy)
@@ -892,7 +893,7 @@ curve_create_colorop_state(struct drm_color_pipeline_state *pipeline_state,
 	const struct drm_colorop_3x1d_lut_blob *lut_blob;
 	struct weston_color_curve *curve;
 	struct drm_colorop_state_object so = { 0 };
-	struct drm_colorop *colorop_curve;
+	const struct drm_colorop *colorop_curve;
 	struct drm_colorop_state *cs_curve;
 	struct drm_colorop_state *cs_multiplier = NULL;
 	uint32_t lut_len;
@@ -962,7 +963,7 @@ curve_create_colorop_state(struct drm_color_pipeline_state *pipeline_state,
 
 static struct drm_colorop_state *
 mapping_create_colorop_state(struct drm_color_pipeline_state *pipeline_state,
-			     struct drm_colorop *previous_colorop,
+			     const struct drm_colorop *previous_colorop,
 			     struct weston_color_transform *xform)
 {
 	struct drm_color_pipeline *pipeline = pipeline_state->pipeline;
@@ -971,7 +972,7 @@ mapping_create_colorop_state(struct drm_color_pipeline_state *pipeline_state,
 	struct weston_color_mapping *mapping = &xform->mapping;
 	const struct drm_colorop_matrix_blob *mat_blob;
 	struct drm_colorop_state_object so = { 0 };
-	struct drm_colorop *colorop;
+	const struct drm_colorop *colorop;
 
 	/* For now Weston has only matrices color mapping. */
 	weston_assert_u32_eq(compositor,
@@ -1001,7 +1002,7 @@ drm_color_pipeline_state_from_xform_steps(struct drm_color_pipeline *pipeline,
 	struct drm_backend *b = pipeline->plane->device->backend;
 	struct drm_color_pipeline_state *pipeline_state;
 	struct drm_colorop_state *colorop_state;
-	struct drm_colorop *previous_colorop;
+	const struct drm_colorop *previous_colorop;
 	uint32_t type;
 
 	pipeline_state = drm_color_pipeline_state_create(pipeline);
@@ -1067,7 +1068,7 @@ drm_color_pipeline_state_from_xform_decomposed(struct drm_color_pipeline *pipeli
 	struct drm_device *device = pipeline->plane->device;
 	struct drm_backend *b = device->backend;
 	struct drm_color_pipeline_state *pipeline_state = NULL;
-	struct drm_colorop *colorop_shaper, *colorop_clut;
+	const struct drm_colorop *colorop_shaper, *colorop_clut;
 	struct drm_colorop_state_object so_clut = { 0 };
 	struct drm_colorop_state_object so_shaper = { 0 };
 	const struct drm_colorop_clut_blob *clut;

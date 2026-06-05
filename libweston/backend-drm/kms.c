@@ -1500,7 +1500,7 @@ drm_plane_set_color_range(struct drm_plane *plane,
 }
 
 static bool
-colorop_program(drmModeAtomicReq *req, struct drm_colorop *colorop,
+colorop_program(drmModeAtomicReq *req, const struct drm_colorop *colorop,
 		enum wdrm_colorop_property colorop_prop,
 		uint64_t prop_val, char **err_msg)
 {
@@ -1526,10 +1526,10 @@ colorop_program(drmModeAtomicReq *req, struct drm_colorop *colorop,
 }
 
 static bool
-set_interp(drmModeAtomicReq *req, struct drm_colorop *colorop,
+set_interp(drmModeAtomicReq *req, const struct drm_colorop *colorop,
 	   enum wdrm_colorop_property interp_prop, uint64_t interp_val)
 {
-	struct drm_property_info *info = &colorop->props[interp_prop];
+	const struct drm_property_info *info = &colorop->props[interp_prop];
 	int ret;
 
 	if (info->enum_values[interp_val].valid) {
@@ -1545,7 +1545,7 @@ static bool
 drm_colorop_program(drmModeAtomicReq *req, struct drm_colorop_state *colorop_state,
 		    const char *indent, char **err_msg)
 {
-	struct drm_colorop *colorop = colorop_state->colorop;
+	const struct drm_colorop *colorop = colorop_state->colorop;
 	struct drm_color_pipeline *pipeline = colorop->pipeline;
 	struct drm_backend *b = pipeline->plane->device->backend;
 	struct weston_compositor *compositor = pipeline->plane->base.compositor;
