@@ -466,10 +466,10 @@ drm_property_get_range_values(const struct drm_property_info *info,
  * value to achieve the requested rotation on this plane is returned.
  */
 uint64_t
-drm_rotation_from_output_transform(struct drm_plane *plane,
+drm_rotation_from_output_transform(const struct drm_plane *plane,
 				   enum wl_output_transform ot)
 {
-	struct drm_property_info *info = &plane->props[WDRM_PLANE_ROTATION];
+	const struct drm_property_info *info = &plane->props[WDRM_PLANE_ROTATION];
 	enum wdrm_plane_rotation drm_rotation;
 	enum wdrm_plane_rotation drm_reflection = 0;
 	uint64_t out = 0;

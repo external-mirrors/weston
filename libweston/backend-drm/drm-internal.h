@@ -830,7 +830,7 @@ void
 drm_free_display_info(struct di_info **display_info);
 
 uint64_t
-drm_rotation_from_output_transform(struct drm_plane *plane,
+drm_rotation_from_output_transform(const struct drm_plane *plane,
 				   enum wl_output_transform ot);
 
 static inline bool
