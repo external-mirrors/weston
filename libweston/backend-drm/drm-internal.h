@@ -669,7 +669,7 @@ struct drm_output {
 
 	bool legacy_gamma_not_supported;
 	uint16_t legacy_gamma_size;
-	struct drm_colorop_3x1d_lut_blob *blend_to_output_xform;
+	const struct drm_colorop_3x1d_lut_blob *blend_to_output_xform;
 
 	/* Plane being displayed directly on the CRTC */
 	struct drm_plane_handle *scanout_handle;

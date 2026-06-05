@@ -2285,7 +2285,7 @@ drm_output_pick_blend_to_output(struct drm_output *output)
 	struct weston_compositor *compositor = output->base.compositor;
 	struct drm_device *device = output->device;
 	struct drm_backend *b = device->backend;
-	struct drm_colorop_3x1d_lut_blob *colorop_lut;
+	const struct drm_colorop_3x1d_lut_blob *colorop_lut;
 	struct weston_color_transform *xform;
 	enum weston_color_curve_step curve_step;
 	size_t lut_len;

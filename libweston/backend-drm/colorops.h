@@ -132,9 +132,9 @@ drm_colorop_3x1d_lut_blob_create(struct drm_device *device,
 				 enum drm_colorop_3x1d_lut_blob_quantization quantization,
 				 struct weston_vec3f *cm_lut, uint32_t lut_len);
 
-struct drm_colorop_3x1d_lut_blob *
-drm_colorop_3x1d_lut_blob_search(struct drm_device *device,
-				 struct weston_color_transform *xform,
+const struct drm_colorop_3x1d_lut_blob *
+drm_colorop_3x1d_lut_blob_search(const struct drm_device *device,
+				 const struct weston_color_transform *xform,
 				 enum weston_color_curve_step curve_step,
 				 enum drm_colorop_3x1d_lut_blob_quantization quantization,
 				 uint32_t lut_len);
@@ -164,9 +164,9 @@ drm_color_pipeline_state_from_xform(struct drm_plane *plane,
 	return NULL;
 }
 
-static inline struct drm_colorop_3x1d_lut_blob *
-drm_colorop_3x1d_lut_blob_create(struct drm_device *device,
-				 struct weston_color_transform *xform,
+static inline const struct drm_colorop_3x1d_lut_blob *
+drm_colorop_3x1d_lut_blob_create(const struct drm_device *device,
+				 const struct weston_color_transform *xform,
 				 enum weston_color_curve_step curve_step,
 				 enum drm_colorop_3x1d_lut_blob_quantization quantization,
 				 struct weston_vec3f *cm_lut, uint32_t lut_len)

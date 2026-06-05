@@ -63,14 +63,14 @@ drm_colorop_3x1d_lut_blob_destroy_handler(struct wl_listener *l, void *data)
  * \param quantization The colorop 3x1D LUT quantization (U32 or U16).
  * \param lut_len How many taps each of the 1D LUT has.
  */
-struct drm_colorop_3x1d_lut_blob *
-drm_colorop_3x1d_lut_blob_search(struct drm_device *device,
-				 struct weston_color_transform *xform,
+const struct drm_colorop_3x1d_lut_blob *
+drm_colorop_3x1d_lut_blob_search(const struct drm_device *device,
+				 const struct weston_color_transform *xform,
 				 enum weston_color_curve_step curve_step,
 				 enum drm_colorop_3x1d_lut_blob_quantization quantization,
 				 uint32_t lut_len)
 {
-	struct drm_colorop_3x1d_lut_blob *lut;
+	const struct drm_colorop_3x1d_lut_blob *lut;
 
 	wl_list_for_each(lut, &device->drm_colorop_3x1d_lut_blob_list, link)
 		if (lut->xform == xform && lut->curve_step == curve_step &&
@@ -206,7 +206,7 @@ lowering_curve_policy_str(enum lowering_curve_policy policy)
 	return "???";
 }
 
-static struct drm_colorop_3x1d_lut_blob *
+static const struct drm_colorop_3x1d_lut_blob *
 drm_colorop_3x1d_lut_blob_from_curve(struct drm_device *device,
 				     struct weston_color_transform *xform,
 				     enum weston_color_curve_step curve_step,
@@ -214,7 +214,7 @@ drm_colorop_3x1d_lut_blob_from_curve(struct drm_device *device,
 {
 	struct weston_compositor *compositor = xform->cm->compositor;
 	struct drm_backend *b = device->backend;
-	struct drm_colorop_3x1d_lut_blob *colorop_lut;
+	const struct drm_colorop_3x1d_lut_blob *colorop_lut;
 	char *err_msg;
 	struct weston_vec3f *cm_lut;
 
@@ -889,7 +889,7 @@ curve_create_colorop_state(struct drm_color_pipeline_state *pipeline_state,
 	struct drm_color_pipeline *pipeline = pipeline_state->pipeline;
 	struct weston_compositor *compositor = pipeline->plane->base.compositor;
 	struct drm_device *device = pipeline->plane->device;
-	struct drm_colorop_3x1d_lut_blob *lut_blob;
+	const struct drm_colorop_3x1d_lut_blob *lut_blob;
 	struct weston_color_curve *curve;
 	struct drm_colorop_state_object so = { 0 };
 	struct drm_colorop *colorop_curve;
