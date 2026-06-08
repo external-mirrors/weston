@@ -926,11 +926,11 @@ drm_fb_create_dumb(struct drm_device *device, int width, int height,
 
 struct drm_fb *
 drm_fb_get_from_dmabuf(struct linux_dmabuf_buffer *dmabuf,
-		       struct drm_device *device, bool is_opaque,
+		       struct drm_device *device,
 		       uint32_t *try_view_on_plane_failure_reasons);
 struct drm_fb *
 drm_fb_get_from_bo(struct gbm_bo *bo, struct drm_device *device,
-		   bool is_opaque, enum drm_fb_type type);
+		   enum drm_fb_type type);
 
 int
 drm_output_ensure_hdr_output_metadata_blob(struct drm_output *output);
@@ -950,7 +950,7 @@ drm_can_scanout_dmabuf(struct weston_backend *backend,
 
 struct drm_fb *
 drm_fb_get_from_dmabuf_attributes(struct dmabuf_attributes *attributes,
-				  struct drm_device *device, bool is_opaque,
+				  struct drm_device *device,
 				  bool direct_display, bool is_internal,
 				  uint32_t *try_view_on_plane_failure_reasons);
 #else
