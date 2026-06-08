@@ -1677,6 +1677,7 @@ drm_output_apply_state_atomic(struct drm_output_state *state,
 	struct drm_writeback_state *wb_state = output->wb_state;
 	enum writeback_screenshot_state wb_screenshot_state =
 		drm_output_get_writeback_state(output);
+	const char *modifier_name;
 	int ret = 0;
 
 	drm_debug(b, "\t\t[atomic] %s output %lu (%s) state\n",
@@ -1833,12 +1834,15 @@ drm_output_apply_state_atomic(struct drm_output_state *state,
 			}
 		}
 
-		if (plane_state->fb && plane_state->fb->format)
+		modifier_name = "None";
+		if (plane_state->fb && plane_state->fb->format) {
 			pinfo = plane_state->fb->format;
-
-		drm_debug(b, "\t\t\t[PLANE:%lu] FORMAT: %s\n",
+			modifier_name = plane_state->fb->modifier_name;
+		}
+		drm_debug(b, "\t\t\t[PLANE:%lu] FORMAT: %s MODIFIER: %s\n",
 			  (unsigned long) plane->plane_id,
-			  pinfo ? pinfo->drm_format_name : "UNKNOWN");
+			  pinfo ? pinfo->drm_format_name : "UNKNOWN",
+			  modifier_name);
 
 		if (plane_state->in_fence_fd >= 0) {
 			ret |= plane_add_prop(req, plane,
