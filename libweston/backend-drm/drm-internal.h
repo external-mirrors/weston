@@ -328,6 +328,7 @@ struct drm_fb {
 	int num_planes;
 	const struct pixel_format_info *format;
 	uint64_t modifier;
+	char *modifier_name;
 	int width, height;
 	int fd;
 

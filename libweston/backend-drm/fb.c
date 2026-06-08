@@ -55,6 +55,8 @@ drm_fb_destroy(struct drm_fb *fb)
 	 * it is free to destroy our fb once it stops using it. */
 	if (fb->fb_id != 0 && !fb->backend->compositor->shutting_down)
 		drmModeRmFB(fb->fd, fb->fb_id);
+
+	free(fb->modifier_name);
 	free(fb);
 }
 
@@ -319,6 +321,7 @@ drm_fb_create_dumb(struct drm_device *device, int width, int height,
 
 	fb->type = BUFFER_PIXMAN_DUMB;
 	fb->modifier = DRM_FORMAT_MOD_INVALID;
+	fb->modifier_name = pixel_format_get_modifier(fb->modifier);
 	fb->handles[0] = create_arg.handle;
 	fb->strides[0] = create_arg.pitch;
 	fb->num_planes = 1;
@@ -488,6 +491,7 @@ bo_import_skip:
 	fb->width = attributes->width;
 	fb->height = attributes->height;
 	fb->modifier = attributes->modifier;
+	fb->modifier_name = pixel_format_get_modifier(fb->modifier);
 	fb->size = 0;
 	fb->fd = device->kms_device->fd;
 
@@ -579,6 +583,8 @@ drm_fb_get_from_bo(struct gbm_bo *bo, struct drm_device *device,
 	fb->size = 0;
 
 	fb->modifier = gbm_bo_get_modifier(bo);
+	fb->modifier_name = pixel_format_get_modifier(fb->modifier);
+
 	fb->num_planes = gbm_bo_get_plane_count(bo);
 	for (i = 0; i < fb->num_planes; i++) {
 		fb->strides[i] = gbm_bo_get_stride_for_plane(bo, i);
