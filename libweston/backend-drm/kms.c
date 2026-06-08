@@ -49,6 +49,70 @@
 #define DRM_CAP_ATOMIC_ASYNC_PAGE_FLIP 0x15
 #endif
 
+static const char *
+format_default(uint64_t val, struct drm_value_fmtbuf *tmp)
+{
+	snprintf(tmp->buf, sizeof tmp->buf, "%" PRIu64, val);
+
+	return tmp->buf;
+}
+
+static const char *
+format_s64(uint64_t val, struct drm_value_fmtbuf *tmp)
+{
+	snprintf(tmp->buf, sizeof tmp->buf, "%" PRId64, (int64_t)val);
+
+	return tmp->buf;
+}
+
+static const char *
+format_u16_16(uint64_t val, struct drm_value_fmtbuf *tmp)
+{
+	snprintf(tmp->buf, sizeof tmp->buf, "%.2f", val / 65536.0);
+
+	return tmp->buf;
+}
+
+static const char *
+format_unorm16(uint64_t val, struct drm_value_fmtbuf *tmp)
+{
+	snprintf(tmp->buf, sizeof tmp->buf, "%.3f", val / 65535.0);
+
+	return tmp->buf;
+}
+
+static const char *
+format_s31_32(uint64_t val, struct drm_value_fmtbuf *tmp)
+{
+	const uint64_t sign_mask = 1ULL << 63;
+	double v = val & ~sign_mask;
+
+	v /= 1ULL << 32;
+	if (val & sign_mask)
+		v = -v;
+
+	snprintf(tmp->buf, sizeof tmp->buf, "%.4f", v);
+
+	return tmp->buf;
+}
+
+static const char *
+format_bg_color(uint64_t val, struct drm_value_fmtbuf *tmp)
+{
+	uint16_t a, r, g, b;
+
+	a = (val >> 48) & 0xffffu;
+	r = (val >> 32) & 0xffffu;
+	g = (val >> 16) & 0xffffu;
+	b = (val >>  0) & 0xffffu;
+
+	snprintf(tmp->buf, sizeof tmp->buf,
+		 "a=%.2f r=%.2f g=%.2f b=%.2f",
+		 a / 65535.0, r / 65535.0, g / 65535.0, b / 65535.0);
+
+	return tmp->buf;
+}
+
 struct drm_property_enum_info plane_type_enums[] = {
 	[WDRM_PLANE_TYPE_PRIMARY] = {
 		.name = "Primary",
@@ -127,12 +191,30 @@ const struct drm_property_info plane_props[] = {
 		.enum_values = plane_type_enums,
 		.num_enum_values = WDRM_PLANE_TYPE__COUNT,
 	},
-	[WDRM_PLANE_SRC_X] = { .name = "SRC_X", },
-	[WDRM_PLANE_SRC_Y] = { .name = "SRC_Y", },
-	[WDRM_PLANE_SRC_W] = { .name = "SRC_W", },
-	[WDRM_PLANE_SRC_H] = { .name = "SRC_H", },
-	[WDRM_PLANE_CRTC_X] = { .name = "CRTC_X", },
-	[WDRM_PLANE_CRTC_Y] = { .name = "CRTC_Y", },
+	[WDRM_PLANE_SRC_X] = {
+		.name = "SRC_X",
+		.format_value = format_u16_16,
+	},
+	[WDRM_PLANE_SRC_Y] = {
+		.name = "SRC_Y",
+		.format_value = format_u16_16,
+	},
+	[WDRM_PLANE_SRC_W] = {
+		.name = "SRC_W",
+		.format_value = format_u16_16,
+	},
+	[WDRM_PLANE_SRC_H] = {
+		.name = "SRC_H",
+		.format_value = format_u16_16,
+	},
+	[WDRM_PLANE_CRTC_X] = {
+		.name = "CRTC_X",
+		.format_value = format_s64,
+	},
+	[WDRM_PLANE_CRTC_Y] = {
+		.name = "CRTC_Y",
+		.format_value = format_s64,
+	},
 	[WDRM_PLANE_CRTC_W] = { .name = "CRTC_W", },
 	[WDRM_PLANE_CRTC_H] = { .name = "CRTC_H", },
 	[WDRM_PLANE_FB_ID] = { .name = "FB_ID", },
@@ -146,7 +228,10 @@ const struct drm_property_info plane_props[] = {
 		.enum_values = plane_rotation_enums,
 		.num_enum_values = WDRM_PLANE_ROTATION__COUNT,
 	},
-	[WDRM_PLANE_ALPHA] = { .name = "alpha" },
+	[WDRM_PLANE_ALPHA] = {
+		.name = "alpha",
+		.format_value = format_unorm16,
+	},
 	[WDRM_PLANE_BLEND] = {
 		.name = "pixel blend mode",
 		.enum_values = plane_blend_enums,
@@ -206,7 +291,10 @@ const struct drm_property_info colorop_props[] = {
 	[WDRM_COLOROP_BYPASS] = { .name = "BYPASS", },
 	[WDRM_COLOROP_SIZE] = { .name = "SIZE", },
 	[WDRM_COLOROP_DATA] = { .name = "DATA", },
-	[WDRM_COLOROP_MULTIPLIER] = { .name = "MULTIPLIER", },
+	[WDRM_COLOROP_MULTIPLIER] = {
+		.name = "MULTIPLIER",
+		.format_value = format_s31_32,
+	},
 	[WDRM_COLOROP_CURVE_1D] = {
 		.name = "CURVE_1D_TYPE",
 		.enum_values = colorop_curve_1d_enums,
@@ -391,7 +479,10 @@ const struct drm_property_info crtc_props[] = {
 	[WDRM_CRTC_GAMMA_LUT] = { .name = "GAMMA_LUT", },
 	[WDRM_CRTC_GAMMA_LUT_SIZE] = { .name = "GAMMA_LUT_SIZE", },
 	[WDRM_CRTC_VRR_ENABLED] = { .name = "VRR_ENABLED", },
-	[WDRM_CRTC_BACKGROUND_COLOR] = { .name = "BACKGROUND_COLOR", },
+	[WDRM_CRTC_BACKGROUND_COLOR] = {
+		.name = "BACKGROUND_COLOR",
+		.format_value = format_bg_color,
+	},
 };
 
 
@@ -614,6 +705,7 @@ drm_property_info_populate(const struct drm_device *device,
 		unsigned int j;
 
 		info[i].name = src[i].name;
+		info[i].format_value = src[i].format_value;
 		info[i].prop_id = 0;
 		info[i].num_enum_values = src[i].num_enum_values;
 
@@ -1148,12 +1240,14 @@ crtc_add_prop(drmModeAtomicReq *req, const struct drm_crtc *crtc,
 	struct drm_device *device = crtc->device;
 	struct drm_backend *b = device->backend;
 	const struct drm_property_info *info = &crtc->props_crtc[prop];
+	struct drm_value_fmtbuf tmp;
 	int ret;
 
-	drm_debug(b, "\t\t\t[CRTC:%lu] %s (%lu) -> %llu (0x%llx)\n",
+	drm_debug(b, "\t\t\t[CRTC:%lu] %s (%lu) -> %s (0x%llx)\n",
 		  (unsigned long) crtc->crtc_id, info->name,
 		  (unsigned long) info->prop_id,
-		  (unsigned long long) val, (unsigned long long) val);
+		  (info->format_value ?: format_default)(val, &tmp),
+		  (unsigned long long) val);
 
 	if (info->prop_id == 0)
 		return -1;
@@ -1210,12 +1304,14 @@ connector_add_prop(drmModeAtomicReq *req, const struct drm_connector *connector,
 	struct drm_backend *b = device->backend;
 	const struct drm_property_info *info = &connector->props[prop];
 	uint32_t connector_id = connector->connector_id;
+	struct drm_value_fmtbuf tmp;
 	int ret;
 
-	drm_debug(b, "\t\t\t[CONN:%lu] %s (%lu) -> %llu (0x%llx)\n",
+	drm_debug(b, "\t\t\t[CONN:%lu] %s (%lu) -> %s (0x%llx)\n",
 		  (unsigned long) connector_id, info->name,
 		  (unsigned long) info->prop_id,
-		  (unsigned long long) val, (unsigned long long) val);
+		  (info->format_value ?: format_default)(val, &tmp),
+		  (unsigned long long) val);
 
 	if (info->prop_id == 0)
 		return -1;
@@ -1260,12 +1356,14 @@ plane_add_prop(drmModeAtomicReq *req, struct drm_plane *plane,
 	struct drm_device *device = plane->device;
 	struct drm_backend *b = device->backend;
 	struct drm_property_info *info = &plane->props[prop];
+	struct drm_value_fmtbuf tmp;
 	int ret;
 
-	drm_debug(b, "\t\t\t[PLANE:%lu] %s (%lu) -> %llu (0x%llx)\n",
+	drm_debug(b, "\t\t\t[PLANE:%lu] %s (%lu) -> %s (0x%llx)\n",
 		  (unsigned long) plane->plane_id, info->name,
 		  (unsigned long) info->prop_id,
-		  (unsigned long long) val, (unsigned long long) val);
+		  (info->format_value ?: format_default)(val, &tmp),
+		  (unsigned long long) val);
 
 	if (info->prop_id == 0)
 		return -1;
@@ -1310,12 +1408,14 @@ colorop_add_prop(drmModeAtomicReq *req, const struct drm_colorop *colorop,
 	struct drm_device *device = plane->device;
 	struct drm_backend *b = device->backend;
 	const struct drm_property_info *info = &colorop->props[prop];
+	struct drm_value_fmtbuf tmp;
 	int ret;
 
-	drm_debug(b, "\t\t\t[COLOROP:%lu] %s (%lu) -> %llu (0x%llx)\n",
+	drm_debug(b, "\t\t\t[COLOROP:%lu] %s (%lu) -> %s (0x%llx)\n",
 		  (unsigned long) colorop->id, info->name,
 		  (unsigned long) info->prop_id,
-		  (unsigned long long) val, (unsigned long long) val);
+		  (info->format_value ?: format_default)(val, &tmp),
+		  (unsigned long long) val);
 
 	if (info->prop_id == 0)
 		return -1;

@@ -141,6 +141,11 @@ struct drm_property_enum_info {
 	uint64_t value; /**< raw value */
 };
 
+/** Temporary buffer for KMS value formatting */
+struct drm_value_fmtbuf {
+	char buf[64];
+};
+
 /**
  * Holds information on a DRM property, including its ID and the enum
  * values it holds.
@@ -162,6 +167,14 @@ struct drm_property_info {
 	struct drm_property_enum_info *enum_values; /**< array of enum values */
 	unsigned int num_range_values;
 	uint64_t range_values[2];
+
+	/** Property value formatting function
+	 *
+	 * If not \c NULL, this function is used for formatting the
+	 * \c uint64_t property value into a temporary string stored in \c tmp.
+	 * Returns \c tmp->buf.
+	 */
+	const char *(*format_value)(uint64_t val, struct drm_value_fmtbuf *tmp);
 };
 
 /**
