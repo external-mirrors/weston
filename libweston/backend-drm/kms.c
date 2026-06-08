@@ -1108,9 +1108,9 @@ crtc_add_prop(drmModeAtomicReq *req, const struct drm_crtc *crtc,
 	const struct drm_property_info *info = &crtc->props_crtc[prop];
 	int ret;
 
-	drm_debug(b, "\t\t\t[CRTC:%lu] %lu (%s) -> %llu (0x%llx)\n",
-		  (unsigned long) crtc->crtc_id,
-		  (unsigned long) info->prop_id, info->name,
+	drm_debug(b, "\t\t\t[CRTC:%lu] %s (%lu) -> %llu (0x%llx)\n",
+		  (unsigned long) crtc->crtc_id, info->name,
+		  (unsigned long) info->prop_id,
 		  (unsigned long long) val, (unsigned long long) val);
 
 	if (info->prop_id == 0)
@@ -1170,9 +1170,9 @@ connector_add_prop(drmModeAtomicReq *req, const struct drm_connector *connector,
 	uint32_t connector_id = connector->connector_id;
 	int ret;
 
-	drm_debug(b, "\t\t\t[CONN:%lu] %lu (%s) -> %llu (0x%llx)\n",
-		  (unsigned long) connector_id,
-		  (unsigned long) info->prop_id, info->name,
+	drm_debug(b, "\t\t\t[CONN:%lu] %s (%lu) -> %llu (0x%llx)\n",
+		  (unsigned long) connector_id, info->name,
+		  (unsigned long) info->prop_id,
 		  (unsigned long long) val, (unsigned long long) val);
 
 	if (info->prop_id == 0)
@@ -1199,9 +1199,9 @@ connector_add_prop_enum(drmModeAtomicReq *req,
 	weston_assert_u32_lt(comp, wdrm_enum_value, info->num_enum_values);
 	eni = &info->enum_values[wdrm_enum_value];
 
-	drm_debug(b, "\t\t\t[CONN:%lu] %lu (%s) -> %s (0x%llx)\n",
-		  (unsigned long) connector_id,
-		  (unsigned long) info->prop_id, info->name,
+	drm_debug(b, "\t\t\t[CONN:%lu] %s (%lu) -> %s (0x%llx)\n",
+		  (unsigned long) connector_id, info->name,
+		  (unsigned long) info->prop_id,
 		  eni->name, (unsigned long long) eni->value);
 
 	if (info->prop_id == 0 || !eni->valid)
@@ -1220,9 +1220,9 @@ plane_add_prop(drmModeAtomicReq *req, struct drm_plane *plane,
 	struct drm_property_info *info = &plane->props[prop];
 	int ret;
 
-	drm_debug(b, "\t\t\t[PLANE:%lu] %lu (%s) -> %llu (0x%llx)\n",
-		  (unsigned long) plane->plane_id,
-		  (unsigned long) info->prop_id, info->name,
+	drm_debug(b, "\t\t\t[PLANE:%lu] %s (%lu) -> %llu (0x%llx)\n",
+		  (unsigned long) plane->plane_id, info->name,
+		  (unsigned long) info->prop_id,
 		  (unsigned long long) val, (unsigned long long) val);
 
 	if (info->prop_id == 0)
@@ -1247,9 +1247,9 @@ plane_add_prop_enum(drmModeAtomicReq *req, const struct drm_plane *plane,
 	weston_assert_u32_lt(comp, wdrm_enum_value, info->num_enum_values);
 	eni = &info->enum_values[wdrm_enum_value];
 
-	drm_debug(b, "\t\t\t[PLANE:%lu] %lu (%s) -> %s (0x%llx)\n",
-		  (unsigned long) plane->plane_id,
-		  (unsigned long) info->prop_id, info->name,
+	drm_debug(b, "\t\t\t[PLANE:%lu] %s (%lu) -> %s (0x%llx)\n",
+		  (unsigned long) plane->plane_id, info->name,
+		  (unsigned long) info->prop_id,
 		  eni->name, (unsigned long long) eni->value);
 
 	if (info->prop_id == 0 || !eni->valid)
@@ -1270,9 +1270,9 @@ colorop_add_prop(drmModeAtomicReq *req, const struct drm_colorop *colorop,
 	const struct drm_property_info *info = &colorop->props[prop];
 	int ret;
 
-	drm_debug(b, "\t\t\t[COLOROP:%lu] %lu (%s) -> %llu (0x%llx)\n",
-		  (unsigned long) colorop->id,
-		  (unsigned long) info->prop_id, info->name,
+	drm_debug(b, "\t\t\t[COLOROP:%lu] %s (%lu) -> %llu (0x%llx)\n",
+		  (unsigned long) colorop->id, info->name,
+		  (unsigned long) info->prop_id,
 		  (unsigned long long) val, (unsigned long long) val);
 
 	if (info->prop_id == 0)
@@ -1297,9 +1297,9 @@ colorop_add_prop_enum(drmModeAtomicReq *req, const struct drm_colorop *colorop,
 	weston_assert_u32_lt(comp, wdrm_enum_value, info->num_enum_values);
 	eni = &info->enum_values[wdrm_enum_value];
 
-	drm_debug(b, "\t\t\t[COLOROP:%lu] %lu (%s) -> %s (0x%llx)\n",
-		  (unsigned long) colorop->id,
-		  (unsigned long) info->prop_id, info->name,
+	drm_debug(b, "\t\t\t[COLOROP:%lu] %s (%lu) -> %s (0x%llx)\n",
+		  (unsigned long) colorop->id, info->name,
+		  (unsigned long) info->prop_id,
 		  eni->name, (unsigned long long) eni->value);
 
 	if (info->prop_id == 0 || !eni->valid)
