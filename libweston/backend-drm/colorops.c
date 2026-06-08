@@ -853,30 +853,6 @@ drm_color_pipeline_state_unref(struct drm_color_pipeline_state *state)
 	free(state);
 }
 
-static uint64_t
-prop_val_from_curve(struct drm_device *device, const struct drm_colorop *colorop,
-		    struct weston_color_curve *curve)
-{
-	struct weston_compositor *compositor = device->backend->compositor;
-	enum wdrm_colorop_curve_1d curve_type;
-	const struct drm_property_enum_info *prop_info;
-	struct colorop_curve_scaler scaler;
-
-	weston_assert_u32_eq(compositor, curve->type,
-			     WESTON_COLOR_CURVE_TYPE_ENUM);
-
-	curve_type = weston_tf_to_colorop_curve(curve->u.enumerated.tf.info,
-						curve->u.enumerated.tf_direction,
-						&scaler);
-	weston_assert_u32_ne(compositor, curve_type,
-			     WDRM_COLOROP_CURVE_1D__COUNT);
-
-	prop_info = &colorop->props[WDRM_COLOROP_CURVE_1D].enum_values[curve_type];
-	weston_assert_true(compositor, prop_info->valid);
-
-	return prop_info->value;
-}
-
 static struct drm_colorop_state *
 multiplier_create_colorop_state(struct drm_color_pipeline_state *pipeline_state,
 				const struct drm_colorop *first_colorop,
@@ -936,11 +912,6 @@ curve_create_colorop_state(struct drm_color_pipeline_state *pipeline_state,
 	curve = (curve_step == WESTON_COLOR_CURVE_STEP_PRE) ? &xform->pre_curve :
 							      &xform->post_curve;
 
-	if (curve->type == WESTON_COLOR_CURVE_TYPE_ENUM)
-		(void) weston_tf_to_colorop_curve(curve->u.enumerated.tf.info,
-						  curve->u.enumerated.tf_direction,
-						  &scaler);
-
 	colorop_curve = search_colorop_compatible_curve(pipeline, previous_colorop,
 							curve, policy);
 	if (!colorop_curve)
@@ -949,7 +920,9 @@ curve_create_colorop_state(struct drm_color_pipeline_state *pipeline_state,
 	switch (colorop_curve->type) {
 	case WDRM_COLOROP_TYPE_1D_CURVE:
 		so.type = COLOROP_OBJECT_TYPE_CURVE;
-		so.curve_type_prop_val = prop_val_from_curve(device, colorop_curve, curve);
+		so.curve = weston_tf_to_colorop_curve(curve->u.enumerated.tf.info,
+						      curve->u.enumerated.tf_direction,
+						      &scaler);
 		break;
 	case WDRM_COLOROP_TYPE_1D_LUT:
 		lut_len = colorop_curve->size;

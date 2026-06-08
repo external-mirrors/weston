@@ -1650,9 +1650,9 @@ drm_colorop_program(drmModeAtomicReq *req, struct drm_colorop_state *colorop_sta
 
 	switch (colorop_state->object.type) {
 	case COLOROP_OBJECT_TYPE_CURVE:
-		colorop_prop = WDRM_COLOROP_CURVE_1D;
-		prop_val = colorop_state->object.curve_type_prop_val;
-		return colorop_program(req, colorop, colorop_prop, prop_val, err_msg);
+		return colorop_add_prop_enum(req, colorop,
+					     WDRM_COLOROP_CURVE_1D,
+					     colorop_state->object.curve);
 	case COLOROP_OBJECT_TYPE_MATRIX:
 		colorop_prop = WDRM_COLOROP_DATA;
 		prop_val = colorop_state->object.matrix_blob_id;

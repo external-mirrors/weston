@@ -86,7 +86,7 @@ struct drm_colorop_state_object {
 	/* Defines which of the below is valid. The others are zero. */
 	enum colorop_object_type type;
 
-	uint64_t curve_type_prop_val;
+	enum wdrm_colorop_curve_1d curve;
 	uint32_t matrix_blob_id;
 	uint32_t lut_3x1d_blob_id;
 	uint32_t lut_3d_blob_id;
