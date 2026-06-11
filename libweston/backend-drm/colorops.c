@@ -796,6 +796,7 @@ drm_color_pipeline_state_create(struct drm_color_pipeline *pipeline)
 	state = xzalloc(sizeof(*state));
 
 	state->pipeline = pipeline;
+	state->ref_count = 1;
 
 	wl_list_init(&state->colorop_state_list);
 
@@ -803,16 +804,24 @@ drm_color_pipeline_state_create(struct drm_color_pipeline *pipeline)
 }
 
 /**
- * Destroys a color pipeline state.
+ * Drop reference on a color pipeline state, freeing it when it is no longer
+ * referenced.
  *
- * @param state The pipeline state to destroy.
+ * @param state The pipeline state to unreference, NULL is valid.
  */
 void
-drm_color_pipeline_state_destroy(struct drm_color_pipeline_state *state)
+drm_color_pipeline_state_unref(struct drm_color_pipeline_state *state)
 {
 	struct drm_colorop_state *colorop_state, *tmp_colorop_state;
+	struct weston_compositor *wc;
 
 	if (!state)
+		return;
+
+	wc = state->pipeline->plane->base.compositor;
+
+	weston_assert_uint_gt(wc, state->ref_count, 0);
+	if (--state->ref_count > 0)
 		return;
 
 	wl_list_for_each_safe(colorop_state, tmp_colorop_state,
@@ -1052,7 +1061,7 @@ drm_color_pipeline_state_from_xform_steps(struct drm_color_pipeline *pipeline,
 	return pipeline_state;
 
 err:
-	drm_color_pipeline_state_destroy(pipeline_state);
+	drm_color_pipeline_state_unref(pipeline_state);
 	drm_debug(b, "%s[colorop] color pipeline id %u NOT compatible with xform t%u;\n" \
 		     "%s          policy: %s\n",
 		     indent, pipeline->id, xform->id, indent,

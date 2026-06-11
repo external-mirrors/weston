@@ -110,6 +110,7 @@ struct drm_color_pipeline {
 
 struct drm_color_pipeline_state {
 	const struct drm_color_pipeline *pipeline;
+	unsigned int ref_count;
 
 	/* struct drm_colorop_state::link */
 	struct wl_list colorop_state_list;
@@ -118,7 +119,7 @@ struct drm_color_pipeline_state {
 #if CAN_OFFLOAD_COLOR_PIPELINE
 
 void
-drm_color_pipeline_state_destroy(struct drm_color_pipeline_state *state);
+drm_color_pipeline_state_unref(struct drm_color_pipeline_state *state);
 
 struct drm_color_pipeline_state *
 drm_color_pipeline_state_from_xform(struct drm_plane *plane,
@@ -152,7 +153,7 @@ drm_plane_release_color_pipelines(struct drm_plane *plane);
 #else /* CAN_OFFLOAD_COLOR_PIPELINE */
 
 static inline void
-drm_color_pipeline_state_destroy(struct drm_color_pipeline_state *state)
+drm_color_pipeline_state_unref(struct drm_color_pipeline_state *state)
 {
 }
 

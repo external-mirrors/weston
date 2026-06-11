@@ -142,7 +142,7 @@ drm_output_try_paint_node_on_plane(struct drm_plane_handle *handle,
 	state->fb = drm_fb_ref(fb);
 	state->in_fence_fd = surface->acquire_fence_fd;
 
-	drm_color_pipeline_state_destroy(state->pipeline_state);
+	drm_color_pipeline_state_unref(state->pipeline_state);
 	state->pipeline_state = NULL;
 	if (pnode->surf_xform.transform) {
 		state->pipeline_state =
