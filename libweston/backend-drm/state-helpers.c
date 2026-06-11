@@ -144,6 +144,12 @@ drm_plane_state_duplicate(struct drm_output_state *state_output,
 	 */
 	dst->in_fence_fd = -1;
 
+	/**
+	 * Take a reference on the pipeline state, as we don't want it to be
+	 * destroyed with src plane_state.
+	 */
+	dst->pipeline_state = drm_color_pipeline_state_ref(src->pipeline_state);
+
 	wl_list_for_each_safe(old, tmp, &state_output->plane_list, link) {
 		/* Duplicating a plane state into the same output state, so
 		 * it can replace itself with an identical copy of itself,

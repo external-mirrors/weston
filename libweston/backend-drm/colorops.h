@@ -118,6 +118,9 @@ struct drm_color_pipeline_state {
 
 #if CAN_OFFLOAD_COLOR_PIPELINE
 
+struct drm_color_pipeline_state *
+drm_color_pipeline_state_ref(struct drm_color_pipeline_state *state);
+
 void
 drm_color_pipeline_state_unref(struct drm_color_pipeline_state *state);
 
@@ -151,6 +154,12 @@ void
 drm_plane_release_color_pipelines(struct drm_plane *plane);
 
 #else /* CAN_OFFLOAD_COLOR_PIPELINE */
+
+static inline struct drm_color_pipeline_state *
+drm_color_pipeline_state_ref(struct drm_color_pipeline_state *state)
+{
+	return NULL;
+}
 
 static inline void
 drm_color_pipeline_state_unref(struct drm_color_pipeline_state *state)

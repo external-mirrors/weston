@@ -804,6 +804,28 @@ drm_color_pipeline_state_create(struct drm_color_pipeline *pipeline)
 }
 
 /**
+ * Take a reference on a color pipeline state.
+ *
+ * @param state The pipeline state to reference, NULL is valid.
+ * @return Pointer to the referenced state, may be NULL as well.
+ */
+struct drm_color_pipeline_state *
+drm_color_pipeline_state_ref(struct drm_color_pipeline_state *state)
+{
+	struct weston_compositor *wc;
+
+	if (!state)
+		return NULL;
+
+	wc = state->pipeline->plane->base.compositor;
+
+	weston_assert_uint_gt(wc, state->ref_count, 0);
+	state->ref_count++;
+
+	return state;
+}
+
+/**
  * Drop reference on a color pipeline state, freeing it when it is no longer
  * referenced.
  *
