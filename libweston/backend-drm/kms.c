@@ -1706,12 +1706,6 @@ drm_color_pipeline_program(drmModeAtomicReq *req,
 	int ret_drm;
 	bool ret;
 
-	drm_debug(b, "%s[PLANE:%lu] %lu (%s) -> %llu (0x%llx)\n",
-		     indent, (unsigned long) plane->plane_id,
-		     (unsigned long) plane->pipeline_props_id, "COLOR_PIPELINE",
-		     (unsigned long long) pipeline_state->pipeline->id,
-		     (unsigned long long) pipeline_state->pipeline->id);
-
 	colorop_state = drm_colorop_state_iter(pipeline_state,
 					       NULL /* previous colorop state (none) */);
 	wl_list_for_each(colorop, &pipeline->colorop_list, link) {
@@ -1739,10 +1733,7 @@ drm_color_pipeline_program(drmModeAtomicReq *req,
 	}
 	weston_assert_ptr_null(b->compositor, colorop_state);
 
-	/* Set plane pipeline. */
-	drmModeAtomicAddProperty(req, plane->plane_id,
-				 plane->pipeline_props_id, pipeline->id);
-	return 0;
+	return plane_add_prop(req, plane, WDRM_PLANE_COLOR_PIPELINE, pipeline->id);
 
 err:
 	drm_debug(b, "%s%s[colorop] failed to program pipeline\n", indent, indent);

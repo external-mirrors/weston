@@ -1253,7 +1253,6 @@ drm_plane_populate_color_pipelines(struct drm_plane *plane,
 	}
 	plane->pipelines = xzalloc(plane->num_color_pipelines *
 				   sizeof(*plane->pipelines));
-	plane->pipeline_props_id = color_pipeline_props->prop_id;
 
 	/* Populate pipelines. */
 	pipeline_i = 0;

@@ -516,7 +516,6 @@ struct drm_plane {
 
 	struct weston_drm_format_array formats;
 
-	uint32_t pipeline_props_id;
 	uint32_t num_color_pipelines;
 	struct drm_color_pipeline *pipelines;
 };
