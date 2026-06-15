@@ -41,17 +41,17 @@ weston_perfetto_ensure_output_ids(struct weston_output *output)
 {
 	char track_name[512];
 
-	if (output->gpu_track_id)
+	if (output->gpu_track.id)
 		return;
 
 	snprintf(track_name, sizeof(track_name), "%s GPU activity", output->name);
-	output->gpu_track_id = util_perfetto_new_track(track_name);
+	output->gpu_track.id = util_perfetto_new_track(track_name);
 
 	snprintf(track_name, sizeof(track_name), "%s paint", output->name);
-	output->paint_track_id = util_perfetto_new_track(track_name);
+	output->paint_track.id = util_perfetto_new_track(track_name);
 
 	snprintf(track_name, sizeof(track_name), "%s present", output->name);
-	output->presentation_track_id = util_perfetto_new_track(track_name);
+	output->presentation_track.id = util_perfetto_new_track(track_name);
 }
 
 static void
@@ -59,7 +59,7 @@ build_track_name(struct weston_surface *surface, char *name, int size)
 {
 	/* Make sure we only call this once, so we don't accidentally
 	 * make multiple names for the same surface */
-	assert(surface->damage_track_id == 0);
+	assert(surface->damage_track.id == 0);
 
 	snprintf(name, size, "%s #%d", surface->label, surface->s_id);
 }
@@ -67,7 +67,7 @@ build_track_name(struct weston_surface *surface, char *name, int size)
 static void
 build_seat_track_name(struct weston_seat *seat, char *name, int size)
 {
-	assert(seat->track_id == 0);
+	assert(seat->track.id == 0);
 
 	snprintf(name, size, "seat: %s", seat->seat_name);
 }
@@ -77,12 +77,12 @@ weston_perfetto_ensure_surface_id(struct weston_surface *surface)
 {
 	char track_name[600];
 
-	if (surface->damage_track_id)
+	if (surface->damage_track.id)
 		return;
 
 	build_track_name(surface, track_name, sizeof(track_name));
 
-	surface->damage_track_id = util_perfetto_new_track(track_name);
+	surface->damage_track.id = util_perfetto_new_track(track_name);
 }
 
 static void
@@ -90,12 +90,12 @@ weston_perfetto_ensure_seat_id(struct weston_seat *seat)
 {
 	char track_name[600];
 
-	if (seat->track_id)
+	if (seat->track.id)
 		return;
 
 	build_seat_track_name(seat, track_name, sizeof(track_name));
 
-	seat->track_id = util_perfetto_new_track(track_name);
+	seat->track.id = util_perfetto_new_track(track_name);
 }
 
 /**
@@ -169,35 +169,35 @@ weston_timeline_perfetto(struct weston_log_scope *timeline_scope,
 	case TLP_CORE_REPAINT_EXIT_LOOP:
 		break;
 	case TLP_CORE_FLUSH_DAMAGE:
-		WESTON_TRACE_TIMESTAMP_END(surface->damage_track_id, CLOCK_MONOTONIC, now_ns);
-		WESTON_TRACE_TIMESTAMP_BEGIN("Clean", surface->damage_track_id, 0, CLOCK_MONOTONIC, now_ns);
+		WESTON_TRACE_TIMESTAMP_END(surface->damage_track.id, CLOCK_MONOTONIC, now_ns);
+		WESTON_TRACE_TIMESTAMP_BEGIN("Clean", surface->damage_track.id, 0, CLOCK_MONOTONIC, now_ns);
 		break;
 	case TLP_CORE_REPAINT_BEGIN:
-		WESTON_TRACE_TIMESTAMP_END(output->paint_track_id, CLOCK_MONOTONIC, now_ns);
-		WESTON_TRACE_TIMESTAMP_BEGIN("Paint", output->paint_track_id, 0, CLOCK_MONOTONIC, now_ns);
+		WESTON_TRACE_TIMESTAMP_END(output->paint_track.id, CLOCK_MONOTONIC, now_ns);
+		WESTON_TRACE_TIMESTAMP_BEGIN("Paint", output->paint_track.id, 0, CLOCK_MONOTONIC, now_ns);
 		break;
 	case TLP_CORE_REPAINT_POSTED:
-		WESTON_TRACE_TIMESTAMP_END(output->paint_track_id, CLOCK_MONOTONIC, now_ns);
-		WESTON_TRACE_TIMESTAMP_BEGIN("Posted", output->presentation_track_id, 0, CLOCK_MONOTONIC, now_ns);
+		WESTON_TRACE_TIMESTAMP_END(output->paint_track.id, CLOCK_MONOTONIC, now_ns);
+		WESTON_TRACE_TIMESTAMP_BEGIN("Posted", output->presentation_track.id, 0, CLOCK_MONOTONIC, now_ns);
 		break;
 	case TLP_CORE_REPAINT_FINISHED:
-		WESTON_TRACE_TIMESTAMP_END(output->presentation_track_id, CLOCK_MONOTONIC, vblank_ns);
+		WESTON_TRACE_TIMESTAMP_END(output->presentation_track.id, CLOCK_MONOTONIC, vblank_ns);
 		break;
 	case TLP_CORE_REPAINT_REQ:
-		WESTON_TRACE_TIMESTAMP_BEGIN("Scheduled", output->paint_track_id, 0, CLOCK_MONOTONIC, now_ns);
+		WESTON_TRACE_TIMESTAMP_BEGIN("Scheduled", output->paint_track.id, 0, CLOCK_MONOTONIC, now_ns);
 		break;
 	case TLP_CORE_COMMIT_DAMAGE:
-		WESTON_TRACE_TIMESTAMP_END(surface->damage_track_id, CLOCK_MONOTONIC, now_ns);
-		WESTON_TRACE_TIMESTAMP_BEGIN("Damaged", surface->damage_track_id, surface->flow.id, CLOCK_MONOTONIC, now_ns);
+		WESTON_TRACE_TIMESTAMP_END(surface->damage_track.id, CLOCK_MONOTONIC, now_ns);
+		WESTON_TRACE_TIMESTAMP_BEGIN("Damaged", surface->damage_track.id, surface->flow.id, CLOCK_MONOTONIC, now_ns);
 		break;
 	case TLP_RENDERER_GPU_BEGIN:
-		WESTON_TRACE_TIMESTAMP_BEGIN("Active", output->gpu_track_id, 0, CLOCK_MONOTONIC, gpu_ns);
+		WESTON_TRACE_TIMESTAMP_BEGIN("Active", output->gpu_track.id, 0, CLOCK_MONOTONIC, gpu_ns);
 		break;
 	case TLP_RENDERER_GPU_END:
-		WESTON_TRACE_TIMESTAMP_END(output->gpu_track_id, CLOCK_MONOTONIC, gpu_ns);
+		WESTON_TRACE_TIMESTAMP_END(output->gpu_track.id, CLOCK_MONOTONIC, gpu_ns);
 		break;
 	case TLP_INPUT_KERNEL_TS:
-		WESTON_TRACE_INSTANT_TIMESTAMP("event ts", ievent->seat->track_id, ievent->flow.id, CLOCK_MONOTONIC, kernel_input_ts);
+		WESTON_TRACE_INSTANT_TIMESTAMP("event ts", ievent->seat->track.id, ievent->flow.id, CLOCK_MONOTONIC, kernel_input_ts);
 		break;
 	default:
 		assert(!"not reached");

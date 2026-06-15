@@ -49,6 +49,10 @@ struct weston_trace_flow {
 	uint64_t id;
 };
 
+struct weston_trace_track {
+	uint64_t id;
+};
+
 struct weston_log_pacer {
 	/** This must be set to zero before first use */
 	bool initialized;
@@ -461,9 +465,9 @@ struct weston_output {
 	struct weston_coord_global pos;
 	int32_t width, height;
 
-	uint64_t gpu_track_id;
-	uint64_t paint_track_id;
-	uint64_t presentation_track_id;
+	struct weston_trace_track gpu_track;
+	struct weston_trace_track paint_track;
+	struct weston_trace_track presentation_track;
 
 	/** List of paint nodes in z-order, from top to bottom, maybe pruned
 	 *
@@ -1303,7 +1307,7 @@ struct weston_seat {
 	struct wl_list tablet_tool_list;
 	struct wl_list tablet_seat_resource_list;
 	struct wl_signal tablet_tool_added_signal;
-	uint64_t track_id;
+	struct weston_trace_track track;
 };
 
 enum {
@@ -2183,7 +2187,7 @@ struct weston_surface {
 	struct wl_resource *color_representation_resource;
 	struct weston_color_representation color_representation;
 
-	uint64_t damage_track_id;
+	struct weston_trace_track damage_track;
 
 	/** increments for each wl_surface::commit,
 	 * reset after each frame counter interval */
