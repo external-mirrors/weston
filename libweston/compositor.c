@@ -486,6 +486,18 @@ paint_node_validate_ready(struct weston_paint_node *pnode)
 	weston_assert_true(comp, pnode->status == WESTON_PAINT_NODE_CLEAN);
 }
 
+static void
+paint_node_update_view_visibility_mask(struct weston_paint_node *pnode)
+{
+	struct weston_output *output = pnode->output;
+	struct weston_view *view = pnode->view;
+
+	if (pixman_region32_not_empty(&pnode->visible))
+		view->output_visibility_mask |= 1u << output->id;
+	else
+		view->output_visibility_mask &= ~(1u << output->id);
+}
+
 /* Update all the paint node data that needs to be handled after
  * assign_planes() completes.
  */
@@ -495,8 +507,6 @@ paint_node_update_late(struct weston_paint_node *pnode)
 	WESTON_TRACE_ANNOTATE_FUNC(("paint node flow", &pnode->flow));
 	struct weston_surface *surf = pnode->surface;
 	struct weston_buffer *buffer = surf->buffer_ref.buffer;
-	struct weston_view *view = pnode->view;
-	struct weston_output *output = pnode->output;
 	bool vis_dirty = pnode->status & WESTON_PAINT_NODE_VISIBILITY_DIRTY;
 	bool plane_dirty = pnode->status & WESTON_PAINT_NODE_PLANE_DIRTY;
 
@@ -511,11 +521,7 @@ paint_node_update_late(struct weston_paint_node *pnode)
 	if (vis_dirty || plane_dirty)
 		paint_node_damage_below(pnode, &pnode->visible_previous);
 
-	/* Update the view's output visibility mask */
-	if (pixman_region32_not_empty(&pnode->visible))
-		view->output_visibility_mask |= 1u << output->id;
-	else
-		view->output_visibility_mask &= ~(1u << output->id);
+	paint_node_update_view_visibility_mask(pnode);
 
 	/* If our visible region was dirty, we should damage the entire
 	 * new visible region to ensure a redraw of our content.
