@@ -10,6 +10,8 @@
 #ifndef WESTON_TRACE_H
 #define WESTON_TRACE_H
 
+#include "config.h"
+
 #include "perfetto/annotations.h"
 #include "perfetto/u_perfetto.h"
 #include "shared/weston-assert.h"

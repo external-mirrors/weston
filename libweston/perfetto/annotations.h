@@ -25,7 +25,6 @@
 
 #pragma once
 
-#include "weston-trace.h"
 #include <libweston/libweston.h>
 #include <libweston/libweston-internal.h>
 
