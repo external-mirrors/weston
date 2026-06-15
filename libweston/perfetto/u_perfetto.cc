@@ -81,9 +81,10 @@ util_perfetto_trace_begin(const char *name)
 }
 
 void
-util_perfetto_trace_end(void)
+util_perfetto_trace_end(uint64_t track_id)
 {
-	TRACE_EVENT_END(UTIL_PERFETTO_CATEGORY_DEFAULT_STR);
+	TRACE_EVENT_END(UTIL_PERFETTO_CATEGORY_DEFAULT_STR,
+			track_id ? perfetto::Track::Global(track_id) : perfetto::Track(0));
 
 	util_perfetto_update_tracing_state();
 }
@@ -236,6 +237,9 @@ util_perfetto_flush_debug_annotation(perfetto::EventContext *ctx,
 			break;
 		}
 	}
+	/* Note: The flush is elided when not tracing, so the caller must
+	 * reset all state!
+	 */
 }
 
 void
@@ -244,6 +248,7 @@ util_perfetto_trace_commit_debug_annots(const char *name,
 {
 	TRACE_EVENT_INSTANT(UTIL_PERFETTO_CATEGORY_DEFAULT_STR,
 			    nullptr,
+			    annots->track_id ? perfetto::Track::Global(annots->track_id) : perfetto::Track(0),
 			    [&](perfetto::EventContext ctx) {
 				ctx.event()->set_name(name);
 				util_perfetto_flush_debug_annotation(&ctx, annots);
@@ -256,6 +261,7 @@ util_perfetto_trace_commit_annotate_func(const char *name,
 {
 	TRACE_EVENT_BEGIN(UTIL_PERFETTO_CATEGORY_DEFAULT_STR,
 			  nullptr,
+			  annots->track_id ? perfetto::Track::Global(annots->track_id) : perfetto::Track(0),
 			  [&](perfetto::EventContext ctx) {
 			  ctx.event()->set_name(name);
 			  util_perfetto_flush_debug_annotation(&ctx, annots);

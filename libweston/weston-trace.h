@@ -50,10 +50,10 @@
 			util_perfetto_trace_begin(name);                      \
 	} while (0)
 
-#define _WESTON_TRACE_END()                                                   \
+#define _WESTON_TRACE_END(track_id)                                           \
 	do {                                                                  \
 		if (_WESTON_TRACE_IS_TRACING())                               \
-			util_perfetto_trace_end();                            \
+			util_perfetto_trace_end(track_id);                    \
 	} while (0)
 
 #define _WESTON_TRACE_SET_COUNTER(name, value)                                \
@@ -81,6 +81,7 @@
 	struct weston_debug_annotations __pd_annots = {                         \
 		.annots = __pd_annot,                                           \
 		.count = 0,                                                     \
+		.track_id = 0,                                                  \
 	}
 
 #define _WESTON_TRACE_ANNOTATE_ADD_GENERIC(k, v)                                          \
@@ -98,7 +99,9 @@
 			const char *: perfetto_annotate_string,                           \
 			weston_trace_time_since *: perfetto_annotate_time_since,          \
 			struct weston_buffer *: perfetto_annotate_buffer,                 \
-			const struct weston_buffer *: perfetto_annotate_buffer            \
+			const struct weston_buffer *: perfetto_annotate_buffer,           \
+			struct weston_trace_track *: perfetto_annotate_track,             \
+			const struct weston_trace_track *: perfetto_annotate_track        \
 		) (&__pd_annots, k, sizeof(k), v);
 
 #define _WESTON_TRACE_ANNOTATE_ADD(k, v)                  \
@@ -186,8 +189,8 @@
  * to work.
  */
 #define _WESTON_TRACE_SCOPE(name)                                             \
-	int _WESTON_TRACE_SCOPE_VAR(__LINE__)                                 \
-		__attribute__((cleanup(_weston_trace_scope_end), unused)) =   \
+	uint64_t _WESTON_TRACE_SCOPE_VAR(__LINE__)                            \
+		__attribute__((cleanup(_weston_trace_scope_end))) =           \
 			_weston_trace_annotate_func_begin(name, &__pd_annots)
 
 static inline void
@@ -197,16 +200,20 @@ _weston_trace_scope_annotate_commit(const char *name,
 	util_perfetto_trace_commit_debug_annots(name, annots);
 
 	annots->count = 0;
+	annots->track_id = 0;
 }
 
-static inline int
+static inline uint64_t
 _weston_trace_annotate_func_begin(const char *name,
 				  struct weston_debug_annotations *annots)
 {
+	uint64_t track_id = annots->track_id;
+
 	_WESTON_TRACE_ANNOTATE_FUNC_BEGIN(name, annots);
 
 	annots->count = 0;
-	return 0;
+	annots->track_id = 0;
+	return track_id;
 }
 
 static inline int
@@ -219,9 +226,9 @@ _weston_trace_instant_timestamp(const char *name, uint64_t track_id, uint64_t id
 }
 
 static inline void
-_weston_trace_scope_end(int *scope)
+_weston_trace_scope_end(uint64_t *scope)
 {
-	_WESTON_TRACE_END();
+	_WESTON_TRACE_END(*scope);
 }
 
 #else

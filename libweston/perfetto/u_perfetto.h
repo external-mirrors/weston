@@ -69,6 +69,7 @@ struct weston_debug_annotation {
 struct weston_debug_annotations {
 	struct weston_debug_annotation *annots;
 	unsigned char count;
+	uint64_t track_id;
 };
 
 extern int util_perfetto_tracing_state;
@@ -83,7 +84,7 @@ util_perfetto_is_tracing_enabled(void)
 
 void util_perfetto_trace_begin(const char *name);
 
-void util_perfetto_trace_end(void);
+void util_perfetto_trace_end(uint64_t track_id);
 
 void util_perfetto_counter_set(const char *name, double value);
 

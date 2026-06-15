@@ -334,3 +334,13 @@ perfetto_annotate_time_since(struct weston_debug_annotations *annots,
 {
 	do_annotate_time_since(annots, annots->count, key, key_size, since);
 }
+
+WL_EXPORT void
+perfetto_annotate_track(struct weston_debug_annotations *annots,
+			const char *key,
+			unsigned char key_size,
+			const struct weston_trace_track *track)
+{
+	weston_assert_u64_eq(NULL, annots->track_id, 0);
+	annots->track_id = track->id;
+}
