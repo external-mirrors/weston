@@ -206,9 +206,9 @@ weston_surface_attach(struct weston_surface *surface,
 	struct weston_buffer *old_buffer = surface->buffer_ref.buffer;
 	enum weston_paint_node_status pnode_changes = WESTON_PAINT_NODE_CLEAN;
 
-	WESTON_TRACE_ANNOTATE_FUNC(("surface flow", &surface->flow),
-				   ("surface", surface->internal_name),
-				   ("new buffer", buffer));
+	WESTON_TRACE_FUNC(("surface flow", &surface->flow),
+			  ("surface", surface->internal_name),
+			  ("new buffer", buffer));
 
 	if (!buffer) {
 		if (weston_surface_is_mapped(surface)) {
@@ -376,7 +376,7 @@ static enum weston_surface_status
 weston_surface_apply_state(struct weston_surface *surface,
 			   struct weston_surface_state *state)
 {
-	WESTON_TRACE_ANNOTATE_FUNC(("surface state flow", &state->flow));
+	WESTON_TRACE_FUNC(("surface state flow", &state->flow));
 	struct weston_view *view;
 	enum weston_surface_status status = state->status;
 
@@ -622,7 +622,7 @@ static void
 weston_surface_apply(struct weston_surface *surface,
 		     struct weston_surface_state *state)
 {
-	WESTON_TRACE_ANNOTATE_FUNC(("surface state flow", &state->flow));
+	WESTON_TRACE_FUNC(("surface state flow", &state->flow));
 	struct weston_subsurface *sub;
 	enum weston_surface_status status;
 
@@ -641,7 +641,7 @@ weston_surface_state_merge_from(struct weston_surface_state *dst,
 				struct weston_surface_state *src,
 				struct weston_surface *surface)
 {
-	WESTON_TRACE_ANNOTATE_FUNC(("surface state flow", &dst->flow));
+	WESTON_TRACE_FUNC(("surface state flow", &dst->flow));
 	src->flow.id = 0;
 
 
@@ -816,7 +816,7 @@ weston_surface_create_transaction(struct weston_compositor *comp,
 				  struct weston_transaction_queue *parent)
 {
 	struct weston_trace_flow transaction_flow = {};
-	WESTON_TRACE_ANNOTATE_FUNC(("transaction flow", &transaction_flow));
+	WESTON_TRACE_FUNC(("transaction flow", &transaction_flow));
 
 	struct weston_transaction *tr;
 	bool need_schedule = false;
@@ -860,7 +860,7 @@ weston_surface_state_ready(struct weston_surface *surface,
 void
 weston_surface_commit(struct weston_surface *surface)
 {
-	WESTON_TRACE_ANNOTATE_FUNC(("surface state flow", &surface->pending.flow));
+	WESTON_TRACE_FUNC(("surface state flow", &surface->pending.flow));
 	struct weston_compositor *comp = surface->compositor;
 	struct weston_subsurface *sub = weston_surface_to_subsurface(surface);
 	struct weston_surface_state *state = &surface->pending;
@@ -923,7 +923,7 @@ weston_subsurface_update_effectively_synchronized(struct weston_subsurface *sub)
 	bool parent_e_sync = false;
 	struct weston_subsurface *child;
 	struct weston_surface *surf = sub->surface;
-	WESTON_TRACE_ANNOTATE_FUNC(("surface flow", &surf->flow));
+	WESTON_TRACE_FUNC(("surface flow", &surf->flow));
 
 	if (sub->parent) {
 		struct weston_subsurface *parent;
@@ -954,7 +954,7 @@ weston_subsurface_update_effectively_synchronized(struct weston_subsurface *sub)
 void
 weston_subsurface_set_synchronized(struct weston_subsurface *sub, bool sync)
 {
-	WESTON_TRACE_ANNOTATE_FUNC(("subsurface flow", &sub->surface->flow));
+	WESTON_TRACE_FUNC(("subsurface flow", &sub->surface->flow));
 	bool old_e_sync = sub->effectively_synchronized;
 
 	if (sub->synchronized == sync)
@@ -972,7 +972,7 @@ weston_subsurface_set_synchronized(struct weston_subsurface *sub, bool sync)
 static void
 apply_transaction(struct weston_transaction *transaction)
 {
-	WESTON_TRACE_ANNOTATE_FUNC(("transaction flow", &transaction->flow));
+	WESTON_TRACE_FUNC(("transaction flow", &transaction->flow));
 	struct weston_content_update *cu, *tmp;
 
 	wl_list_remove(&transaction->link);
@@ -988,7 +988,7 @@ apply_transaction(struct weston_transaction *transaction)
 static bool
 transaction_ready(struct weston_transaction *transaction)
 {
-	WESTON_TRACE_ANNOTATE_FUNC(("transaction flow", &transaction->flow));
+	WESTON_TRACE_FUNC(("transaction flow", &transaction->flow));
 	struct weston_content_update *cu;
 
 	/* Every content update within the transaction must be ready

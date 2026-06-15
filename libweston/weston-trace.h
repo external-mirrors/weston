@@ -168,19 +168,7 @@
 #define _WESTON_TRACE_SCOPE(name)                                             \
 	int _WESTON_TRACE_SCOPE_VAR(__LINE__)                                 \
 		__attribute__((cleanup(_weston_trace_scope_end), unused)) =   \
-			_weston_trace_scope_begin(name)
-
-#define _WESTON_TRACE_ANNOTATE_FUNC(name)                                     \
-	int _WESTON_TRACE_SCOPE_VAR(__LINE__)                                 \
-		__attribute__((cleanup(_weston_trace_scope_end), unused)) =   \
 			_weston_trace_annotate_func_begin(name, &__pd_annots)
-
-static inline int
-_weston_trace_scope_begin(const char *name)
-{
-	_WESTON_TRACE_BEGIN(name);
-	return 0;
-}
 
 static inline void
 _weston_trace_scope_annotate_commit(const char *name,
@@ -233,13 +221,11 @@ _weston_trace_scope_end(int *scope)
 
 #define _WESTON_TRACE_BEGIN_ANNOTATION()
 #define _WESTON_TRACE_COMMIT_ANNOTATION(name)
-#define _WESTON_TRACE_ANNOTATE_FUNC(...)
 #define _WESTON_TRACE_ANNOTATE(...)
 
 #endif /* HAVE_PERFETTO */
 
 #define WESTON_TRACE_SCOPE(name) _WESTON_TRACE_SCOPE(name)
-#define WESTON_TRACE_FUNC() _WESTON_TRACE_SCOPE(__func__)
 #define WESTON_TRACE_SET_COUNTER(name, value) _WESTON_TRACE_SET_COUNTER(name, value)
 #define WESTON_TRACE_TIMESTAMP_BEGIN(name, track_id, flow_id, clock, timestamp) \
 	_WESTON_TRACE_TIMESTAMP_BEGIN(name, track_id, flow_id, clock, timestamp)
@@ -255,10 +241,10 @@ _weston_trace_scope_end(int *scope)
 #define WESTON_TRACE_COMMIT_ANNOTATION() \
         _WESTON_TRACE_COMMIT_ANNOTATION(__func__)
 
-#define WESTON_TRACE_ANNOTATE_FUNC(...)               \
-	WESTON_TRACE_BEGIN_ANNOTATION();              \
-	WESTON_TRACE_ANNOTATE(__VA_ARGS__);           \
-        _WESTON_TRACE_ANNOTATE_FUNC(__func__)
+#define WESTON_TRACE_FUNC(...)                          \
+	WESTON_TRACE_BEGIN_ANNOTATION();                \
+	__VA_OPT__(WESTON_TRACE_ANNOTATE(__VA_ARGS__)); \
+        _WESTON_TRACE_SCOPE(__func__)
 
 /* Adds a series of annotations of the form '("key string", value)' separated
  * by commas.

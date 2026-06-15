@@ -2550,7 +2550,7 @@ apply_color_effect(struct gl_renderer *gr, struct weston_paint_node *pnode, stru
 		return;
 	}
 
-	WESTON_TRACE_ANNOTATE_FUNC(("paint node flow", &pnode->flow));
+	WESTON_TRACE_FUNC(("paint node flow", &pnode->flow));
 	WESTON_TRACE_ANNOTATE(("paint node", pnode->internal_name));
 
 	weston_assert_f32_eq(compositor, a, 1.0f);
@@ -2637,7 +2637,7 @@ static void
 draw_paint_node(struct weston_paint_node *pnode,
 		pixman_region32_t *damage /* in global coordinates */)
 {
-	WESTON_TRACE_ANNOTATE_FUNC(("paint node flow", &pnode->flow));
+	WESTON_TRACE_FUNC(("paint node flow", &pnode->flow));
 	struct gl_renderer *gr = get_renderer(pnode->surface->compositor);
 	struct gl_surface_state *gs = get_surface_state(pnode->surface);
 	/* repaint bounding region in global coordinates: */

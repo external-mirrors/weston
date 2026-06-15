@@ -370,7 +370,7 @@ paint_node_update_desired_protection(struct weston_paint_node *pnode)
 static void
 paint_node_update_early(struct weston_paint_node *pnode)
 {
-	WESTON_TRACE_ANNOTATE_FUNC(("paint node flow", &pnode->flow));
+	WESTON_TRACE_FUNC(("paint node flow", &pnode->flow));
 	struct weston_matrix *mat = &pnode->buffer_to_output_matrix;
 	struct weston_output *output = pnode->output;
 	struct weston_surface *surface = pnode->surface;
@@ -504,7 +504,7 @@ paint_node_update_view_visibility_mask(struct weston_paint_node *pnode)
 static void
 paint_node_update_late(struct weston_paint_node *pnode)
 {
-	WESTON_TRACE_ANNOTATE_FUNC(("paint node flow", &pnode->flow));
+	WESTON_TRACE_FUNC(("paint node flow", &pnode->flow));
 	struct weston_surface *surf = pnode->surface;
 	struct weston_buffer *buffer = surf->buffer_ref.buffer;
 	bool vis_dirty = pnode->status & WESTON_PAINT_NODE_VISIBILITY_DIRTY;
@@ -3482,7 +3482,7 @@ weston_output_damage(struct weston_output *output)
 static void
 paint_node_add_damage(struct weston_paint_node *node)
 {
-	WESTON_TRACE_ANNOTATE_FUNC(("paint node flow", &node->flow));
+	WESTON_TRACE_FUNC(("paint node flow", &node->flow));
 	struct weston_view *view = node->view;
 	pixman_region32_t damage;
 
@@ -3511,7 +3511,7 @@ paint_node_add_damage(struct weston_paint_node *node)
 static void
 paint_node_flush_surface_damage(struct weston_paint_node *pnode)
 {
-	WESTON_TRACE_ANNOTATE_FUNC(("paint node flow", &pnode->flow));
+	WESTON_TRACE_FUNC(("paint node flow", &pnode->flow));
 	struct weston_output *output = pnode->output;
 	struct weston_surface *surface = pnode->surface;
 	struct weston_buffer *buffer = surface->buffer_ref.buffer;
@@ -3637,7 +3637,7 @@ output_accumulate_damage(struct weston_output *output)
 static struct weston_paint_node *
 view_ensure_paint_node(struct weston_view *view, struct weston_output *output)
 {
-	WESTON_TRACE_ANNOTATE_FUNC(("surface flow", &view->surface->flow));
+	WESTON_TRACE_FUNC(("surface flow", &view->surface->flow));
 	struct weston_paint_node *pnode;
 
 	if (!output)
@@ -3714,7 +3714,7 @@ static void
 view_list_add(struct weston_compositor *compositor,
 	      struct weston_view *view)
 {
-	WESTON_TRACE_ANNOTATE_FUNC(("surface flow", &view->surface->flow));
+	WESTON_TRACE_FUNC(("surface flow", &view->surface->flow));
 	struct weston_subsurface *sub;
 
 	weston_view_update_transform(view);
@@ -5292,7 +5292,7 @@ static void
 surface_commit(struct wl_client *client, struct wl_resource *resource)
 {
 	struct weston_surface *surface = wl_resource_get_user_data(resource);
-	WESTON_TRACE_ANNOTATE_FUNC(("surface state flow", &surface->pending.flow));
+	WESTON_TRACE_FUNC(("surface state flow", &surface->pending.flow));
 	struct weston_buffer *buffer;
 	int32_t tmp_w, tmp_h;
 
