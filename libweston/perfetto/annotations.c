@@ -207,7 +207,8 @@ create_container(struct weston_debug_annotations *annots,
 
 #define ADD(annots, parent, key, value)                                              \
 	do {                                                                         \
-		static_assert(sizeof(key) < WESTON_TRACE_MAX_KEY_LENGTH);            \
+		static_assert(sizeof(key) < WESTON_TRACE_MAX_KEY_LENGTH,             \
+			      "Key exceeds maximum length");                         \
 		_Generic((value),                                                    \
 			char *: do_annotate_string,                                  \
 			const char *: do_annotate_string,                            \

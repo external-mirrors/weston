@@ -82,7 +82,8 @@
 	}
 
 #define _WESTON_TRACE_ANNOTATE_ADD_GENERIC(k, v)                                          \
-		static_assert(sizeof(k) < WESTON_TRACE_MAX_KEY_LENGTH);                   \
+		static_assert(sizeof(k) < WESTON_TRACE_MAX_KEY_LENGTH,                    \
+			      "Key exceeds maximum length");                              \
 		_Generic((v),                                                             \
 			struct weston_trace_flow *: perfetto_annotate_flow,               \
 			const struct weston_trace_flow *: perfetto_annotate_flow_const,   \
