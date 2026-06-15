@@ -2736,9 +2736,8 @@ draw_paint_node(struct weston_paint_node *pnode,
 	pixman_region32_fini(&surface_blend);
 	pixman_region32_fini(&surface_opaque);
 
-	WESTON_TRACE_COMMIT_ANNOTATION();
-
 out:
+	WESTON_TRACE_COMMIT_ANNOTATION();
 	pixman_region32_fini(&repaint);
 }
 
