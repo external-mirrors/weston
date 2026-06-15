@@ -491,10 +491,20 @@ paint_node_update_view_visibility_mask(struct weston_paint_node *pnode)
 {
 	struct weston_output *output = pnode->output;
 	struct weston_view *view = pnode->view;
+	struct weston_surface *surf = pnode->surface;
 
-	if (pixman_region32_not_empty(&pnode->visible))
+	if (pixman_region32_not_empty(&pnode->visible)) {
+		uint32_t old_mask = view->output_visibility_mask;
+
 		view->output_visibility_mask |= 1u << output->id;
-	else
+
+		if (!(old_mask & (1u << output->id)) && surf->damage_track.id) {
+			WESTON_TRACE_BEGIN_ANNOTATION();
+			WESTON_TRACE_ANNOTATE(("surface track", &surf->damage_track),
+					      ("Enter output", output->name));
+			WESTON_TRACE_COMMIT_ANNOTATION("visbility change");
+		}
+	} else
 		view->output_visibility_mask &= ~(1u << output->id);
 }
 
