@@ -59,7 +59,7 @@ fdo_log_section_end install_meson
 # just a regular container.
 fdo_log_section_start_collapsed install_kernel "install_kernel"
 if [[ -n "$KERNEL_DEFCONFIG" ]]; then
-	git clone --depth=1 --branch drm-misc-next-2026-03-20 https://gitlab.freedesktop.org/drm/misc/kernel.git linux
+	git clone --depth=1 --branch=v7.1 https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git linux
 	cd linux
 
 	if [[ "${BUILD_ARCH}" = "x86-64" ]]; then
@@ -168,7 +168,7 @@ ninja ${NINJAFLAGS} -C build install
 cd ..
 rm -rf glslang
 
-git clone --branch mesa-26.0.4 --depth=1 https://gitlab.freedesktop.org/mesa/mesa.git
+git clone --branch mesa-26.1.2 --depth=1 https://gitlab.freedesktop.org/mesa/mesa.git
 cd mesa
 meson setup build --wrap-mode=nofallback -Dauto_features=disabled \
 	-Dgallium-drivers=llvmpipe -Dvulkan-drivers=swrast -Dvideo-codecs= \
