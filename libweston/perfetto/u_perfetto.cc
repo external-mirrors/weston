@@ -89,14 +89,6 @@ util_perfetto_trace_end(void)
 }
 
 void
-util_perfetto_trace_begin_flow(const char *fname, uint64_t id)
-{
-	TRACE_EVENT_BEGIN(UTIL_PERFETTO_CATEGORY_DEFAULT_STR, nullptr,
-			  perfetto::Flow::ProcessScoped(id),
-			  [&](perfetto::EventContext ctx) { ctx.event()->set_name(fname); });
-}
-
-void
 util_perfetto_trace_full_begin(const char *fname, uint64_t track_id, uint64_t id, clockid_t clock, uint64_t timestamp)
 {
 	if (id) {

@@ -83,8 +83,6 @@ void util_perfetto_trace_begin(const char *name);
 
 void util_perfetto_trace_end(void);
 
-void util_perfetto_trace_begin_flow(const char *fname, uint64_t id);
-
 void util_perfetto_counter_set(const char *name, double value);
 
 void util_perfetto_trace_full_begin(const char *name, uint64_t track_id, uint64_t id, clockid_t clock, uint64_t timestamp);
@@ -124,10 +122,6 @@ util_perfetto_trace_begin(const char *name)
 
 static inline void
 util_perfetto_trace_end(void)
-{
-}
-
-static inline void util_perfetto_trace_begin_flow(const char *fname, uint64_t id)
 {
 }
 
