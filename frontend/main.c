@@ -4169,15 +4169,15 @@ load_drm_backend(struct weston_compositor *c, int *argc, char **argv,
 	wb = wet_compositor_load_backend(c, WESTON_BACKEND_DRM, &config.base,
 					 drm_heads_changed, NULL);
 
+	free(config.gbm_format);
+	free(config.seat_id);
+	free(config.specific_device);
+
 	if (!wb)
 		return -1;
 
 
 	wet->drm_backend_loaded = true;
-
-	free(config.gbm_format);
-	free(config.seat_id);
-	free(config.specific_device);
 
 	return 0;
 }
