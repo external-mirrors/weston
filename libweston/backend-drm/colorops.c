@@ -882,7 +882,7 @@ multiplier_create_colorop_state(struct drm_color_pipeline_state *pipeline_state,
 		return NULL;
 
 	so.type = COLOROP_OBJECT_TYPE_MULTIPLIER;
-	so.multiplier = (double) multiplier * (1ULL << 32);
+	so.multiplier = float_to_s31_32_sign_magnitude(multiplier);
 
 	return drm_colorop_state_create(pipeline_state, colorop, so);
 }
