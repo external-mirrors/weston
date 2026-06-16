@@ -124,6 +124,7 @@ struct rdp_backend {
 enum peer_item_flags {
 	RDP_PEER_ACTIVATED      = (1 << 0),
 	RDP_PEER_OUTPUT_ENABLED = (1 << 1),
+	RDP_PEER_NEEDS_FULL_REFRESH  = (1 << 2),
 };
 
 struct rdp_peers_item {

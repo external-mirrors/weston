@@ -68,6 +68,9 @@ rdp_buffer_destroy(struct rdp_buffer *buffer);
 static BOOL
 xf_peer_adjust_monitor_layout(freerdp_peer *client);
 
+static void
+rdp_full_refresh(freerdp_peer *peer, struct rdp_output *output);
+
 static struct rdp_output *
 rdp_get_first_output(struct rdp_backend *b)
 {
@@ -81,6 +84,49 @@ rdp_get_first_output(struct rdp_backend *b)
 	}
 
 	return NULL;
+}
+
+static bool
+rdp_backend_has_activated_peer(struct rdp_backend *b)
+{
+	struct rdp_peers_item *peer;
+
+	wl_list_for_each(peer, &b->peers, link) {
+		if (peer->flags & RDP_PEER_ACTIVATED)
+			return true;
+	}
+
+	return false;
+}
+
+static void
+rdp_output_update_power(struct rdp_backend *b)
+{
+	struct rdp_output *output = rdp_get_first_output(b);
+
+	if (!output || !output->base.enabled)
+		return;
+
+	if (rdp_backend_has_activated_peer(b))
+		weston_output_power_on(&output->base);
+	else
+		weston_output_power_off(&output->base);
+}
+
+static void
+rdp_send_pending_full_refreshes(struct rdp_backend *b, struct rdp_output *output)
+{
+	struct rdp_peers_item *peer;
+
+	wl_list_for_each(peer, &b->peers, link) {
+		if (!(peer->flags & RDP_PEER_ACTIVATED))
+			continue;
+		if (!(peer->flags & RDP_PEER_NEEDS_FULL_REFRESH))
+			continue;
+
+		rdp_full_refresh(peer->peer, output);
+		peer->flags &= ~RDP_PEER_NEEDS_FULL_REFRESH;
+	}
 }
 
 static void
@@ -297,6 +343,12 @@ rdp_output_repaint(struct weston_output *output_base)
 
 	assert(output);
 
+	if (!rdp_backend_has_activated_peer(b)) {
+		weston_output_power_off(output_base);
+		weston_output_arm_frame_timer(output_base, output->finish_frame_timer);
+		return 0;
+	}
+
 	pixman_region32_init(&damage);
 
 	weston_output_flush_damage_for_primary_plane(output_base, &damage);
@@ -318,6 +370,8 @@ rdp_output_repaint(struct weston_output *output_base)
 		}
 		pixman_region32_fini(&transformed_damage);
 	}
+
+	rdp_send_pending_full_refreshes(b, output);
 
 	pixman_region32_fini(&damage);
 
@@ -568,6 +622,8 @@ rdp_output_enable(struct weston_output *base)
 
 	loop = wl_display_get_event_loop(b->compositor->wl_display);
 	output->finish_frame_timer = wl_event_loop_add_timer(loop, finish_frame_handler, output);
+
+	weston_output_power_off(base);
 
 	return 0;
 }
@@ -863,6 +919,8 @@ rdp_peer_context_free(freerdp_peer* client, RdpPeerContext* context)
 		weston_seat_release(context->item.seat);
 		free(context->item.seat);
 	}
+
+	rdp_output_update_power(b);
 
 	Stream_Free(context->encode_stream, TRUE);
 	nsc_context_free(context->nsc_context);
@@ -1229,13 +1287,15 @@ xf_peer_activate(freerdp_peer* client)
 			goto error_exit;
 
 	peersItem->flags |= RDP_PEER_ACTIVATED;
+	peersItem->flags |= RDP_PEER_NEEDS_FULL_REFRESH;
+
+	weston_output_power_on(weston_output);
+	weston_output_schedule_repaint(weston_output);
 
 	/* disable pointer on the client side */
 	pointer = client->context->update->pointer;
 	pointer_system.type = SYSPTR_NULL;
 	pointer->PointerSystem(client->context, &pointer_system);
-
-	rdp_full_refresh(client, output);
 
 	return TRUE;
 
@@ -1553,7 +1613,6 @@ xf_extendedMouseEvent(rdpInput *input, UINT16 flags, UINT16 x, UINT16 y)
 static BOOL
 xf_input_synchronize_event(rdpInput *input, UINT32 flags)
 {
-	freerdp_peer *client = input->context->peer;
 	RdpPeerContext *peerCtx = (RdpPeerContext *)input->context;
 	struct rdp_backend *b = peerCtx->rdpBackend;
 	struct rdp_output *output = rdp_get_first_output(b);
@@ -1579,7 +1638,10 @@ xf_input_synchronize_event(rdpInput *input, UINT32 flags)
 					  value);
 	}
 
-	rdp_full_refresh(client, output);
+	if (output) {
+		peerCtx->item.flags |= RDP_PEER_NEEDS_FULL_REFRESH;
+		weston_output_schedule_repaint(&output->base);
+	}
 
 	return TRUE;
 }
