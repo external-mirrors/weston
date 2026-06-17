@@ -33,6 +33,11 @@
 typedef struct { const struct timespec ts; } weston_trace_time_since;
 typedef struct { const struct timespec ts; } weston_trace_time_until;
 
+struct weston_trace_bitflags {
+	uint32_t bitflags;
+	const char *(*map)(uint32_t);
+};
+
 void
 perfetto_annotate_int(struct weston_debug_annotations *annots,
 		      const char *key,
@@ -109,3 +114,9 @@ perfetto_annotate_time(struct weston_debug_annotations *annots,
 		       const char *key,
 		       unsigned char key_size,
 		       struct timespec when);
+
+void
+perfetto_annotate_bitflags(struct weston_debug_annotations *annots,
+			   const char *key,
+			   unsigned char key_size,
+			   struct weston_trace_bitflags *trace_bf);

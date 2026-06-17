@@ -104,7 +104,8 @@
 			const struct weston_buffer *: perfetto_annotate_buffer,           \
 			struct weston_trace_track *: perfetto_annotate_track,             \
 			const struct weston_trace_track *: perfetto_annotate_track,       \
-			struct timespec: perfetto_annotate_time                           \
+			struct timespec: perfetto_annotate_time,                          \
+			struct weston_trace_bitflags *: perfetto_annotate_bitflags        \
 		) (&__pd_annots, k, sizeof(k), v);
 
 #define _WESTON_TRACE_ANNOTATE_ADD(k, v)                  \

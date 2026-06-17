@@ -28,6 +28,7 @@
 
 #include "libweston/pixel-formats.h"
 #include "perfetto/annotations.h"
+#include "shared/string-helpers.h"
 #include "shared/timespec-util.h"
 #include "shared/weston-assert.h"
 #include "weston-trace.h"
@@ -52,6 +53,13 @@ do_annotate_time_since(struct weston_debug_annotations *annots,
 		       const char *key,
 		       unsigned char key_size,
 		       weston_trace_time_since *since);
+
+static void
+do_annotate_bitflags(struct weston_debug_annotations *annots,
+		     unsigned char parent,
+		     const char *key,
+		     unsigned char key_size,
+		     struct weston_trace_bitflags *trace_bf);
 
 static void
 do_annotate_int(struct weston_debug_annotations *annots,
@@ -218,7 +226,8 @@ create_container(struct weston_debug_annotations *annots,
 			const struct weston_buffer *:do_annotate_buffer,             \
 			struct weston_solid_buffer_values *:do_annotate_solid_buffer_values,       \
 			const struct weston_solid_buffer_values *: do_annotate_solid_buffer_values,\
-			struct weston_trace_time_since *: do_annotate_time_since     \
+			struct weston_trace_time_since *: do_annotate_time_since,    \
+			struct weston_trace_bitflags *: do_annotate_bitflags         \
 		) (annots, parent, key, sizeof(key), value);                         \
 	} while (0)
 
@@ -379,4 +388,41 @@ perfetto_annotate_time(struct weston_debug_annotations *annots,
 	weston_assert_false(NULL, annots->when_set);
 	annots->when_set = true;
 	annots->when = when;
+}
+
+static void
+do_annotate_bitflags(struct weston_debug_annotations *annots,
+		     unsigned char parent,
+		     const char *key,
+		     unsigned char key_size,
+		     struct weston_trace_bitflags *trace_bf)
+{
+	unsigned char container_id = create_container(annots, parent, key, key_size);
+	int i;
+
+	if (!trace_bf->bitflags)
+		return;
+
+	for (i = 0; trace_bf->bitflags; i++) {
+		uint32_t bitmask = 1u << i;
+
+		if (!(trace_bf->bitflags & bitmask))
+			continue;
+
+		/* We can't use the ADD macro here because we don't have a
+		 * string literal for the key!
+		 */
+		do_annotate_bool(annots, container_id, trace_bf->map(bitmask),
+				 strlen(trace_bf->map(bitmask)) + 1, true);
+		trace_bf->bitflags ^= bitmask;
+	}
+}
+
+WL_EXPORT void
+perfetto_annotate_bitflags(struct weston_debug_annotations *annots,
+			   const char *key,
+			   unsigned char key_size,
+			   struct weston_trace_bitflags *trace_bf)
+{
+	do_annotate_bitflags(annots, annots->count, key, key_size, trace_bf);
 }
