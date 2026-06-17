@@ -2758,6 +2758,7 @@ maybe_framebuffer_fetch_barrier(struct weston_output *output)
 static void
 repaint_views(struct weston_output *output, pixman_region32_t *damage)
 {
+	WESTON_TRACE_FUNC();
 	struct gl_renderer *gr = get_renderer(output->compositor);
 	struct weston_paint_node *pnode;
 
@@ -3150,6 +3151,7 @@ gl_renderer_repaint_output(struct weston_output *output,
 			   pixman_region32_t *output_damage,
 			   weston_renderbuffer_t renderbuffer)
 {
+	WESTON_TRACE_FUNC();
 	struct gl_output_state *go = get_output_state(output);
 	struct weston_compositor *compositor = output->compositor;
 	struct gl_renderer *gr = get_renderer(compositor);
