@@ -47,6 +47,8 @@
 #include "shared/string-helpers.h"
 #include "shared/weston-assert.h"
 
+#include <weston-trace.h>
+
 static const char *const drm_output_propose_state_mode_as_string[] = {
 	[DRM_OUTPUT_PROPOSE_STATE_INVALID] = "invalid(uninitialized) state",
 	[DRM_OUTPUT_PROPOSE_STATE_MIXED] = "mixed state",
@@ -466,8 +468,13 @@ dma_feedback_update(struct drm_device *device,
 		    uint32_t action_needed,
 		    struct weston_dmabuf_feedback_tranche *scanout_tranche)
 {
+	struct weston_trace_flow feedback_flow __attribute__((unused)) = { 0 };
 	struct weston_dmabuf_feedback *dmabuf_feedback = pnode->surface->dmabuf_feedback;
 	struct drm_backend *b = device->backend;
+	const char *action_str;
+
+	WESTON_TRACE_FUNC(("feedback flow", &feedback_flow),
+			  ("pnode flow", &pnode->flow));
 
 	/* If we got here it means that the timer has triggered, so we have
 	 * pending actions with the dma-buf feedback. So we update and resend
@@ -479,11 +486,15 @@ dma_feedback_update(struct drm_device *device,
 	else
 		assert(0);
 
+	action_str = action_needed_to_str(action_needed);
 	drm_debug(b, "\t[repaint] Need to update and resend the "
 		     "dma-buf feedback for surface of paint node %s: %s\n",
-		     pnode->internal_name,
-		     action_needed_to_str(action_needed));
+		     pnode->internal_name, action_str);
 
+	WESTON_TRACE_ANNOTATE(("feedback flow", &feedback_flow),
+			      ("surface track", &pnode->surface->damage_track),
+			      ("feedback", action_str));
+	WESTON_TRACE_COMMIT_ANNOTATION("dmabuf feedback");
 	weston_dmabuf_feedback_send_all(b->compositor, dmabuf_feedback,
 					b->compositor->dmabuf_feedback_format_table);
 
@@ -504,6 +515,8 @@ dmabuf_feedback_maybe_update(struct drm_device *device,
 	struct timespec current_time, delta_time;
 	const time_t MAX_TIME_SECONDS = 2;
 	uint32_t try_view_on_plane_failure_reasons = pnode->try_view_on_plane_failure_reasons;
+
+	WESTON_TRACE_FUNC(("pnode flow", &pnode->flow));
 
 	/* Look for scanout tranche. If not found, add it but in disabled mode
 	 * (we still don't know if we'll have to send it to clients). This
