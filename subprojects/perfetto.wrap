@@ -1,6 +1,8 @@
-[wrap-git]
+[wrap-file]
 directory = perfetto
 
-url = https://android.googlesource.com/platform/external/perfetto
-revision = v47.0
-depth = 1
+source_url = https://github.com/google/perfetto/releases/download/v56.1/perfetto-cpp-sdk-src.zip
+source_filename = perfetto-cpp-sdk-src.zip
+source_hash = 9138dad1ab39048a61d3333e0c2ebf32a7497ed45e3b7daa5f3a02c14748af38
+lead_directory_missing = true
+patch_directory = perfetto
