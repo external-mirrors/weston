@@ -2664,7 +2664,8 @@ draw_paint_node(struct weston_paint_node *pnode,
 	WESTON_TRACE_ANNOTATE(("paint node flow", &pnode->flow),
 			      ("paint node", pnode->internal_name),
 			      ("label", pnode->surface->label),
-			      ("surface id", pnode->surface->s_id));
+			      ("surface id", pnode->surface->s_id),
+			      ("hole punching", pnode->need_hole));
 
 	gl_log_paint_node_start(gr, pnode);
 
