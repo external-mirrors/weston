@@ -513,7 +513,8 @@ paint_node_update_view_visibility_mask(struct weston_paint_node *pnode)
 static void
 paint_node_update_late(struct weston_paint_node *pnode)
 {
-	WESTON_TRACE_FUNC(("paint node flow", &pnode->flow));
+	WESTON_TRACE_FUNC(("paint node flow", &pnode->flow),
+			  ("need_hole", pnode->need_hole));
 	struct weston_surface *surf = pnode->surface;
 	struct weston_buffer *buffer = surf->buffer_ref.buffer;
 	bool vis_dirty = pnode->status & WESTON_PAINT_NODE_VISIBILITY_DIRTY;
