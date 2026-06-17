@@ -462,6 +462,37 @@ action_needed_to_str(enum actions_needed_dmabuf_feedback action_needed)
 }
 
 static void
+dma_feedback_update(struct drm_device *device,
+		    struct weston_paint_node *pnode,
+		    uint32_t action_needed,
+		    struct weston_dmabuf_feedback_tranche *scanout_tranche)
+{
+	struct weston_dmabuf_feedback *dmabuf_feedback = pnode->surface->dmabuf_feedback;
+	struct drm_backend *b = device->backend;
+
+	/* If we got here it means that the timer has triggered, so we have
+	 * pending actions with the dma-buf feedback. So we update and resend
+	 * them. */
+	if (action_needed == ACTION_NEEDED_ADD_SCANOUT_TRANCHE)
+		scanout_tranche->active = true;
+	else if (action_needed == ACTION_NEEDED_REMOVE_SCANOUT_TRANCHE)
+		scanout_tranche->active = false;
+	else
+		assert(0);
+
+	drm_debug(b, "\t[repaint] Need to update and resend the "
+		     "dma-buf feedback for surface of paint node %s: %s\n",
+		     pnode->internal_name,
+		     action_needed_to_str(action_needed));
+
+	weston_dmabuf_feedback_send_all(b->compositor, dmabuf_feedback,
+					b->compositor->dmabuf_feedback_format_table);
+
+	/* Set the timer to off */
+	dmabuf_feedback->action_needed = ACTION_NEEDED_NONE;
+}
+
+static void
 dmabuf_feedback_maybe_update(struct drm_device *device,
 			     struct weston_paint_node *pnode)
 {
@@ -552,25 +583,7 @@ dmabuf_feedback_maybe_update(struct drm_device *device,
 			return;
 	}
 
-	/* If we got here it means that the timer has triggered, so we have
-	 * pending actions with the dma-buf feedback. So we update and resend
-	 * them. */
-	if (action_needed == ACTION_NEEDED_ADD_SCANOUT_TRANCHE)
-		scanout_tranche->active = true;
-	else if (action_needed == ACTION_NEEDED_REMOVE_SCANOUT_TRANCHE)
-		scanout_tranche->active = false;
-	else
-		assert(0);
-
-	drm_debug(b, "\t[repaint] Need to update and resend the "
-		     "dma-buf feedback for surface of paint node %s: %s\n",
-		     pnode->internal_name,
-		     action_needed_to_str(action_needed));
-	weston_dmabuf_feedback_send_all(b->compositor, dmabuf_feedback,
-					b->compositor->dmabuf_feedback_format_table);
-
-	/* Set the timer to off */
-	dmabuf_feedback->action_needed = ACTION_NEEDED_NONE;
+	dma_feedback_update(device, pnode, action_needed, scanout_tranche);
 }
 
 static void
