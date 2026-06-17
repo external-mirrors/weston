@@ -44,6 +44,7 @@
 #include "linux-dmabuf.h"
 #include "presentation-time-server-protocol.h"
 #include "linux-dmabuf-unstable-v1-server-protocol.h"
+#include "weston-trace.h"
 #include "shared/string-helpers.h"
 #include "shared/weston-assert.h"
 
@@ -736,6 +737,10 @@ drm_output_find_plane_for_paint_node(struct drm_output_state *state,
 				     uint64_t current_lowest_zpos_underlay,
 				     bool need_underlay)
 {
+	WESTON_TRACE_FUNC(("paint node flow", &pnode->flow),
+			  ("paint node", pnode->internal_name),
+			  ("propose mode", drm_propose_state_mode_to_string(mode)),
+			  ("need underlay", need_underlay));
 	struct drm_output *output = state->output;
 	struct drm_device *device = output->device;
 	struct drm_backend *b = device->backend;
@@ -868,6 +873,13 @@ drm_output_find_plane_for_paint_node(struct drm_output_state *state,
 		scanout_plane_possible = possible_plane_mask & (1 << output->scanout_handle->plane->plane_idx) &&
 					 pnode_can_use_plane(state, scanout_handle, pnode);
 
+		WESTON_TRACE_ANNOTATE(
+			("scanout has view assigned", scanout_has_view_assigned),
+			("view matches entire output", view_matches_entire_output),
+			("may use scanout plane", may_use_scanout_plane),
+			("scanout plane possible", scanout_plane_possible)
+		);
+
 		if (may_use_scanout_plane && scanout_plane_possible && fb) {
 			uint64_t zpos;
 
@@ -881,6 +893,10 @@ drm_output_find_plane_for_paint_node(struct drm_output_state *state,
 								fb, zpos);
 			if (ps) {
 				drm_fb_unref(fb);
+				WESTON_TRACE_ANNOTATE(
+					("plane", drm_output_get_handle_type_name(scanout_handle)),
+					("plane id", scanout_plane->plane_id));
+				WESTON_TRACE_COMMIT_ANNOTATION("assign plane");
 				return ps;
 			}
 		}
@@ -986,6 +1002,9 @@ drm_output_find_plane_for_paint_node(struct drm_output_state *state,
 				     pnode->internal_name, p_name,
 				     pnode->need_hole ? "underlay" : "overlay",
 				     zpos);
+			WESTON_TRACE_ANNOTATE(("plane", p_name),
+					      ("plane id", plane->plane_id),
+					      ("need_hole", pnode->need_hole));
 			break;
 		}
 
@@ -997,6 +1016,7 @@ drm_output_find_plane_for_paint_node(struct drm_output_state *state,
 		pnode->try_view_on_plane_failure_reasons |=
 			FAILURE_REASONS_NO_PLANES_AVAILABLE;
 
+	WESTON_TRACE_COMMIT_ANNOTATION(ps ? "assign plane" : "plane failure");
 	/* if we have a plane state, it has its own ref to the fb; if not then
 	 * we drop ours here */
 	drm_fb_unref(fb);
@@ -1479,6 +1499,10 @@ drm_output_propose_state(struct weston_output *output_base,
 		pixman_region32_t tmp;
 		bool renderer_ok = (mode != DRM_OUTPUT_PROPOSE_STATE_PLANES_ONLY);
 
+		WESTON_TRACE_BEGIN_ANNOTATION();
+		WESTON_TRACE_ANNOTATE(("paint node flow", &pnode->flow),
+				      ("paint node", pnode->internal_name));
+
 		drm_debug(b, "\t\t\t[paint node] evaluating paint node %s for plane "
 		             "assignment on output %s (%lu)\n",
 			  pnode->internal_name, output->base.name,
@@ -1555,11 +1579,14 @@ drm_output_propose_state(struct weston_output *output_base,
 
 			pixman_region32_init(&obscured_or_background_region);
 			if (pnode == last_visible_pnode) {
+				pixman_bool_t is_background;
 				pixman_region32_union(&obscured_or_background_region,
 						      &background_region,
 						      &obscured_region);
-				if (pixman_region32_not_empty (&obscured_or_background_region))
+				is_background = pixman_region32_not_empty(&obscured_or_background_region);
+				if (is_background)
 					drm_debug(b, "\t\t\t[plane] adding background region\n");
+				WESTON_TRACE_ANNOTATE(("background region", is_background));
 			}
 
 			ps = drm_output_find_plane_for_paint_node(state, pnode, mode,
@@ -1571,6 +1598,12 @@ drm_output_propose_state(struct weston_output *output_base,
 
 			pixman_region32_fini(&obscured_or_background_region);
 		}
+
+		WESTON_TRACE_ANNOTATE(("try_view_on_plane_failure_reasons",
+				       (&(struct weston_trace_bitflags) {
+						.bitflags = pnode->try_view_on_plane_failure_reasons,
+						.map = weston_plane_failure_reasons_to_str
+					})));
 
 		if (ps) {
 			if (mode == DRM_OUTPUT_PROPOSE_STATE_PLANES_ONLY &&
@@ -1592,6 +1625,7 @@ drm_output_propose_state(struct weston_output *output_base,
 			drm_debug(b, "\t\t[paint node] failing state generation: "
 				      "placing paint node %s to renderer not allowed\n",
 				  pnode->internal_name);
+			WESTON_TRACE_COMMIT_ANNOTATION("state failure");
 			goto err_region;
 		} else if (!ps) {
 			FILE *dbg = weston_log_scope_stream(b->debug);
@@ -1612,6 +1646,8 @@ drm_output_propose_state(struct weston_output *output_base,
 					      &renderer_region,
 					      &pnode->visible);
 		}
+
+		WESTON_TRACE_COMMIT_ANNOTATION("plane check");
 	}
 
 	pixman_region32_fini(&renderer_region);
