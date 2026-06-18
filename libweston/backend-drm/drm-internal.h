@@ -120,7 +120,10 @@
  * possible type and use a matching format specifier.
  */
 #define DO_DRM_DEBUG_COMPLEX(scope, ...) \
-	weston_log_scope_printf(scope, __VA_ARGS__)
+	do { \
+		if (weston_log_scope_is_enabled(scope)) \
+			weston_log_scope_printf(scope, __VA_ARGS__); \
+	} while(0)
 
 #define DO_DRM_DEBUG(scope, string) \
 	weston_log_scope_puts(scope, string)
