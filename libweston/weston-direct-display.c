@@ -40,11 +40,24 @@ direct_display_enable(struct wl_client *client,
 		      struct wl_resource *dmabuf_res)
 {
 	struct linux_dmabuf_buffer *dmabuf;
+	int version = wl_resource_get_version(resource);
 
 	dmabuf = wl_resource_get_user_data(dmabuf_res);
 
-	if (!dmabuf)
+	if (!dmabuf) {
+		if (version == 1)
+			return;
+
+		wl_resource_post_error(resource, WESTON_DIRECT_DISPLAY_V1_ERROR_PARAMS_ALREADY_USED,
+				       "params was already used to create a wl_buffer");
 		return;
+	}
+
+	if (version > 1 && dmabuf->direct_display) {
+		wl_resource_post_error(resource, WESTON_DIRECT_DISPLAY_V1_ERROR_ALREADY_SET,
+				       "direct display already set for params");
+		return;
+	}
 
 	dmabuf->direct_display = true;
 }
@@ -86,7 +99,7 @@ WL_EXPORT int
 weston_direct_display_setup(struct weston_compositor *ec)
 {
 	if (!wl_global_create(ec->wl_display,
-			      &weston_direct_display_v1_interface, 1,
+			      &weston_direct_display_v1_interface, 2,
 			      ec, bind_direct_display))
 		return -1;
 

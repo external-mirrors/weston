@@ -24,7 +24,7 @@
     DEALINGS IN THE SOFTWARE.
   </copyright>
 
-  <interface name="weston_direct_display_v1" version="1">
+  <interface name="weston_direct_display_v1" version="2">
     <description summary="weston direct display">
       Weston extension to instruct the compositor to avoid any import
       of the dmabuf created by 'linux-dmabuf' protocol other than the display
@@ -54,6 +54,11 @@
       WARNING: This extension requires 'linux-dmabuf' protocol and
       'zwp_linux_buffer_params_v1' be already created by 'zwp_linux_buffer_v1'.
     </description>
+
+    <enum name="error" since="2">
+      <entry name="params_already_used" value="0" summary="dmabuf params already used"/>
+      <entry name="already_set" value="1" summary="already set"/>
+    </enum>
 
     <request name="enable">
       <description summary="forward buffer to display controller">
