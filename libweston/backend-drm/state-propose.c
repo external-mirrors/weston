@@ -1696,6 +1696,7 @@ err:
 void
 drm_assign_planes(struct weston_output *output_base)
 {
+	WESTON_TRACE_FUNC();
 	struct drm_output *output = to_drm_output(output_base);
 	struct drm_device *device = output->device;
 	struct drm_backend *b = device->backend;
@@ -1776,6 +1777,12 @@ drm_assign_planes(struct weston_output *output_base)
 
 	drm_debug(b, "\t[repaint] Using %s composition\n",
 		  drm_propose_state_mode_to_string(mode));
+
+	WESTON_TRACE_ANNOTATE(("output id", output_base->id),
+			      ("output", output_base->name),
+			      ("has underlay", output->has_underlay),
+			      ("composition", drm_propose_state_mode_to_string(mode)));
+	WESTON_TRACE_COMMIT_ANNOTATION("assign planes");
 
 	wl_list_for_each(pnode, &output->base.paint_node_z_order_list,
 			 z_order_link) {
