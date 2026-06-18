@@ -1068,8 +1068,11 @@ registry_handle_global(void *data, struct wl_registry *registry,
 			registry, id,
 			&zwp_linux_explicit_synchronization_v1_interface, 1);
 	} else if (strcmp(interface, "weston_direct_display_v1") == 0) {
+		if (version > 2)
+			version = 2;
 		d->direct_display = wl_registry_bind(registry,
-						     id, &weston_direct_display_v1_interface, 1);
+						     id, &weston_direct_display_v1_interface,
+						     version);
 	}
 }
 
