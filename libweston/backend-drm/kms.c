@@ -1349,6 +1349,21 @@ connector_add_prop_enum(drmModeAtomicReq *req,
 	return (ret <= 0) ? -1 : 0;
 }
 
+static const char *
+drm_plane_type_tag(const struct drm_plane *plane)
+{
+	static const char *tags[] = {
+		[WDRM_PLANE_TYPE_PRIMARY] = "pri",
+		[WDRM_PLANE_TYPE_CURSOR] = "cur",
+		[WDRM_PLANE_TYPE_OVERLAY] = "ovr",
+	};
+
+	if (plane->type < 0 || plane->type >= WDRM_PLANE_TYPE__COUNT)
+		return "???";
+
+	return tags[plane->type] ?: "?!?";
+}
+
 static int
 plane_add_prop(drmModeAtomicReq *req, struct drm_plane *plane,
 	       enum wdrm_plane_property prop, uint64_t val)
@@ -1359,8 +1374,10 @@ plane_add_prop(drmModeAtomicReq *req, struct drm_plane *plane,
 	struct drm_value_fmtbuf tmp;
 	int ret;
 
-	drm_debug(b, "\t\t\t[PLANE:%lu] %s (%lu) -> %s (0x%llx)\n",
-		  (unsigned long) plane->plane_id, info->name,
+	drm_debug(b, "\t\t\t[PLANE:%lu %s] %s (%lu) -> %s (0x%llx)\n",
+		  (unsigned long) plane->plane_id,
+		  drm_plane_type_tag(plane),
+		  info->name,
 		  (unsigned long) info->prop_id,
 		  (info->format_value ?: format_default)(val, &tmp),
 		  (unsigned long long) val);
@@ -1387,8 +1404,10 @@ plane_add_prop_enum(drmModeAtomicReq *req, const struct drm_plane *plane,
 	weston_assert_u32_lt(comp, wdrm_enum_value, info->num_enum_values);
 	eni = &info->enum_values[wdrm_enum_value];
 
-	drm_debug(b, "\t\t\t[PLANE:%lu] %s (%lu) -> %s (0x%llx)\n",
-		  (unsigned long) plane->plane_id, info->name,
+	drm_debug(b, "\t\t\t[PLANE:%lu %s] %s (%lu) -> %s (0x%llx)\n",
+		  (unsigned long) plane->plane_id,
+		  drm_plane_type_tag(plane),
+		  info->name,
 		  (unsigned long) info->prop_id,
 		  eni->name, (unsigned long long) eni->value);
 
