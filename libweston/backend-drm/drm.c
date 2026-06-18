@@ -4882,6 +4882,7 @@ err_udev:
 err_launcher:
 	weston_launcher_destroy(compositor->launcher);
 err_compositor:
+	weston_log_scope_destroy(b->debug);
 	wl_list_remove(&b->base.link);
 #ifdef BUILD_DRM_GBM
 	if (b->gbm)
