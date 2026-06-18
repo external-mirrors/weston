@@ -335,14 +335,13 @@ drm_backend_pageflip_counter_timer_disarm(struct drm_backend *b)
 	b->perf_page_flips_stats.timer_armed = false;
 }
 
-
 static void
 drm_backend_pageflip_counter_timer_disable_cb(struct weston_log_subscription *sub, void *data)
 {
 	struct drm_backend *b = data;
-	assert(b->perf_page_flips_stats.timer_armed);
 
-	drm_backend_pageflip_counter_timer_disarm(b);
+	if (b->perf_page_flips_stats.timer_armed)
+		drm_backend_pageflip_counter_timer_disarm(b);
 }
 
 static void
