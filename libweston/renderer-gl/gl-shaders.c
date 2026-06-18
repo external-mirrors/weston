@@ -712,6 +712,7 @@ gl_renderer_get_program(struct gl_renderer *gr,
 void
 gl_renderer_garbage_collect_programs(struct gl_renderer *gr)
 {
+	WESTON_TRACE_FUNC();
 	struct gl_shader *shader, *tmp;
 	unsigned count = 0;
 

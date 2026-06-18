@@ -762,6 +762,7 @@ timeline_render_point_handler(int fd, uint32_t mask, void *data)
 static EGLSyncKHR
 create_render_sync(struct gl_renderer *gr)
 {
+	WESTON_TRACE_FUNC();
 	static const EGLint attribs[] = { EGL_NONE };
 
 	if (!egl_display_has(gr, EXTENSION_ANDROID_NATIVE_FENCE_SYNC))
@@ -1080,6 +1081,7 @@ gl_renderer_update_renderbuffers(struct weston_output *output,
 				 pixman_region32_t *damage,
 				 weston_renderbuffer_t renderbuffer)
 {
+	WESTON_TRACE_FUNC();
 	struct gl_output_state *go = get_output_state(output);
 	struct gl_renderbuffer *rb;
 
@@ -1520,6 +1522,7 @@ gl_renderer_do_capture_tasks(struct gl_renderer *gr,
 			     struct gl_renderbuffer *rb,
 			     enum weston_output_capture_source source)
 {
+	WESTON_TRACE_FUNC();
 	struct gl_output_state *go = get_output_state(output);
 	const struct pixel_format_info *format;
 	struct weston_capture_task *ct;
@@ -1670,6 +1673,7 @@ ensure_surface_buffer_is_ready(struct gl_renderer *gr,
 			       struct gl_surface_state *gs,
 			       struct weston_paint_node *pnode)
 {
+	WESTON_TRACE_FUNC(("paint node flow", &pnode->flow));
 	EGLint attribs[] = {
 		EGL_SYNC_NATIVE_FENCE_FD_ANDROID,
 		-1,
@@ -2097,6 +2101,7 @@ pixman_region_to_egl(struct weston_output *output,
 		     EGLint **rects,
 		     EGLint *nrects)
 {
+	WESTON_TRACE_FUNC();
 	struct gl_output_state *go = get_output_state(output);
 	pixman_region32_t transformed;
 	struct pixman_box32 *box;
@@ -2205,6 +2210,7 @@ transform_damage(const struct weston_paint_node *pnode,
 		 struct clipper_quad **quads,
 		 int *nquads)
 {
+	WESTON_TRACE_FUNC(("paint node flow", &pnode->flow));
 	pixman_box32_t *rects;
 	int nrects, i;
 	bool compress, axis_aligned;
@@ -2362,10 +2368,9 @@ set_debug_mode(struct gl_renderer *gr,
 static void
 set_blend_state(struct gl_renderer *gr, struct weston_paint_node *pnode, bool state)
 {
+	WESTON_TRACE_FUNC();
 	if (gr->blend_state == state)
 		return;
-
-	WESTON_TRACE_BEGIN_ANNOTATION();
 
 	if (state) {
 		glEnable(GL_BLEND);
@@ -2397,6 +2402,7 @@ draw_mesh(struct gl_renderer *gr,
 	  int nidx,
 	  bool opaque)
 {
+	WESTON_TRACE_FUNC(("paint node flow", &pnode->flow));
 	struct gl_surface_state *gs = get_surface_state(pnode->surface);
 	struct gl_output_state *go = get_output_state(pnode->output);
 	struct gl_buffer_state *gb = gs->buffer;
@@ -2440,6 +2446,7 @@ repaint_region(struct gl_renderer *gr,
 	       struct gl_shader_config *sconf,
 	       bool opaque)
 {
+	WESTON_TRACE_FUNC(("paint node flow", &pnode->flow));
 	pixman_box32_t *rects;
 	struct clipper_vertex *positions;
 	uint32_t *barycentrics = NULL;
@@ -2600,6 +2607,7 @@ static void
 clear_region(struct gl_renderer *gr, struct weston_paint_node *pnode,
 	     pixman_region32_t *repaint)
 {
+	WESTON_TRACE_FUNC(("paint node flow", &pnode->flow));
 	struct weston_output *output = pnode->output;
 	struct gl_output_state *go = get_output_state(pnode->output);
 	EGLint *rects;
@@ -2748,6 +2756,7 @@ out:
 static void
 maybe_framebuffer_fetch_barrier(struct weston_output *output)
 {
+	WESTON_TRACE_FUNC();
 	struct gl_renderer *gr = get_renderer(output->compositor);
 	struct gl_output_state *go = get_output_state(output);
 
@@ -2790,6 +2799,7 @@ static void
 update_buffer_release_fences(struct weston_compositor *compositor,
 			     struct weston_output *output)
 {
+	WESTON_TRACE_FUNC();
 	struct weston_paint_node *pnode;
 
 	wl_list_for_each_reverse(pnode, &output->paint_node_z_order_list,
@@ -2857,6 +2867,7 @@ static void
 update_wireframe_tex(struct gl_renderer *gr,
 		     const struct weston_geometry *area)
 {
+	WESTON_TRACE_FUNC();
 	GLint filters[] = { GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR };
 	struct gl_texture_parameters params;
 	int new_size, i;
@@ -2903,6 +2914,7 @@ static void
 update_borders_tex(struct gl_renderer *gr,
 		   struct gl_output_state *go)
 {
+	WESTON_TRACE_FUNC();
 	GLint swizzles[] = { GL_BLUE, GL_GREEN, GL_RED, GL_ALPHA };
 	int i;
 
@@ -2954,6 +2966,7 @@ draw_output_border_texture(struct gl_renderer *gr,
 			   int32_t x, int32_t y,
 			   int32_t width, int32_t height)
 {
+	WESTON_TRACE_FUNC();
 	struct gl_border_image *img = &go->borders_current[side];
 	static GLushort indices [] = { 0, 1, 3, 3, 1, 2 };
 
@@ -2989,6 +3002,7 @@ static void
 draw_output_borders(struct weston_output *output,
 		    enum gl_border_status border_status)
 {
+	WESTON_TRACE_FUNC();
 	struct gl_shader_config sconf = {
 		.req = {
 			.variant = SHADER_VARIANT_RGBA,
@@ -3137,6 +3151,7 @@ blit_shadow_to_output(struct weston_output *output,
 	glBindTexture(GL_TEXTURE_2D, 0);
 	pixman_region32_fini(&translated_damage);
 }
+
 
 /* NOTE: We now allow falling back to ARGB gl visuals when XRGB is
  * unavailable, so we're assuming the background has no transparency

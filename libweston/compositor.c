@@ -3747,6 +3747,7 @@ static void
 weston_output_build_z_order_list(struct weston_compositor *compositor,
 				 struct weston_output *output)
 {
+	WESTON_TRACE_FUNC();
 	struct weston_paint_node *pnode;
 	struct weston_view *view;
 
@@ -3864,6 +3865,7 @@ weston_output_flush_damage_for_plane(struct weston_output *output,
 				     struct weston_plane *plane,
 				     pixman_region32_t *damage)
 {
+	WESTON_TRACE_FUNC();
 	struct weston_paint_node *driving_node;
 	struct weston_paint_node *pnode;
 	int nodes_on_plane = 0;
@@ -3900,6 +3902,7 @@ WL_EXPORT void
 weston_output_flush_damage_for_primary_plane(struct weston_output *output,
 					     pixman_region32_t *damage)
 {
+	WESTON_TRACE_FUNC();
 	weston_output_flush_damage_for_plane(output,
 					     &output->primary_plane,
 					     damage);
@@ -4290,6 +4293,7 @@ out:
 void
 weston_repaint_timer_arm(struct weston_compositor *compositor)
 {
+	WESTON_TRACE_FUNC();
 	struct weston_output *output;
 	bool any_should_repaint = false;
 	struct timespec now;

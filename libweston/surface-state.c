@@ -131,6 +131,8 @@ void
 weston_surface_state_init(struct weston_surface *surface,
 			  struct weston_surface_state *state)
 {
+	WESTON_TRACE_FUNC();
+
 	state->flow.id = 0;
 	state->status = WESTON_SURFACE_CLEAN;
 	state->buffer_ref.buffer = NULL;
@@ -733,6 +735,7 @@ static struct weston_transaction_queue *
 weston_surface_find_parent_transaction_queue(struct weston_compositor *comp,
 					     struct weston_surface *surface)
 {
+	WESTON_TRACE_FUNC();
 	struct weston_transaction_queue *tq;
 	struct weston_transaction *tr;
 	struct weston_content_update *cu;
@@ -786,6 +789,7 @@ weston_transaction_add_content_update(struct weston_transaction *tr,
 				      struct weston_surface *surface,
 				      struct weston_surface_state *state)
 {
+	WESTON_TRACE_FUNC();
 	struct weston_content_update *cu;
 
 	cu = xzalloc(sizeof *cu);
@@ -848,6 +852,8 @@ static bool
 weston_surface_state_ready(struct weston_surface *surface,
 			   struct weston_surface_state *state)
 {
+	WESTON_TRACE_FUNC(("surface state flow", &state->flow));
+
 	if (!weston_fifo_surface_state_ready(surface, state))
 		return false;
 

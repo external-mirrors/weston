@@ -455,6 +455,7 @@ void
 drm_output_update_complete(struct drm_output *output, uint32_t flags,
 			   unsigned int sec, unsigned int usec)
 {
+	WESTON_TRACE_FUNC();
 	struct drm_device *device = output->device;
 	struct drm_plane_state *ps;
 	struct timespec ts;
@@ -522,6 +523,7 @@ static struct drm_fb *
 drm_output_render_pixman(struct drm_output_state *state,
 			 pixman_region32_t *damage)
 {
+	WESTON_TRACE_FUNC();
 	struct drm_output *output = state->output;
 	struct weston_compositor *ec = output->base.compositor;
 
@@ -536,6 +538,7 @@ drm_output_render_pixman(struct drm_output_state *state,
 void
 drm_output_render(struct drm_output_state *state)
 {
+	WESTON_TRACE_FUNC();
 	struct drm_output *output = state->output;
 	struct drm_device *device = output->device;
 	struct weston_compositor *c = output->base.compositor;
@@ -861,6 +864,7 @@ err:
 static void
 cursor_bo_update(struct drm_output *output, struct weston_paint_node *pnode)
 {
+	WESTON_TRACE_FUNC();
 	struct drm_device *device = output->device;
 	struct gbm_bo *bo = output->gbm_cursor_fb[output->current_cursor]->bo;
 	struct weston_buffer *buffer = pnode->surface->buffer_ref.buffer;
@@ -909,6 +913,7 @@ drm_output_prepare_repaint(struct weston_output *output_base)
 static int
 drm_output_repaint(struct weston_output *output_base)
 {
+	WESTON_TRACE_FUNC();
 	struct weston_compositor *compositor = output_base->compositor;
 	struct drm_output *output = to_drm_output(output_base);
 	struct drm_output_state *state = NULL;

@@ -44,6 +44,7 @@
 #include "drm-internal.h"
 #include "pixel-formats.h"
 #include "presentation-time-server-protocol.h"
+#include "weston-trace.h"
 
 #ifndef DRM_CAP_ATOMIC_ASYNC_PAGE_FLIP
 #define DRM_CAP_ATOMIC_ASYNC_PAGE_FLIP 0x15
@@ -2186,6 +2187,7 @@ static void
 atomic_flip_handler(int fd, unsigned int frame, unsigned int sec,
 		    unsigned int usec, unsigned int crtc_id, void *data)
 {
+	WESTON_TRACE_FUNC();
 	struct drm_device *device = data;
 	struct drm_backend *b = device->backend;
 	struct weston_compositor *ec = b->compositor;

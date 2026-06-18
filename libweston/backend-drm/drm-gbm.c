@@ -46,6 +46,7 @@
 #include "linux-dmabuf.h"
 #include "linux-explicit-synchronization.h"
 #include "shared/xalloc.h"
+#include "weston-trace.h"
 
 /* When initializing EGL, if the preferred buffer format isn't available
  * we may be able to substitute an ARGB format for an XRGB one.
@@ -776,6 +777,7 @@ drm_output_fini_vulkan(struct drm_output *output)
 struct drm_fb *
 drm_output_render_gl(struct drm_output_state *state, pixman_region32_t *damage)
 {
+	WESTON_TRACE_FUNC();
 	struct drm_output *output = state->output;
 	struct drm_device *device = output->device;
 	struct gbm_bo *bo;
