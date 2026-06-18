@@ -402,8 +402,13 @@ create_dmabuf_buffer(struct display *display, struct buffer *buffer,
 
 	params = zwp_linux_dmabuf_v1_create_params(display->dmabuf);
 
-	if ((opts & OPT_DIRECT_DISPLAY) && display->direct_display)
+	if (opts & OPT_DIRECT_DISPLAY) {
+		if (!display->direct_display) {
+			fprintf(stderr, "error: direct display protocol unavailable\n");
+			goto error;
+		}
 		weston_direct_display_v1_enable(display->direct_display, params);
+	}
 
 	if (opts & OPT_RESTRICTED_BUFFER) {
 		if (!display->restricted_buffer) {
