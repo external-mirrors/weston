@@ -2217,7 +2217,6 @@ struct protected_surface {
 };
 
 struct content_protection {
-	struct weston_compositor *compositor;
 	struct wl_listener destroy_listener;
 	struct weston_log_scope *debug;
 	struct wl_list protected_list;

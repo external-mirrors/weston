@@ -182,6 +182,7 @@ static void
 cp_destroy_listener(struct wl_listener *listener, void *data)
 {
 	struct content_protection *cp;
+	struct weston_compositor *compositor = data;
 
 	cp = container_of(listener, struct content_protection,
 			  destroy_listener);
@@ -192,7 +193,7 @@ cp_destroy_listener(struct wl_listener *listener, void *data)
 	if (cp->surface_protection_update)
 		wl_event_source_remove(cp->surface_protection_update);
 	cp->surface_protection_update = NULL;
-	cp->compositor->content_protection = NULL;
+	compositor->content_protection = NULL;
 	free(cp);
 }
 
@@ -332,7 +333,6 @@ weston_compositor_enable_content_protection(struct weston_compositor *compositor
 	cp = zalloc(sizeof(*cp));
 	if (cp == NULL)
 		return -1;
-	cp->compositor = compositor;
 
 	compositor->content_protection = cp;
 	wl_list_init(&cp->protected_list);
