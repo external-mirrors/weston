@@ -1,5 +1,6 @@
 # you need to add here any files you add to the toc directory as well
 files = [
+	'content-restrictions.rst',
 	'kiosk-shell.rst',
 	'ivi-shell.rst',
 	'running-weston.rst',

@@ -10,6 +10,7 @@ Welcome to Weston documentation!
    toc/test-suite.rst
    toc/kiosk-shell.rst
    toc/ivi-shell.rst
+   toc/content-restrictions.rst
 
 Weston
 ------
