@@ -1305,6 +1305,7 @@ vulkan_renderer_cmd_end_wait(struct vulkan_renderer *vr,
 static bool
 vulkan_renderer_do_read_pixels(struct vulkan_renderer *vr,
 			       VkImage color_attachment,
+			       VkImageLayout image_layout,
 			       struct vulkan_output_state *vo,
 			       const struct pixel_format_info *pixel_format,
 			       void *pixels, int stride,
@@ -1325,7 +1326,7 @@ vulkan_renderer_do_read_pixels(struct vulkan_renderer *vr,
 	vulkan_renderer_cmd_begin(vr, &cmd_buffer);
 
 	transition_image_layout(cmd_buffer, color_attachment,
-				VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+				image_layout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 				VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
 				VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT,
 				VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED);
@@ -1339,7 +1340,7 @@ vulkan_renderer_do_read_pixels(struct vulkan_renderer *vr,
 				 rect->width, rect->height);
 
 	transition_image_layout(cmd_buffer, color_attachment,
-				VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+				VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image_layout,
 				VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
 				VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
 				VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED);
@@ -1385,6 +1386,7 @@ vulkan_renderer_do_read_pixels(struct vulkan_renderer *vr,
 static bool
 vulkan_renderer_do_capture(struct vulkan_renderer *vr,
 			   VkImage color_attachment,
+			   VkImageLayout image_layout,
 			   struct vulkan_output_state *vo,
 			   struct weston_buffer *into,
 			   const struct weston_geometry *rect)
@@ -1398,7 +1400,7 @@ vulkan_renderer_do_capture(struct vulkan_renderer *vr,
 
 	wl_shm_buffer_begin_access(shm);
 
-	ret = vulkan_renderer_do_read_pixels(vr, color_attachment, vo, pixel_format,
+	ret = vulkan_renderer_do_read_pixels(vr, color_attachment, image_layout, vo, pixel_format,
 					     wl_shm_buffer_get_data(shm), into->stride, rect);
 
 	wl_shm_buffer_end_access(shm);
@@ -1409,6 +1411,7 @@ vulkan_renderer_do_capture(struct vulkan_renderer *vr,
 static void
 vulkan_renderer_do_capture_tasks(struct vulkan_renderer *vr,
 				 VkImage color_attachment,
+				 VkImageLayout image_layout,
 				 struct weston_output *output,
 				 enum weston_output_capture_source source)
 {
@@ -1454,7 +1457,8 @@ vulkan_renderer_do_capture_tasks(struct vulkan_renderer *vr,
 			continue;
 		}
 
-		if (vulkan_renderer_do_capture(vr, color_attachment, vo, buffer, &rect))
+		if (vulkan_renderer_do_capture(vr, color_attachment, image_layout,
+					       vo, buffer, &rect))
 			weston_capture_task_retire_complete(ct);
 		else
 			weston_capture_task_retire_failed(ct, "Vulkan: capture failed");
@@ -2387,6 +2391,7 @@ vulkan_renderer_repaint_output(struct weston_output *output,
 	struct weston_paint_node *pnode;
 	VkResult result;
 	uint32_t swapchain_index;
+	VkImageLayout expected_layout;
 
 	assert(vo);
 	assert(!renderbuffer ||
@@ -2443,11 +2448,13 @@ vulkan_renderer_repaint_output(struct weston_output *output,
 
 		im = &vo->images[swapchain_index];
 		rb = im->renderbuffer;
+		expected_layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 		break;
 	case VULKAN_OUTPUT_HEADLESS:
 		assert(renderbuffer);
 		rb = renderbuffer;
 		im = rb->image;
+		expected_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		break;
 	default:
 		abort();
@@ -2558,9 +2565,9 @@ vulkan_renderer_repaint_output(struct weston_output *output,
 	result = vkQueueSubmit(vr->queue, 1, &submit_info, fr->fence);
 	check_vk_success(result, "vkQueueSubmit");
 
-	vulkan_renderer_do_capture_tasks(vr, im->image, output,
+	vulkan_renderer_do_capture_tasks(vr, im->image, expected_layout, output,
 					 WESTON_OUTPUT_CAPTURE_SOURCE_FRAMEBUFFER);
-	vulkan_renderer_do_capture_tasks(vr, im->image, output,
+	vulkan_renderer_do_capture_tasks(vr, im->image, expected_layout, output,
 					 WESTON_OUTPUT_CAPTURE_SOURCE_FULL_FRAMEBUFFER);
 
 	if (rb->buffer) {
@@ -2581,8 +2588,8 @@ vulkan_renderer_repaint_output(struct weston_output *output,
 			.height = extents.y2 - extents.y1,
 		};
 
-		vulkan_renderer_do_read_pixels(vr, im->image, vo,
-					       compositor->read_format,
+		vulkan_renderer_do_read_pixels(vr, im->image, expected_layout,
+					       vo, compositor->read_format,
 					       pixels, stride, &rect);
 	}
 
