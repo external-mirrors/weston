@@ -155,8 +155,8 @@ if not get_option('backend-' + backend_default)
 	error('Backend @0@ was chosen as native but is not being built.'.format(backend_default))
 endif
 
-dep_wayland_server = dependency('wayland-server', version: '>= 1.22.0')
-dep_wayland_client = dependency('wayland-client', version: '>= 1.22.0')
+dep_wayland_server = dependency('wayland-server', version: '>= 1.24.0')
+dep_wayland_client = dependency('wayland-client', version: '>= 1.24.0')
 dep_pixman = dependency('pixman-1', version: '>= 0.25.2')
 dep_xkbcommon = dependency('xkbcommon', version: '>= 0.5.0')
 dep_libinput = dependency('libinput', version: '>= 1.2.0')

@@ -2681,8 +2681,12 @@ wayland_backend_handle_event(int fd, uint32_t mask, void *data)
 		return 0;
 	}
 
-	if (mask & WL_EVENT_READABLE)
-		count = wl_display_dispatch(b->parent.wl_display);
+	if (mask & WL_EVENT_READABLE) {
+		struct timespec timeout = {};
+
+		count = wl_display_dispatch_timeout(b->parent.wl_display,
+						    &timeout);
+	}
 	if (mask & WL_EVENT_WRITABLE)
 		wl_display_flush(b->parent.wl_display);
 
