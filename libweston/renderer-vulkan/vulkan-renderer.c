@@ -1308,12 +1308,14 @@ vulkan_renderer_do_read_pixels(struct vulkan_renderer *vr,
 			       VkImageLayout image_layout,
 			       struct vulkan_output_state *vo,
 			       const struct pixel_format_info *pixel_format,
-			       void *pixels, int stride,
+			       void *pixels, int dst_stride,
+			       int dst_x, int dst_y,
 			       const struct weston_geometry *rect)
 {
 	VkBuffer dst_buffer;
 	VkDeviceMemory dst_memory;
-	VkDeviceSize buffer_size = stride * vo->fb_size.height;
+	int src_stride = vo->fb_size.width * (pixel_format->bpp / 8);
+	VkDeviceSize buffer_size = src_stride * vo->fb_size.height;
 	VkResult result;
 
 	create_buffer(vr, buffer_size,
@@ -1334,7 +1336,7 @@ vulkan_renderer_do_read_pixels(struct vulkan_renderer *vr,
 	copy_sub_image_to_buffer(cmd_buffer,
 				 dst_buffer, color_attachment,
 				 vo->fb_size.width, vo->fb_size.height,
-				 (stride / (pixel_format->bpp/8)),
+				 vo->fb_size.width,
 				 pixel_format->bpp,
 				 rect->x, rect->y,
 				 rect->width, rect->height);
@@ -1349,7 +1351,7 @@ vulkan_renderer_do_read_pixels(struct vulkan_renderer *vr,
 	vulkan_renderer_cmd_end_wait(vr, &cmd_buffer);
 
 	/* Map image memory so we can start copying from it */
-	void* buffer_map;
+	void *buffer_map;
 	result = vkMapMemory(vr->dev, dst_memory, 0, VK_WHOLE_SIZE, 0, &buffer_map);
 	check_vk_success(result, "vkMapMemory");
 
@@ -1359,12 +1361,12 @@ vulkan_renderer_do_read_pixels(struct vulkan_renderer *vr,
 	pixman_image_t *image_src;
 	image_src = pixman_image_create_bits_no_clear(pixel_format->pixman_format,
 						      vo->fb_size.width, vo->fb_size.height,
-						      buffer_map, stride);
+						      buffer_map, src_stride);
 
 	pixman_image_t *image_dst;
 	image_dst = pixman_image_create_bits_no_clear(pixel_format->pixman_format,
-						      vo->fb_size.width, vo->fb_size.height,
-						      pixels, stride);
+						      rect->width, rect->height,
+						      pixels, dst_stride);
 
 	pixman_image_composite32(PIXMAN_OP_SRC,
 				 image_src,        /* src */
@@ -1372,7 +1374,7 @@ vulkan_renderer_do_read_pixels(struct vulkan_renderer *vr,
 				 image_dst,        /* dest */
 				 rect->x, rect->y, /* src x,y */
 				 0, 0,             /* mask x,y */
-				 rect->x, rect->y, /* dest x,y */
+				 dst_x, dst_y,     /* dest x,y */
 				 rect->width, rect->height);
 
 	pixman_image_unref(image_src);
@@ -1400,8 +1402,10 @@ vulkan_renderer_do_capture(struct vulkan_renderer *vr,
 
 	wl_shm_buffer_begin_access(shm);
 
+	/* This always copies the requested rect into the start
+	 * of the target shm, so dest coords 0,0 */
 	ret = vulkan_renderer_do_read_pixels(vr, color_attachment, image_layout, vo, pixel_format,
-					     wl_shm_buffer_get_data(shm), into->stride, rect);
+					     wl_shm_buffer_get_data(shm), into->stride, 0, 0, rect);
 
 	wl_shm_buffer_end_access(shm);
 
@@ -2590,7 +2594,7 @@ vulkan_renderer_repaint_output(struct weston_output *output,
 
 		vulkan_renderer_do_read_pixels(vr, im->image, expected_layout,
 					       vo, compositor->read_format,
-					       pixels, stride, &rect);
+					       pixels, stride, rect.x, rect.y, &rect);
 	}
 
 	if (vo->output_type == VULKAN_OUTPUT_SWAPCHAIN) {
