@@ -2346,6 +2346,7 @@ vulkan_renderer_create_swapchain(struct weston_output *output,
 
 	for (uint32_t i = 0; i < vo->image_count; i++) {
 		struct vulkan_renderer_image *im = &vo->images[i];
+		im->image = swapchain_images[i];
 
 		create_image_view(vr->dev, swapchain_images[i], format, &im->image_view);
 		create_framebuffer(vr->dev, vo->renderpass, im->image_view,
