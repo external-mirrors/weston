@@ -486,13 +486,7 @@ cmlcms_color_profile_destroy(struct cmlcms_color_profile *cprof)
 	switch (cprof->type) {
 	case CMLCMS_PROFILE_TYPE_ICC:
 		cmsCloseProfile(cprof->icc.profile.p);
-		/**
-		 * TODO: drop this if when we convert the stock sRGB profile to
-		 * a parametric one. When we do that, all ICC profiles will have
-		 * their ro_anonymous_file, so we won't have to check.
-		 */
-		if (cprof->icc.prof_rofile)
-			os_ro_anonymous_file_destroy(cprof->icc.prof_rofile);
+		os_ro_anonymous_file_destroy(cprof->icc.prof_rofile);
 		break;
 	case CMLCMS_PROFILE_TYPE_PARAMS:
 		free(cprof->params);
