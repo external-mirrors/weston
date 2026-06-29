@@ -91,21 +91,16 @@ util_perfetto_trace_end(void)
 void
 util_perfetto_trace_full_begin(const char *fname, uint64_t track_id, uint64_t id, clockid_t clock, uint64_t timestamp)
 {
-	if (id) {
-		TRACE_EVENT_BEGIN(UTIL_PERFETTO_CATEGORY_DEFAULT_STR,
-				  nullptr,
-				  perfetto::Track(track_id),
-				  perfetto::TraceTimestamp{clockid_to_perfetto_clock(clock), timestamp},
-				  perfetto::Flow::ProcessScoped(id),
-				  [&](perfetto::EventContext ctx) { ctx.event()->set_name(fname); });
-		return;
-	}
 
-   TRACE_EVENT_BEGIN(UTIL_PERFETTO_CATEGORY_DEFAULT_STR,
-		     nullptr,
-		     perfetto::Track(track_id),
-		     perfetto::TraceTimestamp{clockid_to_perfetto_clock(clock), timestamp},
-		     [&](perfetto::EventContext ctx) { ctx.event()->set_name(fname); });
+	TRACE_EVENT_BEGIN(UTIL_PERFETTO_CATEGORY_DEFAULT_STR,
+			  nullptr,
+			  perfetto::Track(track_id),
+			  perfetto::TraceTimestamp{clockid_to_perfetto_clock(clock), timestamp},
+			  [&](perfetto::EventContext ctx) {
+				ctx.event()->set_name(fname);
+				if (id)
+					perfetto::Flow::ProcessScoped(id)(ctx);
+			  });
 }
 
 uint64_t
@@ -140,25 +135,14 @@ util_perfetto_counter_set(const char *name, double value)
 void
 util_perfetto_trace_instant_timestamp(const char *name, uint64_t track_id, uint64_t id, clockid_t clock, uint64_t ts)
 {
-	if (id) {
-		TRACE_EVENT_INSTANT(UTIL_PERFETTO_CATEGORY_DEFAULT_STR,
-				    nullptr,
-				    perfetto::Track(track_id),
-				    perfetto::TraceTimestamp{clockid_to_perfetto_clock(clock), ts},
-				    perfetto::Flow::ProcessScoped(id),
-				    [&](perfetto::EventContext ctx) {
-					ctx.event()->set_name(name);
-					ctx.AddDebugAnnotation(name, ts);
-		});
-		return;
-	}
-
 	TRACE_EVENT_INSTANT(UTIL_PERFETTO_CATEGORY_DEFAULT_STR,
 			    nullptr,
 			    perfetto::Track(track_id),
 			    perfetto::TraceTimestamp{clockid_to_perfetto_clock(clock), ts},
 			    [&](perfetto::EventContext ctx) {
 				ctx.event()->set_name(name);
+				if (id)
+					perfetto::Flow::ProcessScoped(id)(ctx);
 				ctx.AddDebugAnnotation(name, ts);
 	});
 }
