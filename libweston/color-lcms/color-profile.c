@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <libweston/libweston.h>
+#include <libweston/linalg-3.h>
 
 #include "color.h"
 #include "color-lcms.h"
@@ -37,18 +38,6 @@
 #include "shared/string-helpers.h"
 #include "shared/xalloc.h"
 #include "shared/weston-assert.h"
-
-struct xyz_arr_flt {
-	float v[3];
-};
-
-static double
-xyz_dot_prod(const struct xyz_arr_flt a, const struct xyz_arr_flt b)
-{
-	return (double)a.v[0] * b.v[0] +
-	       (double)a.v[1] * b.v[1] +
-	       (double)a.v[2] * b.v[2];
-}
 
 /**
  * Graeme sketched a linearization method there:
@@ -89,28 +78,28 @@ build_eotf_from_clut_profile(cmsContext lcms_ctx,
 		goto release;
 
 	for (ch = 0; ch < 3; ch++) {
-		struct xyz_arr_flt prim_xyz_max;
-		struct xyz_arr_flt prim_xyz;
+		struct weston_vec3f prim_xyz_max;
+		struct weston_vec3f prim_xyz;
 		double xyz_square_magnitude;
-		float rgb[3] = { 0.0f, 0.0f, 0.0f };
+		struct weston_vec3f rgb = WESTON_VEC3F_ZERO;
 
-		rgb[ch] = 1.0f;
-		cmsDoTransform(transform_rgb_to_xyz, rgb, prim_xyz_max.v, 1);
+		rgb.el[ch] = 1.0f;
+		cmsDoTransform(transform_rgb_to_xyz, rgb.el, prim_xyz_max.el, 1);
 
 		/**
 		 * Calculate xyz square of magnitude uses single channel 100% and
 		 * others are zero.
 		 */
-		xyz_square_magnitude = xyz_dot_prod(prim_xyz_max, prim_xyz_max);
+		xyz_square_magnitude = weston_v3f_dot_v3f(prim_xyz_max, prim_xyz_max);
 		/**
 		 * Build rgb tone curves
 		 */
 		for (point = 0; point < num_points; point++) {
-			rgb[ch] = (float)point / div;
-			cmsDoTransform(transform_rgb_to_xyz, rgb, prim_xyz.v, 1);
-			curve_array[ch][point] = xyz_dot_prod(prim_xyz,
-							      prim_xyz_max) /
-						 xyz_square_magnitude;
+			rgb.el[ch] = (float)point / div;
+			cmsDoTransform(transform_rgb_to_xyz, rgb.el, prim_xyz.el, 1);
+			curve_array[ch][point] =
+				weston_v3f_dot_v3f(prim_xyz, prim_xyz_max) /
+					xyz_square_magnitude;
 		}
 
 		/**
