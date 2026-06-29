@@ -123,6 +123,9 @@ struct cmlcms_color_profile {
 		struct lcmsProfilePtr profile;
 		struct cmlcms_md5_sum md5sum;
 		struct ro_anonymous_file *prof_rofile;
+
+		/** A parametric approximation */
+		struct weston_color_profile *paralt;
 	} icc;
 
 	/* Only for CMLCMS_PROFILE_TYPE_PARAMS */
@@ -334,5 +337,10 @@ cmlcms_color_transformer_eval(struct weston_compositor *compositor,
 char *
 cmlcms_color_transformer_string(int indent,
 				const struct cmlcms_color_transformer *t);
+
+bool
+init_curve_from_trc_data(struct weston_compositor *compositor,
+			 struct weston_color_curve *curve,
+			 const struct lcmsToneCurveTriple *trcset);
 
 #endif /* WESTON_COLOR_LCMS_H */

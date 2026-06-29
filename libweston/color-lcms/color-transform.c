@@ -841,7 +841,7 @@ err:
 	return false;
 }
 
-static bool
+bool
 init_curve_from_trc_data(struct weston_compositor *compositor,
 			 struct weston_color_curve *curve,
 			 const struct lcmsToneCurveTriple *trcset)

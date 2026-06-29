@@ -758,6 +758,9 @@ weston_color_format_to_str(enum weston_color_format c);
 char *
 weston_color_format_mask_to_str(uint32_t color_format_mask);
 
+struct weston_CIExy
+weston_CIExy_from_XYZ(struct weston_vec3f c);
+
 struct weston_vec3f
 weston_CIExy_to_XYZ(struct weston_CIExy c);
 

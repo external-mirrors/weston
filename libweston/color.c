@@ -1007,6 +1007,20 @@ weston_colorimetry_mask_to_str(uint32_t colorimetry_mask)
 	return bits_to_str(colorimetry_mask, weston_colorimetry_mode_to_str);
 }
 
+WL_EXPORT struct weston_CIExy
+weston_CIExy_from_XYZ(struct weston_vec3f c)
+{
+	float sum = c.x + c.y + c.z;
+
+	if (!(sum > 1e-4f))
+		return (struct weston_CIExy) { 0.0f, 0.0f };
+
+	return (struct weston_CIExy) {
+		.x = c.x / sum,
+		.y = c.y / sum,
+	};
+}
+
 static float
 CIExy_to_z(struct weston_CIExy c)
 {

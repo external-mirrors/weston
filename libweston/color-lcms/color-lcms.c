@@ -450,7 +450,7 @@ cmlcms_destroy(struct weston_color_manager *cm_base)
 	/* TODO: this is an ugly hack. Remove it when we stop leaking surfaces
 	 * when shutting down Weston with client surfaces alive. */
 	if (!wl_list_empty(&cm->color_profile_list)) {
-		struct cmlcms_color_profile *cprof, *tmp;
+		struct cmlcms_color_profile *cprof;
 
 		weston_log("BUG: When Weston is shutting down with client surfaces alive, it may\n" \
 			   "leak them. This is a bug that needs to be fixed. At this point (in which\n" \
@@ -460,8 +460,11 @@ cmlcms_destroy(struct weston_color_manager *cm_base)
 			   "bug, this didn't happen, and now we destroy the color profiles and leave\n" \
 			   "dangling pointers around.");
 
-		wl_list_for_each_safe(cprof, tmp, &cm->color_profile_list, link)
+		while (!wl_list_empty(&cm->color_profile_list)) {
+			cprof = wl_container_of(cm->color_profile_list.next, cprof, link);
+
 			cmlcms_color_profile_destroy(cprof);
+		}
 	}
 
 	assert(wl_list_empty(&cm->color_transform_list));

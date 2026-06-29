@@ -475,6 +475,7 @@ cmlcms_color_profile_destroy(struct cmlcms_color_profile *cprof)
 
 	switch (cprof->type) {
 	case CMLCMS_PROFILE_TYPE_ICC:
+		weston_color_profile_unref(cprof->icc.paralt);
 		cmsCloseProfile(cprof->icc.profile.p);
 		os_ro_anonymous_file_destroy(cprof->icc.prof_rofile);
 		break;
@@ -725,6 +726,159 @@ cmlcms_send_image_desc_info(struct cm_image_desc_info *cm_image_desc_info,
 	return false;
 }
 
+static struct weston_color_tf
+color_tf_from_icc(struct weston_compositor *compositor,
+		  struct lcmsProfilePtr icc)
+{
+	static const cmsTagSignature trc_tags[] = {
+		cmsSigRedTRCTag, cmsSigGreenTRCTag, cmsSigBlueTRCTag,
+	};
+	struct weston_color_curve curve;
+	struct lcmsToneCurveTriple trcset;
+	unsigned i;
+
+	struct weston_color_tf default_tf = {
+		.info = weston_color_tf_info_from(compositor, WESTON_TF_GAMMA22),
+	};
+
+	/*
+	 * If it's not a matrix-shaper, let's not bother with trying to
+	 * recover the curves as LUTs and having to fit power curves to them.
+	 * This is just an approximation and it is ok to be off.
+	 */
+	if (!cmsIsMatrixShaper(icc.p))
+		return default_tf;
+
+	for (i = 0; i < 3; i++) {
+		trcset.t[i] = cmsReadTag(icc.p, trc_tags[i]);
+		if (!trcset.t[i])
+			return default_tf;
+	}
+
+	if (!init_curve_from_trc_data(compositor, &curve, &trcset))
+		return default_tf;
+
+	if (curve.type != WESTON_COLOR_CURVE_TYPE_ENUM)
+		return default_tf;
+
+	if (curve.u.enumerated.tf_direction != WESTON_FORWARD_TF)
+		return default_tf;
+
+	return curve.u.enumerated.tf;
+}
+
+static bool
+convert_device_rgb_to_xyz(cmsContext lcms_ctx,
+			  struct lcmsProfilePtr icc,
+			  const struct weston_vec3f *device_rgb,
+			  struct weston_vec3f *XYZ,
+			  size_t len)
+{
+	struct lcmsProfilePtr xyz_profile = { NULL };
+	cmsHTRANSFORM transform_rgb_to_xyz = NULL;
+	bool ret = false;
+
+	xyz_profile.p = cmsCreateXYZProfileTHR(lcms_ctx);
+	if (!xyz_profile.p)
+		goto out;
+
+	/*
+	 * Remove chromatic adaptation, because we want to know the emission
+	 * of the device rather than its adaptation to the PCS.
+	 * No black-point compensation either.
+	 */
+	cmsSetAdaptationStateTHR(lcms_ctx, 0.0);
+	transform_rgb_to_xyz = cmsCreateTransformTHR(lcms_ctx,
+						     icc.p, TYPE_RGB_FLT,
+						     xyz_profile.p, TYPE_XYZ_FLT,
+						     INTENT_ABSOLUTE_COLORIMETRIC,
+						     0);
+	if (!transform_rgb_to_xyz)
+		goto out;
+
+	cmsDoTransform(transform_rgb_to_xyz, device_rgb, XYZ, len);
+	ret = true;
+
+out:
+	if (transform_rgb_to_xyz)
+		cmsDeleteTransform(transform_rgb_to_xyz);
+	if (xyz_profile.p)
+		cmsCloseProfile(xyz_profile.p);
+
+	return ret;
+}
+
+enum cmlcms_stimulus_index {
+	STIND_BP = 0,
+	STIND_WP,
+	STIND_R,
+	STIND_G,
+	STIND_B,
+	STIND_COUNT
+};
+
+static struct weston_color_profile *
+create_parametric_alternative_to_icc(struct cmlcms_color_profile *cprof, char **errmsg)
+{
+	struct weston_color_manager_lcms *cm = to_cmlcms(cprof->base.cm);
+	static const struct weston_vec3f device_rgb[STIND_COUNT] = {
+		[STIND_BP] = WESTON_VEC3F(0.0f, 0.0f, 0.0f),
+		[STIND_WP] = WESTON_VEC3F(1.0f, 1.0f, 1.0f),
+		[STIND_R] = WESTON_VEC3F(1.0f, 0.0f, 0.0f),
+		[STIND_G] = WESTON_VEC3F(0.0f, 1.0f, 0.0f),
+		[STIND_B] = WESTON_VEC3F(0.0f, 0.0f, 1.0f),
+	};
+	struct weston_vec3f XYZ[STIND_COUNT];
+	struct weston_color_profile_params params = {};
+	struct weston_color_profile *paralt;
+	char *name_part;
+	float lum_factor;
+	unsigned i;
+	bool ret;
+
+	params.tf = color_tf_from_icc(cprof->base.cm->compositor, cprof->icc.profile);
+
+	if (!convert_device_rgb_to_xyz(cm->lcms_ctx, cprof->icc.profile,
+				       device_rgb, XYZ, STIND_COUNT)) {
+		str_printf(errmsg, "LittleCMS or memory error");
+		return NULL;
+	}
+
+	for (i = 0; i < 3; i++)
+		params.primaries.primary[i] = weston_CIExy_from_XYZ(XYZ[STIND_R + i]);
+	params.primaries.white_point = weston_CIExy_from_XYZ(XYZ[STIND_WP]);
+
+	params.target_primaries = params.primaries;
+
+	const cmsCIEXYZ *lumtag = cmsReadTag(cprof->icc.profile.p, cmsSigLuminanceTag);
+	if (lumtag && lumtag->Y > 0.0f)
+		lum_factor = lumtag->Y;
+	else
+		lum_factor = 100.0f; /* An arbitrary default cd/m² */
+
+	params.max_luminance = XYZ[STIND_WP].y * lum_factor;
+	params.min_luminance = XYZ[STIND_BP].y * lum_factor;
+	params.reference_white_luminance = params.max_luminance;
+
+	params.target_max_luminance = params.max_luminance;
+	params.target_min_luminance = params.min_luminance;
+
+	params.maxCLL = -1.0f;
+	params.maxFALL = -1.0f;
+
+	str_printf(&name_part, "for ICC profile p%u (%s)",
+		   cprof->base.id, cprof->base.description);
+	abort_oom_if_null(name_part);
+
+	ret = cmlcms_get_color_profile_from_params(&cm->base, &params, name_part,
+						   &paralt, errmsg);
+	free(name_part);
+	if (!ret)
+		return NULL;
+
+	return paralt;
+}
+
 struct weston_color_profile *
 cmlcms_get_parametric_color_profile(struct weston_color_profile *cprof_base,
 				    char **errmsg)
@@ -733,17 +887,21 @@ cmlcms_get_parametric_color_profile(struct weston_color_profile *cprof_base,
 	struct weston_compositor *compositor = cm->base.compositor;
 	struct cmlcms_color_profile *cprof = to_cmlcms_cprof(cprof_base);
 
-	switch(cprof->type) {
+	switch (cprof->type) {
 	case CMLCMS_PROFILE_TYPE_ICC:
-		/* TODO: transform an ICC profile into an equivalent parametric one. */
-		str_printf(errmsg, "we still can't create param cprof equivalent to ICC cprof");
-		return NULL;
+		if (!cprof->icc.paralt) {
+			cprof->icc.paralt = create_parametric_alternative_to_icc(cprof, errmsg);
+			if (!cprof->icc.paralt)
+				return NULL;
+		}
+
+		return weston_color_profile_ref(cprof->icc.paralt);
 	case CMLCMS_PROFILE_TYPE_PARAMS:
-		ref_cprof(cprof);
-		return cprof_base;
-	default:
-		weston_assert_not_reached(compositor, "unknown cprof type");
+		return weston_color_profile_ref(&cprof->base);
 	}
+
+	weston_assert_not_reached(compositor, "unknown cprof type");
+	return NULL;
 }
 
 void
