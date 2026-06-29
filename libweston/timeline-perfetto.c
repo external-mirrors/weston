@@ -39,19 +39,13 @@
 static void
 weston_perfetto_ensure_output_ids(struct weston_output *output)
 {
-	char track_name[512];
-
 	if (output->gpu_track.id)
 		return;
 
-	snprintf(track_name, sizeof(track_name), "%s GPU activity", output->name);
-	output->gpu_track.id = util_perfetto_new_track(track_name);
-
-	snprintf(track_name, sizeof(track_name), "%s paint", output->name);
-	output->paint_track.id = util_perfetto_new_track(track_name);
-
-	snprintf(track_name, sizeof(track_name), "%s present", output->name);
-	output->presentation_track.id = util_perfetto_new_track(track_name);
+	output->track.id = util_perfetto_new_track(output->name);
+	output->gpu_track.id = util_perfetto_new_nested_track("GPU activity", output->track.id);
+	output->paint_track.id = util_perfetto_new_nested_track("paint", output->track.id);
+	output->presentation_track.id = util_perfetto_new_nested_track("present", output->track.id);
 }
 
 static void

@@ -465,6 +465,7 @@ struct weston_output {
 	struct weston_coord_global pos;
 	int32_t width, height;
 
+	struct weston_trace_track track;
 	struct weston_trace_track gpu_track;
 	struct weston_trace_track paint_track;
 	struct weston_trace_track presentation_track;

@@ -104,15 +104,44 @@ util_perfetto_trace_full_begin(const char *fname, uint64_t track_id, uint64_t id
 			  });
 }
 
+void
+util_perfetto_track_refresh(const char *name,
+			    uint64_t uuid,
+			    uint64_t parent_uuid)
+{
+	auto track = perfetto::Track::Global(uuid);
+	auto desc = track.Serialize();
+
+	desc.set_name(name);
+	if (parent_uuid)
+		desc.set_parent_uuid(parent_uuid);
+	else
+		desc.set_parent_uuid(perfetto::Track(0).uuid);
+
+	perfetto::TrackEvent::SetTrackDescriptor(track, desc);
+}
+
 uint64_t
 util_perfetto_new_track(const char *name)
 {
 	uint64_t track_id = util_perfetto_next_id();
 	auto track = perfetto::Track(track_id);
-	auto desc = track.Serialize();
+	uint64_t uuid = track.uuid;
 
-	desc.set_name(name);
-	perfetto::TrackEvent::SetTrackDescriptor(track, desc);
+	util_perfetto_track_refresh(name, uuid, 0);
+
+	return track.uuid;
+}
+
+uint64_t
+util_perfetto_new_nested_track(const char *name, uint64_t parent_uuid)
+{
+	uint64_t track_id = util_perfetto_next_id();
+	auto track = perfetto::Track(track_id);
+	uint64_t uuid = track.uuid;
+
+	util_perfetto_track_refresh(name, uuid, parent_uuid);
+
 	return track.uuid;
 }
 

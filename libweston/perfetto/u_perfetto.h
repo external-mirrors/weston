@@ -105,6 +105,14 @@ uint64_t util_perfetto_next_id(void);
 
 uint64_t util_perfetto_new_track(const char *name);
 
+uint64_t
+util_perfetto_new_nested_track(const char *name, uint64_t parent_uuid);
+
+void
+util_perfetto_track_refresh(const char *name,
+			    uint64_t uuid,
+			    uint64_t parent_uuid);
+
 #ifdef __cplusplus
 }
 #endif

@@ -8637,6 +8637,7 @@ weston_output_init(struct weston_output *output,
 	 * free to set the color profile to whatever they want later on. */
 	cm = compositor->color_manager;
 	output->color_profile = cm->ref_stock_sRGB_color_profile(cm);
+	output->track.id = 0;
 	output->gpu_track.id = 0;
 	output->paint_track.id = 0;
 	output->presentation_track.id = 0;
