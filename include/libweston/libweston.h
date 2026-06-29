@@ -2050,6 +2050,7 @@ struct weston_pointer_constraint {
 };
 
 struct weston_surface {
+	struct weston_trace_track client_track;
 	struct weston_trace_flow flow;
 	/** Derived from weston_client::internal_id_counter */
 	uint64_t internal_id;

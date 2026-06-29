@@ -105,6 +105,14 @@ util_perfetto_trace_full_begin(const char *fname, uint64_t track_id, uint64_t id
 }
 
 void
+util_perfetto_track_clear(uint64_t uuid)
+{
+	auto track = perfetto::Track::Global(uuid);
+
+	perfetto::TrackEvent::EraseTrackDescriptor(track);
+}
+
+void
 util_perfetto_track_refresh(const char *name,
 			    uint64_t uuid,
 			    uint64_t parent_uuid)

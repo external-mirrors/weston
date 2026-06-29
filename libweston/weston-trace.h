@@ -15,6 +15,7 @@
 #if defined(HAVE_PERFETTO)
 
 #include "perfetto/annotations.h"
+#include "perfetto/trace-helpers.h"
 #include "perfetto/u_perfetto.h"
 #include "shared/weston-assert.h"
 #include <string.h>
@@ -237,6 +238,9 @@ _weston_trace_scope_end(uint64_t *scope)
 
 #endif /* __has_attribute(cleanup) && __has_attribute(unused) */
 
+#define _WESTON_TRACE_CLIENT_INIT(client) weston_trace_client_init(client)
+#define _WESTON_TRACE_CLIENT_FINI(client) weston_trace_client_fini(client)
+
 #else /* No perfetto, make these all do nothing */
 
 #define _WESTON_TRACE_SCOPE(name)
@@ -252,6 +256,9 @@ _weston_trace_scope_end(uint64_t *scope)
 
 #define _WESTON_TRACE_INIT()
 #define _WESTON_TRACE_IS_TRACING() (false)
+
+#define _WESTON_TRACE_CLIENT_INIT(client)
+#define _WESTON_TRACE_CLIENT_FINI(client)
 
 #endif /* HAVE_PERFETTO */
 
@@ -287,5 +294,8 @@ _weston_trace_scope_end(uint64_t *scope)
 
 #define WESTON_TRACE_INIT() _WESTON_TRACE_INIT()
 #define WESTON_TRACE_IS_TRACING() _WESTON_TRACE_IS_TRACING()
+
+#define WESTON_TRACE_CLIENT_INIT(client) _WESTON_TRACE_CLIENT_INIT(client)
+#define WESTON_TRACE_CLIENT_FINI(client) _WESTON_TRACE_CLIENT_FINI(client)
 
 #endif /* WESTON_TRACE_H */

@@ -1180,6 +1180,9 @@ weston_surface_create(struct weston_compositor *compositor,
 	if (surface == NULL)
 		return NULL;
 
+	if (client)
+		surface->client_track = client->trace.track;
+
 	wl_signal_init(&surface->destroy_signal);
 	wl_signal_init(&surface->commit_signal);
 	wl_signal_init(&surface->map_signal);
@@ -10312,10 +10315,13 @@ weston_compositor_get_test_data(struct weston_compositor *ec)
 static void
 weston_client_destroy_handler(struct wl_listener *l, void *data)
 {
+	WESTON_TRACE_FUNC();
 	struct weston_client *client = wl_container_of(l, client,
 						       wl_client_destroy_listener);
 
+	WESTON_TRACE_CLIENT_FINI(client);
 	wl_list_remove(&client->link);
+
 	free(client->internal_name);
 	free(client);
 }
@@ -10323,6 +10329,7 @@ weston_client_destroy_handler(struct wl_listener *l, void *data)
 static void
 weston_compositor_client_created(struct wl_listener *l, void *data)
 {
+	WESTON_TRACE_FUNC();
 	struct weston_compositor *compositor = wl_container_of(l, compositor,
 							       client_created_listener);
 	struct wl_client *wlclient = data;
@@ -10338,6 +10345,8 @@ weston_compositor_client_created(struct wl_listener *l, void *data)
 	str_printf(&client->internal_name, "%" PRIu64, client->internal_id);
 
 	wl_list_insert(&compositor->client_list, &client->link);
+
+	WESTON_TRACE_CLIENT_INIT(client);
 }
 
 /** Get weston_client from wl_client

@@ -76,7 +76,8 @@ weston_perfetto_ensure_surface_id(struct weston_surface *surface)
 
 	build_track_name(surface, track_name, sizeof(track_name));
 
-	surface->damage_track.id = util_perfetto_new_track(track_name);
+	surface->damage_track.id = util_perfetto_new_nested_track(track_name,
+								  surface->client_track.id);
 }
 
 static void

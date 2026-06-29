@@ -43,6 +43,8 @@
 #include <assert.h>
 #include "color.h"
 
+#define WESTON_TRACE_NAME_SIZE 80
+
 #define DEFAULT_FRAME_RATE_INTERVAL 1 /* seconds */
 
 /* compositor <-> renderer interface */
@@ -250,11 +252,19 @@ struct weston_tearing_control {
 	bool may_tear;
 };
 
+
+struct weston_trace_client {
+	struct weston_trace_track track;
+	char track_name[WESTON_TRACE_NAME_SIZE];
+};
+
 /** A client tracker
  *
  * This life time is tied to the wl_client.
  */
 struct weston_client {
+	struct weston_trace_client trace;
+
 	struct wl_listener wl_client_destroy_listener;
 	uint64_t internal_id;
 	char *internal_name;

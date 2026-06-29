@@ -72,6 +72,8 @@ struct weston_debug_annotations {
 	uint64_t track_id;
 };
 
+struct weston_compositor;
+
 extern int util_perfetto_tracing_state;
 
 void util_perfetto_init(void);
@@ -112,6 +114,9 @@ void
 util_perfetto_track_refresh(const char *name,
 			    uint64_t uuid,
 			    uint64_t parent_uuid);
+
+void
+util_perfetto_track_clear(uint64_t uuid);
 
 #ifdef __cplusplus
 }
