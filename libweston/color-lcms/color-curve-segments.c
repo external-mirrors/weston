@@ -625,7 +625,7 @@ get_defining_curve_segment(cmsToneCurve *from, bool *clamped_input)
 
 bool
 get_parametric_curveset_params(struct weston_compositor *compositor,
-			       _cmsStageToneCurvesData *trc_data,
+			       const struct lcmsToneCurveTriple *trcset,
 			       cmsInt32Number *type,
 			       float curveset_params[3][MAX_PARAMS_LCMS_PARAM_CURVE],
 			       bool *clamped_input)
@@ -633,11 +633,6 @@ get_parametric_curveset_params(struct weston_compositor *compositor,
 	const cmsCurveSegment *seg;
 	cmsInt32Number curve_types[3];
 	unsigned int i, j;
-
-	/* If there isn't a curve for each color channel, we define our curveset
-	 * as not being a parametric one. */
-	if (trc_data->nCurves != 3)
-		return false;
 
 	/* If at least one of the curves is being clamped to [0.0, 1.0], we
 	 * change clamped_input to true. Our expectation is that if one of the
@@ -648,7 +643,7 @@ get_parametric_curveset_params(struct weston_compositor *compositor,
 	for (i = 0; i < 3; i++) {
 		bool clamp_this;
 
-		seg = get_defining_curve_segment(trc_data->TheCurves[i], &clamp_this);
+		seg = get_defining_curve_segment(trcset->t[i], &clamp_this);
 		if (!seg)
 			return false;
 

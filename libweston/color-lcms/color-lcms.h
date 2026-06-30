@@ -60,6 +60,10 @@ from_lcmsProfilePtr_array(struct lcmsProfilePtr *arr)
 	return &arr[0].p;
 }
 
+struct lcmsToneCurveTriple {
+	cmsToneCurve *t[3];
+};
+
 struct weston_color_manager_lcms {
 	struct weston_color_manager base;
 	struct weston_log_scope *profiles_scope;

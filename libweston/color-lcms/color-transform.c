@@ -843,7 +843,7 @@ err:
 
 static bool
 translate_curve_element_parametric(struct cmlcms_color_transform *xform,
-				   _cmsStageToneCurvesData *trc_data,
+				   const struct lcmsToneCurveTriple *trcset,
 				   enum color_transform_step step)
 {
 	struct weston_compositor *compositor = xform->base.cm->compositor;
@@ -869,7 +869,7 @@ translate_curve_element_parametric(struct cmlcms_color_transform *xform,
 	 * fallback path. But if it is a parametric curve, we get the params for
 	 * each color channel and also the parametric curve type (defined by
 	 * LittleCMS). */
-	if (!get_parametric_curveset_params(compositor, trc_data, &type,
+	if (!get_parametric_curveset_params(compositor, trcset, &type,
 					    lcms_curveset_params, &clamped_input))
 		return false;
 
@@ -900,7 +900,7 @@ translate_curve_element_parametric(struct cmlcms_color_transform *xform,
 
 static bool
 translate_curve_element_LUT(struct cmlcms_color_transform *xform,
-			    _cmsStageToneCurvesData *trc_data,
+			    const struct lcmsToneCurveTriple *trcset,
 			    enum color_transform_step step)
 {
 	struct weston_compositor *compositor = xform->base.cm->compositor;
@@ -927,9 +927,8 @@ translate_curve_element_LUT(struct cmlcms_color_transform *xform,
 	curve->type = WESTON_COLOR_CURVE_TYPE_LUT_3x1D;
 	curve->u.lut_3x1d.optimal_len = cmlcms_reasonable_1D_points();
 
-	weston_assert_u32_eq(compositor, trc_data->nCurves, 3);
 	for (i = 0; i < 3; i++) {
-		stash[i] = cmsDupToneCurve(trc_data->TheCurves[i]);
+		stash[i] = cmsDupToneCurve(trcset->t[i]);
 		abort_oom_if_null(stash[i]);
 	}
 
@@ -950,13 +949,21 @@ translate_curve_element(struct cmlcms_color_transform *xform,
 	if (trc_data->nCurves != 3)
 		return false;
 
+	struct lcmsToneCurveTriple trcset = {
+		.t = {
+			trc_data->TheCurves[0],
+			trc_data->TheCurves[1],
+			trc_data->TheCurves[2],
+		},
+	};
+
 	/* First try to translate the curve to a parametric one. */
-	if (translate_curve_element_parametric(xform, trc_data, step))
+	if (translate_curve_element_parametric(xform, &trcset, step))
 		return true;
 
 	/* Curve does not fit any of the parametric curves that we implement, so
 	 * fallback to LUT. */
-	return translate_curve_element_LUT(xform, trc_data, step);
+	return translate_curve_element_LUT(xform, &trcset, step);
 }
 
 static bool

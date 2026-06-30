@@ -34,7 +34,7 @@
 
 bool
 get_parametric_curveset_params(struct weston_compositor *compositor,
-			       _cmsStageToneCurvesData *trc_data,
+			       const struct lcmsToneCurveTriple *trcset,
 			       cmsInt32Number *type,
 			       float curveset_params[3][MAX_PARAMS_LCMS_PARAM_CURVE],
 			       bool *clamped_input);
@@ -59,7 +59,7 @@ join_powerlaw_curvesets(cmsContext context_id,
 
 static inline bool
 get_parametric_curveset_params(struct weston_compositor *compositor,
-			       _cmsStageToneCurvesData *trc_data,
+			       const struct lcmsToneCurveTriple *trcset,
 			       cmsInt32Number *type,
 			       float curveset_params[3][MAX_PARAMS_LCMS_PARAM_CURVE],
 			       bool *clamped_input)
