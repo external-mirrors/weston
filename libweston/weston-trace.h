@@ -241,6 +241,9 @@ _weston_trace_scope_end(uint64_t *scope)
 #define _WESTON_TRACE_CLIENT_INIT(client) weston_trace_client_init(client)
 #define _WESTON_TRACE_CLIENT_FINI(client) weston_trace_client_fini(client)
 
+#define _WESTON_TRACE_OUTPUT_INIT(output) weston_trace_output_init(output)
+#define _WESTON_TRACE_OUTPUT_FINI(output) weston_trace_output_fini(output)
+
 #else /* No perfetto, make these all do nothing */
 
 #define _WESTON_TRACE_SCOPE(name)
@@ -259,6 +262,9 @@ _weston_trace_scope_end(uint64_t *scope)
 
 #define _WESTON_TRACE_CLIENT_INIT(client)
 #define _WESTON_TRACE_CLIENT_FINI(client)
+
+#define _WESTON_TRACE_OUTPUT_INIT(output)
+#define _WESTON_TRACE_OUTPUT_FINI(output)
 
 #endif /* HAVE_PERFETTO */
 
@@ -297,5 +303,8 @@ _weston_trace_scope_end(uint64_t *scope)
 
 #define WESTON_TRACE_CLIENT_INIT(client) _WESTON_TRACE_CLIENT_INIT(client)
 #define WESTON_TRACE_CLIENT_FINI(client) _WESTON_TRACE_CLIENT_FINI(client)
+
+#define WESTON_TRACE_OUTPUT_INIT(output) _WESTON_TRACE_OUTPUT_INIT(output)
+#define WESTON_TRACE_OUTPUT_FINI(output) _WESTON_TRACE_OUTPUT_FINI(output)
 
 #endif /* WESTON_TRACE_H */

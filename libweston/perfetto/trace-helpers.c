@@ -116,3 +116,30 @@ weston_trace_client_fini(struct weston_client *client)
 
 	weston_trace_track_clear(&client->trace.track);
 }
+
+void
+weston_trace_output_init(struct weston_output *output)
+{
+	output->trace.track.id = util_perfetto_new_track(output->name);
+
+	output->trace.gpu_track.id =
+		util_perfetto_new_nested_track("GPU activity",
+					       output->trace.track.id);
+
+	output->trace.paint_track.id =
+		util_perfetto_new_nested_track("paint",
+						output->trace.track.id);
+
+	output->trace.presentation_track.id =
+		util_perfetto_new_nested_track("present",
+					       output->trace.track.id);
+}
+
+void
+weston_trace_output_fini(struct weston_output *output)
+{
+	weston_trace_track_clear(&output->trace.track);
+	weston_trace_track_clear(&output->trace.gpu_track);
+	weston_trace_track_clear(&output->trace.paint_track);
+	weston_trace_track_clear(&output->trace.presentation_track);
+}

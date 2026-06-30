@@ -426,6 +426,14 @@ enum weston_output_fb_alpha_encoding {
 	WESTON_OUTPUT_FB_ALPHA_STRAIGHT,
 };
 
+
+struct weston_trace_output {
+	struct weston_trace_track track;
+	struct weston_trace_track gpu_track;
+	struct weston_trace_track paint_track;
+	struct weston_trace_track presentation_track;
+};
+
 /** Content producer for heads
  *
  * \rst
@@ -434,6 +442,7 @@ enum weston_output_fb_alpha_encoding {
  * \ingroup output
  */
 struct weston_output {
+	struct weston_trace_output trace;
 	uint32_t id;
 	char *name;
 
@@ -464,11 +473,6 @@ struct weston_output {
 	struct wl_list animation_list;
 	struct weston_coord_global pos;
 	int32_t width, height;
-
-	struct weston_trace_track track;
-	struct weston_trace_track gpu_track;
-	struct weston_trace_track paint_track;
-	struct weston_trace_track presentation_track;
 
 	/** List of paint nodes in z-order, from top to bottom, maybe pruned
 	 *

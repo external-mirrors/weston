@@ -32,3 +32,9 @@ weston_trace_client_init(struct weston_client *client);
 
 void
 weston_trace_client_fini(struct weston_client *client);
+
+void
+weston_trace_output_init(struct weston_output *output);
+
+void
+weston_trace_output_fini(struct weston_output *output);
