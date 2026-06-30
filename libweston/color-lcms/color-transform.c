@@ -842,28 +842,14 @@ err:
 }
 
 static bool
-translate_curve_element_parametric(struct cmlcms_color_transform *xform,
-				   const struct lcmsToneCurveTriple *trcset,
-				   enum color_transform_step step)
+init_curve_from_trc_data(struct weston_compositor *compositor,
+			 struct weston_color_curve *curve,
+			 const struct lcmsToneCurveTriple *trcset)
 {
-	struct weston_compositor *compositor = xform->base.cm->compositor;
-	struct weston_color_curve *curve;
 	cmsInt32Number type;
 	float lcms_curveset_params[3][MAX_PARAMS_LCMS_PARAM_CURVE];
 	bool clamped_input;
 	bool ret;
-
-	switch (step) {
-	case STEP_PRE_CURVE:
-		curve = &xform->base.pre_curve;
-		break;
-	case STEP_POST_CURVE:
-		curve = &xform->base.post_curve;
-		break;
-	default:
-		weston_assert_not_reached(compositor,
-					  "curve should be a pre or post curve");
-	}
 
 	/* The curveset may not be a parametric one, in such case we have a
 	 * fallback path. But if it is a parametric curve, we get the params for
@@ -896,6 +882,29 @@ translate_curve_element_parametric(struct cmlcms_color_transform *xform,
 	}
 
 	return ret;
+}
+
+static bool
+translate_curve_element_parametric(struct cmlcms_color_transform *xform,
+				   const struct lcmsToneCurveTriple *trcset,
+				   enum color_transform_step step)
+{
+	struct weston_compositor *compositor = xform->base.cm->compositor;
+	struct weston_color_curve *curve;
+
+	switch (step) {
+	case STEP_PRE_CURVE:
+		curve = &xform->base.pre_curve;
+		break;
+	case STEP_POST_CURVE:
+		curve = &xform->base.post_curve;
+		break;
+	default:
+		weston_assert_not_reached(compositor,
+					  "curve should be a pre or post curve");
+	}
+
+	return init_curve_from_trc_data(compositor, curve, trcset);
 }
 
 static bool
