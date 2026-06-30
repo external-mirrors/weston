@@ -260,6 +260,8 @@ struct weston_client {
 	char *internal_name;
 
 	uint64_t internal_id_counter;
+
+	struct wl_list link; /**< in weston_compositor::client_list */
 };
 
 bool

@@ -10313,6 +10313,7 @@ weston_client_destroy_handler(struct wl_listener *l, void *data)
 	struct weston_client *client = wl_container_of(l, client,
 						       wl_client_destroy_listener);
 
+	wl_list_remove(&client->link);
 	free(client->internal_name);
 	free(client);
 }
@@ -10331,6 +10332,8 @@ weston_compositor_client_created(struct wl_listener *l, void *data)
 
 	client->internal_id = ++compositor->client_counter;
 	str_printf(&client->internal_name, "%" PRIu64, client->internal_id);
+
+	wl_list_insert(&compositor->client_list, &client->link);
 }
 
 /** Get weston_client from wl_client
@@ -10582,6 +10585,7 @@ weston_compositor_create(struct wl_display *display,
 	wl_list_init(&ec->tablet_tool_binding_list);
 	wl_list_init(&ec->axis_binding_list);
 	wl_list_init(&ec->debug_binding_list);
+	wl_list_init(&ec->client_list);
 	wl_list_init(&ec->tablet_manager_resource_list);
 	wl_list_init(&ec->transaction_queue_list);
 	wl_list_init(&ec->backend_list);

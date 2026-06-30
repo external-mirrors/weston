@@ -1546,6 +1546,7 @@ struct weston_compositor {
 	struct wl_list tablet_tool_binding_list;
 	struct wl_list axis_binding_list;
 	struct wl_list debug_binding_list;
+	struct wl_list client_list;
 
 	bool view_list_needs_rebuild;
 	int global_weston_surface_disambiguator; /* surface ids to avoid using PID-reuse */
