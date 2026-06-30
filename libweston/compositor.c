@@ -4388,25 +4388,18 @@ surface_frame_rate_stats(void *data)
 		compositor->perf_surface_stats.frame_counter_interval;
 
 	if (surf->resource) {
-		char p_counter_fc_counter[1024];
-		char p_counter_painted_counter[1024];
-
 		surf->frame_commit_fps_counter =
 			(float) (surf->frame_commit_counter / frame_counter_interval);
 
-		snprintf(p_counter_fc_counter, sizeof(p_counter_fc_counter),
-			 "%s #%d", surf->label, surf->s_id);
-
-		WESTON_TRACE_SET_COUNTER(p_counter_fc_counter,
+		WESTON_TRACE_SET_COUNTER(surf->trace.damage_track,
+					 "commits",
 					 surf->frame_commit_fps_counter);
 
 		surf->painted_frame_fps_counter =
 			(float) (surf->painted_frame_counter / frame_counter_interval);
 
-		snprintf(p_counter_painted_counter, sizeof(p_counter_painted_counter),
-			 "%s #%d (painted)", surf->label, surf->s_id);
-
-		WESTON_TRACE_SET_COUNTER(p_counter_painted_counter,
+		WESTON_TRACE_SET_COUNTER(surf->trace.damage_track,
+					 "paints",
 					 surf->painted_frame_fps_counter);
 	}
 

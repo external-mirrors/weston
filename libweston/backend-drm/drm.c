@@ -251,7 +251,6 @@ pageflip_timer_counter_handler(void *data)
 
 	wl_list_for_each(output_base, &ec->output_list, link) {
 		struct drm_output *output = to_drm_output(output_base);
-		char desc[1024];
 
 		/* Skip outputs on other backends */
 		if (!output)
@@ -261,11 +260,8 @@ pageflip_timer_counter_handler(void *data)
 			(float) (output->page_flips_counted /
 					b->perf_page_flips_stats.frame_counter_interval);
 
-		snprintf(desc, sizeof(desc),
-			 "output %s KMS page flips", output_base->name);
-
-		WESTON_TRACE_SET_COUNTER(desc,
-					output->page_flips_per_timer_interval);
+		WESTON_TRACE_SET_COUNTER(output->base.trace.track, "Page flips",
+					 output->page_flips_per_timer_interval);
 
 		output->page_flips_counted = 0;
 	}

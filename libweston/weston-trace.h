@@ -57,10 +57,10 @@
 			util_perfetto_trace_end(track_id);                    \
 	} while (0)
 
-#define _WESTON_TRACE_SET_COUNTER(name, value)                                \
+#define _WESTON_TRACE_SET_COUNTER(parent, name, value)                        \
 	do {                                                                  \
 		if (_WESTON_TRACE_IS_TRACING())                               \
-			util_perfetto_counter_set(name, value);               \
+			util_perfetto_counter_set(parent.id, name, value);    \
 	} while (0)
 
 #define _WESTON_TRACE_TIMESTAMP_BEGIN(name, track_id, flow_id, clock, timestamp) \
@@ -252,7 +252,7 @@ _weston_trace_scope_end(uint64_t *scope)
 
 #define _WESTON_TRACE_SCOPE(name)
 #define _WESTON_TRACE_FUNC()
-#define _WESTON_TRACE_SET_COUNTER(name, value)
+#define _WESTON_TRACE_SET_COUNTER(parent, name, value)
 #define _WESTON_TRACE_TIMESTAMP_BEGIN(name, track_id, flow_id, clock, timestamp)
 #define _WESTON_TRACE_TIMESTAMP_END(track_id, clock, timestamp)
 #define _WESTON_TRACE_INSTANT_TIMESTAMP(name, track_id, id, clock, timestamp)
@@ -277,7 +277,8 @@ _weston_trace_scope_end(uint64_t *scope)
 #endif /* HAVE_PERFETTO */
 
 #define WESTON_TRACE_SCOPE(name) _WESTON_TRACE_SCOPE(name)
-#define WESTON_TRACE_SET_COUNTER(name, value) _WESTON_TRACE_SET_COUNTER(name, value)
+#define WESTON_TRACE_SET_COUNTER(parent, name, value) \
+	_WESTON_TRACE_SET_COUNTER(parent, name, value)
 #define WESTON_TRACE_TIMESTAMP_BEGIN(name, track_id, flow_id, clock, timestamp) \
 	_WESTON_TRACE_TIMESTAMP_BEGIN(name, track_id, flow_id, clock, timestamp)
 #define WESTON_TRACE_TIMESTAMP_END(track_id, clock, timestamp) \

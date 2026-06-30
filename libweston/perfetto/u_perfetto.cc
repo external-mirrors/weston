@@ -172,10 +172,14 @@ util_perfetto_trace_full_end(uint64_t track_id, clockid_t clock, uint64_t timest
 }
 
 void
-util_perfetto_counter_set(const char *name, double value)
+util_perfetto_counter_set(uint64_t parent_uuid,
+			  const char *name,
+			  double value)
 {
-	TRACE_COUNTER(UTIL_PERFETTO_CATEGORY_DEFAULT_STR,
-		      perfetto::DynamicString(name), value);
+	perfetto::Track parent = perfetto::Track::Global(parent_uuid);
+	auto track = perfetto::CounterTrack(perfetto::DynamicString(name), parent);
+
+	TRACE_COUNTER(UTIL_PERFETTO_CATEGORY_DEFAULT_STR, track, value);
 }
 
 void

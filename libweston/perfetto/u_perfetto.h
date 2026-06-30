@@ -88,7 +88,10 @@ void util_perfetto_trace_begin(const char *name);
 
 void util_perfetto_trace_end(uint64_t track_id);
 
-void util_perfetto_counter_set(const char *name, double value);
+void
+util_perfetto_counter_set(uint64_t parent_uuid,
+			  const char *name,
+			  double value);
 
 void util_perfetto_trace_full_begin(const char *name, uint64_t track_id, uint64_t id, clockid_t clock, uint64_t timestamp);
 
