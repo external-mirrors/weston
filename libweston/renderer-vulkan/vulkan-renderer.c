@@ -2726,12 +2726,12 @@ update_texture_image(struct vulkan_renderer *vr,
 	VkDeviceSize image_size = pitch * buffer_height * (pixel_format->bpp/8);
 	VkResult result;
 
+	vkWaitForFences(vr->dev, 1, &texture->upload_fence, VK_TRUE, UINT64_MAX);
+	vkResetFences(vr->dev, 1, &texture->upload_fence);
+
 	assert(pixels);
 
 	memcpy(texture->staging_map, pixels, (size_t)image_size);
-
-	vkWaitForFences(vr->dev, 1, &texture->upload_fence, VK_TRUE, UINT64_MAX);
-	vkResetFences(vr->dev, 1, &texture->upload_fence);
 
 	const VkCommandBufferBeginInfo begin_info = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
