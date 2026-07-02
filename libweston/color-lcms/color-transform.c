@@ -1333,6 +1333,7 @@ xform_realize_icc_chain(struct cmlcms_color_transform *xform,
 	xform->lcms_ctx = cmsCreateContext(&transform_plugin, xform);
 	abort_oom_if_null(xform->lcms_ctx);
 	cmsSetLogErrorHandlerTHR(xform->lcms_ctx, lcms_xform_error_logger);
+	cmsSetAdaptationStateTHR(xform->lcms_ctx, 1.0);
 
 	/* transform_factory() is invoked by this call. */
 	dwFlags = render_intent->bps ? cmsFLAGS_BLACKPOINTCOMPENSATION : 0;

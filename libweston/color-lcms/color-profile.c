@@ -69,6 +69,7 @@ build_eotf_from_clut_profile(cmsContext lcms_ctx,
 	if (!xyz_profile.p)
 		goto release;
 
+	cmsSetAdaptationStateTHR(lcms_ctx, 1.0);
 	transform_rgb_to_xyz = cmsCreateTransformTHR(lcms_ctx, profile.p,
 						     TYPE_RGB_FLT, xyz_profile.p,
 						     TYPE_XYZ_FLT,
