@@ -294,11 +294,9 @@ weston_cm_send_parametric_info(struct cm_image_desc_info *cm_image_desc_info,
 	weston_cm_send_luminances(cm_image_desc_info, par->min_luminance,
 				  par->max_luminance, par->reference_white_luminance);
 
-	if (par->target_min_luminance >= 0.0f && par->target_max_luminance >= 0.0f) {
-		weston_cm_send_target_luminances(cm_image_desc_info,
-						 par->target_min_luminance,
-						 par->target_max_luminance);
-	}
+	weston_cm_send_target_luminances(cm_image_desc_info,
+					 par->target_min_luminance,
+					 par->target_max_luminance);
 
 	if (par->maxCLL > 0.0f) {
 		wp_image_description_info_v1_send_target_max_cll(cm_image_desc_info->owner,

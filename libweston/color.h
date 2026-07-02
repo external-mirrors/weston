@@ -161,8 +161,10 @@ struct weston_color_profile_params {
 	/* Target color volume; always set. */
 	struct weston_color_gamut target_primaries;
 
-	/* Target luminance parameters cd/m²; negative when not set */
+	/* Target luminance parameters cd/m²; always set. */
 	float target_min_luminance, target_max_luminance;
+
+	/* Programme luminance parameters cd/m²; negative when not set */
 	float maxCLL, maxFALL;
 
 	char padding[4];

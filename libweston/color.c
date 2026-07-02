@@ -233,9 +233,8 @@ weston_color_profile_params_to_str(const struct weston_color_profile_params *par
 	fprintf(fp, "%starget primaries (CIE xy):\n", ident);
 	weston_color_gamut_fprint(fp, ident, &params->target_primaries);
 
-	if (params->target_min_luminance >= 0.0f && params->target_max_luminance >= 0.0f)
-		fprintf(fp, "%starget luminance: [%.3f, %.2f] (cd/m²)\n", ident, params->target_min_luminance,
-										 params->target_max_luminance);
+	fprintf(fp, "%starget luminance: [%.3f, %.2f] (cd/m²)\n", ident, params->target_min_luminance,
+									 params->target_max_luminance);
 
 	if (params->maxCLL >= 0.0f)
 		fprintf(fp, "%smax cll: %.2f (cd/m²)\n", ident, params->maxCLL);

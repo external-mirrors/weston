@@ -249,17 +249,13 @@ cmlcms_get_hdr_meta(struct weston_hdr_metadata_type1 *hdr_meta,
 				       "white", 0.0, 1.0, cprof);
 	hdr_meta->group_mask |= WESTON_HDR_METADATA_TYPE1_GROUP_WHITE;
 
-	if (cpp->target_max_luminance > 0.0f) {
-		hdr_meta->maxDML = meta_clamp(cpp->target_max_luminance,
-					      "maxDML", 1.0, 65535.0, cprof);
-		hdr_meta->group_mask |= WESTON_HDR_METADATA_TYPE1_GROUP_MAXDML;
-	}
+	hdr_meta->maxDML = meta_clamp(cpp->target_max_luminance,
+				      "maxDML", 1.0, 65535.0, cprof);
+	hdr_meta->group_mask |= WESTON_HDR_METADATA_TYPE1_GROUP_MAXDML;
 
-	if (cpp->target_min_luminance > 0.0f) {
-		hdr_meta->minDML = meta_clamp(cpp->target_min_luminance,
-					      "minDML", 0.0001, 6.5535, cprof);
-		hdr_meta->group_mask |= WESTON_HDR_METADATA_TYPE1_GROUP_MINDML;
-	}
+	hdr_meta->minDML = meta_clamp(cpp->target_min_luminance,
+				      "minDML", 0.0001, 6.5535, cprof);
+	hdr_meta->group_mask |= WESTON_HDR_METADATA_TYPE1_GROUP_MINDML;
 
 	if (cpp->maxFALL > 0.0f) {
 		hdr_meta->maxFALL = meta_clamp(cpp->maxFALL,
