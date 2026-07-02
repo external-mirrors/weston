@@ -223,3 +223,10 @@ option(
 	value: false,
 	description: 'DEPRECATED: Allow non-atomic modeset paths which will be removed soon'
 )
+
+option(
+	'build-string',
+	type: 'string',
+	value: '',
+	description: 'Custom string to add after the build ID in a Weston log'
+)

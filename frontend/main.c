@@ -5357,12 +5357,10 @@ wet_main(int argc, char *argv[], const struct weston_testsuite_data *test_data)
 				       log_scopes, flight_rec_scopes,
 				       debug_scopes);
 
-	weston_log("%s\n"
-		   STAMP_SPACE "%s\n"
-		   STAMP_SPACE "Bug reports to: %s\n"
-		   STAMP_SPACE "Build: %s\n",
-		   PACKAGE_STRING, PACKAGE_URL, PACKAGE_BUGREPORT,
-		   BUILD_ID);
+	weston_log(PACKAGE_STRING "\n"
+		   STAMP_SPACE PACKAGE_URL "\n"
+		   STAMP_SPACE "Bug reports to: " PACKAGE_BUGREPORT "\n"
+		   STAMP_SPACE "Build: " BUILD_ID " " BUILD_STRING "\n");
 	weston_log("Command line: %s\n", cmdline);
 	free(cmdline);
 	log_uname();

@@ -133,6 +133,7 @@ config_h.set_quoted('PACKAGE_VERSION', version_weston)
 config_h.set_quoted('VERSION', version_weston)
 config_h.set_quoted('PACKAGE_URL', 'https://wayland.freedesktop.org')
 config_h.set_quoted('PACKAGE_BUGREPORT', 'https://gitlab.freedesktop.org/wayland/weston/issues/')
+config_h.set_quoted('BUILD_STRING', get_option('build-string'))
 
 config_h.set_quoted('BINDIR', dir_bin)
 config_h.set_quoted('DATADIR', dir_data)
