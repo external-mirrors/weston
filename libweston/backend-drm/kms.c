@@ -2629,8 +2629,20 @@ init_kms_caps(struct drm_device *device)
 	drmSetClientCap(device->kms_device->fd, DRM_CLIENT_CAP_WRITEBACK_CONNECTORS, 1);
 
 #ifdef DRM_CLIENT_CAP_PLANE_COLOR_PIPELINE
-	ret = drmSetClientCap(device->kms_device->fd, DRM_CLIENT_CAP_PLANE_COLOR_PIPELINE, 1);
-	device->color_pipeline_supported = (ret == 0);
+	/*
+	 * color_manager being present at this point implies color-management
+	 * being enabled as the no-op color manager will only be created after
+	 * all backends are loaded. Only enable plane color pipelines in that
+	 * case as there is no color pipeline replacement for the legacy
+	 * COLOR_ENCODING and COLOR_RANGE properties yet.
+	 */
+	if (b->compositor->color_manager) {
+		ret = drmSetClientCap(device->kms_device->fd,
+				      DRM_CLIENT_CAP_PLANE_COLOR_PIPELINE, 1);
+		device->color_pipeline_supported = (ret == 0);
+	} else {
+		device->color_pipeline_supported = false;
+	}
 #else
 	device->color_pipeline_supported = false;
 #endif
