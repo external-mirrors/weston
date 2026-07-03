@@ -43,7 +43,7 @@
 variables:
   FDO_UPSTREAM_REPO: wayland/weston
   FDO_REPO_SUFFIX: "$BUILD_OS-$FDO_DISTRIBUTION_VERSION/$BUILD_ARCH"
-  FDO_DISTRIBUTION_TAG: '2026-06-15-linux-7.1-mesa-26.1.2'
+  FDO_DISTRIBUTION_TAG: '2026-07-02-libwayland-1.24-libdrm-2.4.130'
 
 
 include:

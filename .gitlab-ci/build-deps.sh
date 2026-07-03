@@ -106,7 +106,7 @@ fdo_log_section_end install_kernel
 # Build and install Wayland; keep this version in sync with our dependency
 # in meson.build.
 fdo_log_section_start_collapsed install_wayland "install_wayland"
-git clone --branch 1.22.0 --depth=1 https://gitlab.freedesktop.org/wayland/wayland
+git clone --branch 1.24.0 --depth=1 https://gitlab.freedesktop.org/wayland/wayland
 cd wayland
 git show -s HEAD
 meson setup build --wrap-mode=nofallback -Ddocumentation=false
@@ -126,12 +126,10 @@ cd ..
 rm -rf wayland-protocols
 fdo_log_section_end install_wayland
 
-# Build and install our own version of libdrm. Debian 11 (bullseye) provides
-# libdrm 2.4.104 which doesn't have the IN_FORMATS iterator api, and Mesa
-# depends on 2.4.109 as well.
-# Bump to 2.4.118 to include DRM_FORMAT_NV{15,20,30}
+# Build and install our own version of libdrm.
+# 2.4.130 is the first version defining DRM_CLIENT_CAP_PLANE_COLOR_PIPELINE.
 fdo_log_section_start_collapsed install_libdrm "install_libdrm"
-git clone --branch libdrm-2.4.118 --depth=1 https://gitlab.freedesktop.org/mesa/drm.git
+git clone --branch libdrm-2.4.130 --depth=1 https://gitlab.freedesktop.org/mesa/drm.git
 cd drm
 meson setup build --wrap-mode=nofallback -Dauto_features=disabled \
 	-Dvc4=disabled -Dfreedreno=disabled -Detnaviv=disabled
