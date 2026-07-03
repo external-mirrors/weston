@@ -10046,8 +10046,10 @@ debug_scene_view_print(FILE *fp, struct weston_view *view)
 
 	if (view->surface->resource) {
 		struct wl_resource *resource = view->surface->resource;
-		wl_client_get_credentials(wl_resource_get_client(resource),
-					  &pid, NULL, NULL);
+		struct wl_client *wlc = wl_resource_get_client(resource);
+		struct weston_client *wc = weston_compositor_get_client(ec, wlc);
+
+		pid = wc->pid;
 	}
 
 	fprintf(fp, "\tView %s (role %s, PID %d, '%s'):\n",
@@ -10327,6 +10329,8 @@ weston_compositor_client_created(struct wl_listener *l, void *data)
 	struct weston_client *client;
 
 	client = xzalloc(sizeof *client);
+	wl_client_get_credentials(wlclient, &client->pid, NULL, NULL);
+
 	client->wl_client_destroy_listener.notify = weston_client_destroy_handler;
 	wl_client_add_destroy_late_listener(wlclient, &client->wl_client_destroy_listener);
 

@@ -261,6 +261,8 @@ struct weston_client {
 
 	uint64_t internal_id_counter;
 
+	pid_t pid;
+
 	struct wl_list link; /**< in weston_compositor::client_list */
 };
 
