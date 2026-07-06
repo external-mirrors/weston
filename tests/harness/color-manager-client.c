@@ -244,13 +244,22 @@ image_description_create_for_output(struct color_manager_client *cm,
 
 struct image_description *
 image_description_create_for_preferred(struct color_manager_client *cm,
-				       struct surface *surface)
+				       struct surface *surface,
+				       enum preferred_type type)
 {
-	struct wp_image_description_v1 *proxy;
+	struct wp_image_description_v1 *proxy = NULL;
 	struct wp_color_management_surface_feedback_v1 *cm_feedback;
 
 	cm_feedback = wp_color_manager_v1_get_surface_feedback(cm->manager_proxy, surface->wl_surface);
-	proxy = wp_color_management_surface_feedback_v1_get_preferred(cm_feedback);
+	switch (type) {
+	case PREFERRED_ORIGINAL:
+		proxy = wp_color_management_surface_feedback_v1_get_preferred(cm_feedback);
+		break;
+	case PREFERRED_PARAMETRIC:
+		proxy = wp_color_management_surface_feedback_v1_get_preferred_parametric(cm_feedback);
+		break;
+	}
+	abort_oom_if_null(proxy);
 	wp_color_management_surface_feedback_v1_destroy(cm_feedback);
 
 	return image_description_from_proxy(proxy);

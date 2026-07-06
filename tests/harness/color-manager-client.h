@@ -89,9 +89,15 @@ struct image_description *
 image_description_create_for_output(struct color_manager_client *cm,
 				    struct output *output);
 
+enum preferred_type {
+	PREFERRED_ORIGINAL,
+	PREFERRED_PARAMETRIC,
+};
+
 struct image_description *
 image_description_create_for_preferred(struct color_manager_client *cm,
-				       struct surface *surface);
+				       struct surface *surface,
+				       enum preferred_type type);
 
 struct image_description *
 image_description_create_soft_fail(struct color_manager_client *cm);

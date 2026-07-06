@@ -323,7 +323,8 @@ surface_get_preferred_image_description(struct wet_testsuite_data *suite_data)
 	cm = client_get_color_manager(client, 1);
 
 	/* Get preferred image description from surface */
-	image_descr = image_description_create_for_preferred(cm, client->surface);
+	image_descr = image_description_create_for_preferred(cm, client->surface,
+							     PREFERRED_ORIGINAL);
 	image_description_wait_until_ready(client, image_descr);
 
 	/* Get surface image description information */

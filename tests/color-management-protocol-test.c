@@ -538,7 +538,7 @@ set_inert_surface_image_description(struct wet_testsuite_data *suite_data)
 	cm = color_manager_get(client);
 
 	/* Get guaranteed good image description. */
-	image_descr = image_description_create_for_preferred(cm, client->surface);
+	image_descr = image_description_create_for_preferred(cm, client->surface, PREFERRED_ORIGINAL);
 	image_description_wait_until_ready(client, image_descr);
 
 	/* Destroy the wl_surface, making cm_surface inert. */
@@ -572,7 +572,7 @@ set_bad_rendering_intent(struct wet_testsuite_data *suite_data)
 	cm = color_manager_get(client);
 
 	/* Get guaranteed good image description. */
-	image_descr = image_description_create_for_preferred(cm, client->surface);
+	image_descr = image_description_create_for_preferred(cm, client->surface, PREFERRED_ORIGINAL);
 	image_description_wait_until_ready(client, image_descr);
 
 	cm_surface = wp_color_manager_v1_get_surface(cm->manager_proxy, client->surface->wl_surface);
