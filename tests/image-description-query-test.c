@@ -63,21 +63,22 @@ struct setup_args {
 
 static const struct setup_args my_setup_args[] = {
 	{
-		.meta.name = "ICC file DisplayP3",
+		.meta.name = "ICCv2 file DisplayP3",
 		.icc_file = "DisplayP3.icm",
 		.icc_size = 2740,
 		.param = {
 			.template = {
 				.primaries = prim_display_p3,
 				.target_primaries = prim_display_p3,
-				.min_luminance = 0.2f,
-				.max_luminance = 80.f,
-				.reference_white_luminance = 80.f,
-				.target_min_luminance = 0.2f,
-				.target_max_luminance = 80.f,
+				.min_luminance = 0.0f,
+				.max_luminance = 100.f,
+				.reference_white_luminance = 100.f,
+				.target_min_luminance = 0.0f,
+				.target_max_luminance = 100.f,
 				.maxCLL = NO_VALUE,
 				.maxFALL = NO_VALUE,
 			},
+			/* Profile contains a LUT, ignored. */
 			.tf = WESTON_TF_GAMMA22,
 		},
 	},
@@ -270,7 +271,7 @@ verify_image_description(const struct image_description_info *info,
 {
 	struct weston_color_profile_params params;
 
-	if (arg->icc_file) {
+	if (info->icc_fd >= 0) {
 		off_t size;
 
 		/* Let's pretend checking the size is enough. */
@@ -310,8 +311,14 @@ output_get_image_description(struct wet_testsuite_data *suite_data)
 	return RESULT_OK;
 }
 
+static enum preferred_type preferred_types[] = {
+	PREFERRED_ORIGINAL,
+	PREFERRED_PARAMETRIC,
+};
+
 static enum test_result_code
-surface_get_preferred_image_description(struct wet_testsuite_data *suite_data)
+surface_get_preferred_image_description(struct wet_testsuite_data *suite_data,
+					const enum preferred_type *type)
 {
 	const struct setup_args *arg = &my_setup_args[get_test_fixture_index()];
 	struct client *client;
@@ -323,8 +330,7 @@ surface_get_preferred_image_description(struct wet_testsuite_data *suite_data)
 	cm = client_get_color_manager(client, 1);
 
 	/* Get preferred image description from surface */
-	image_descr = image_description_create_for_preferred(cm, client->surface,
-							     PREFERRED_ORIGINAL);
+	image_descr = image_description_create_for_preferred(cm, client->surface, *type);
 	image_description_wait_until_ready(client, image_descr);
 
 	/* Get surface image description information */
@@ -340,5 +346,5 @@ surface_get_preferred_image_description(struct wet_testsuite_data *suite_data)
 
 DECLARE_TEST_LIST(
 	TESTFN(output_get_image_description),
-	TESTFN(surface_get_preferred_image_description),
+	TESTFN_ARG(surface_get_preferred_image_description, preferred_types),
 );
