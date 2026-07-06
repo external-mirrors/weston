@@ -38,6 +38,8 @@
 #include "shared/helpers.h"
 #include "shared/xalloc.h"
 
+#include "color-properties.h"
+
 static void
 cm_supported_intent(void *data, struct wp_color_manager_v1 *wp_color_manager_v1,
 		    uint32_t render_intent)
@@ -578,8 +580,13 @@ image_descr_info_done(void *data,
 	if (has_bit(info->events_received, IMAGE_DESCR_INFO_EVENT_PRIMARIES))
 		testlog_gamut("Primary primaries:", &info->primaries, 4);
 
-	if (has_bit(info->events_received, IMAGE_DESCR_INFO_EVENT_TF_NAMED))
-		testlog("    Transfer characteristics named: %u\n", info->tf_named);
+	if (has_bit(info->events_received, IMAGE_DESCR_INFO_EVENT_TF_NAMED)) {
+		const struct weston_color_tf_info *tfi;
+
+		tfi = weston_color_tf_info_from_protocol(info->tf_named);
+		testlog("    Transfer characteristics named: %u (%s)\n",
+			info->tf_named, tfi ? tfi->desc : "???");
+	}
 
 	if (has_bit(info->events_received, IMAGE_DESCR_INFO_EVENT_TF_POWER_EXP))
 		testlog("    EOTF is a pure power-law curve of exp %.4f\n", info->tf_power);
