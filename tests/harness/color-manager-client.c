@@ -584,6 +584,11 @@ image_descr_info_done(void *data,
 	if (has_bit(info->events_received, IMAGE_DESCR_INFO_EVENT_TF_POWER_EXP))
 		testlog("    EOTF is a pure power-law curve of exp %.4f\n", info->tf_power);
 
+	if (has_bit(info->events_received, IMAGE_DESCR_INFO_EVENT_LUMINANCES))
+		testlog("    Luminance min: %.4f, max %.4f\n"
+			"        reference: %.4f\n",
+			info->min_lum, info->max_lum, info->ref_lum);
+
 	if (has_bit(info->events_received, IMAGE_DESCR_INFO_EVENT_TARGET_PRIMARIES))
 		testlog_gamut("Target primaries:", &info->target_primaries, 4);
 
