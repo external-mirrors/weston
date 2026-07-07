@@ -96,3 +96,9 @@ perfetto_annotate_track(struct weston_debug_annotations *annots,
 			const char *key,
 			unsigned char key_size,
 			const struct weston_trace_track *track);
+
+void
+perfetto_annotate_time(struct weston_debug_annotations *annots,
+		       const char *key,
+		       unsigned char key_size,
+		       struct timespec when);

@@ -29,6 +29,8 @@
 
 #include "config.h"
 
+#include "shared/timespec-util.h"
+#include "trace-helpers.h"
 #include "u_perfetto.h"
 
 #include <perfetto.h>
@@ -182,21 +184,6 @@ util_perfetto_counter_set(uint64_t parent_uuid,
 	TRACE_COUNTER(UTIL_PERFETTO_CATEGORY_DEFAULT_STR, track, value);
 }
 
-void
-util_perfetto_trace_instant_timestamp(const char *name, uint64_t track_id, uint64_t id, clockid_t clock, uint64_t ts)
-{
-	TRACE_EVENT_INSTANT(UTIL_PERFETTO_CATEGORY_DEFAULT_STR,
-			    nullptr,
-			    track_id ? perfetto::Track::Global(track_id) : perfetto::Track(0),
-			    perfetto::TraceTimestamp{clockid_to_perfetto_clock(clock), ts},
-			    [&](perfetto::EventContext ctx) {
-				ctx.event()->set_name(name);
-				if (id)
-					perfetto::Flow::ProcessScoped(id)(ctx);
-				ctx.AddDebugAnnotation(name, ts);
-	});
-}
-
 uint64_t
 util_perfetto_next_id(void)
 {
@@ -295,9 +282,19 @@ void
 util_perfetto_trace_commit_debug_annots(const char *name,
 					struct weston_debug_annotations *annots)
 {
+	perfetto::TraceTimestamp when;
+	if (annots->when_set) {
+		uint64_t ns = timespec_to_nsec(&annots->when);
+
+		when = perfetto::TraceTimestamp{clockid_to_perfetto_clock(CLOCK_MONOTONIC), ns};
+	} else {
+		when = perfetto::internal::TrackEventInternal::GetTraceTime();
+	}
+
 	TRACE_EVENT_INSTANT(UTIL_PERFETTO_CATEGORY_DEFAULT_STR,
 			    nullptr,
 			    annots->track_id ? perfetto::Track::Global(annots->track_id) : perfetto::Track(0),
+			    when,
 			    [&](perfetto::EventContext ctx) {
 				ctx.event()->set_name(name);
 				util_perfetto_flush_debug_annotation(&ctx, annots);

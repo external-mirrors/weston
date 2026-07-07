@@ -344,3 +344,14 @@ perfetto_annotate_track(struct weston_debug_annotations *annots,
 	weston_assert_u64_eq(NULL, annots->track_id, 0);
 	annots->track_id = track->id;
 }
+
+WL_EXPORT void
+perfetto_annotate_time(struct weston_debug_annotations *annots,
+		       const char *key,
+		       unsigned char key_size,
+		       struct timespec when)
+{
+	weston_assert_false(NULL, annots->when_set);
+	annots->when_set = true;
+	annots->when = when;
+}

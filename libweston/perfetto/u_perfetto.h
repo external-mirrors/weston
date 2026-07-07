@@ -70,6 +70,8 @@ struct weston_debug_annotations {
 	struct weston_debug_annotation *annots;
 	unsigned char count;
 	uint64_t track_id;
+	struct timespec when;
+	bool when_set;
 };
 
 struct weston_compositor;
@@ -102,9 +104,6 @@ void util_perfetto_trace_commit_debug_annots(const char *name,
 
 void util_perfetto_trace_commit_annotate_func(const char *name,
 		struct weston_debug_annotations *annots);
-
-void util_perfetto_trace_instant_timestamp(const char *name, uint64_t track_id,
-		uint64_t id, clockid_t clock, uint64_t ts);
 
 uint64_t util_perfetto_next_id(void);
 

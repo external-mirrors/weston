@@ -78,7 +78,7 @@ weston_timeline_perfetto(struct weston_log_scope *timeline_scope,
 	struct weston_input_event *ievent = NULL;
 	struct timespec ts;
 	uint64_t now_ns;
-	uint64_t vblank_ns = 0, gpu_ns = 0, kernel_input_ts = 0;
+	uint64_t vblank_ns = 0, gpu_ns = 0;
 	va_list argp;
 
 	if (!util_perfetto_is_tracing_enabled())
@@ -114,7 +114,6 @@ weston_timeline_perfetto(struct weston_log_scope *timeline_scope,
 		case TLT_INPUT_EVENT:
 			ievent = obj;
 			weston_perfetto_ensure_seat_id(ievent->seat);
-			kernel_input_ts = timespec_to_nsec(&ievent->ts);
 			break;
 		default:
 			assert(!"not reached");
@@ -156,7 +155,11 @@ weston_timeline_perfetto(struct weston_log_scope *timeline_scope,
 		WESTON_TRACE_TIMESTAMP_END(output->trace.gpu_track.id, CLOCK_MONOTONIC, gpu_ns);
 		break;
 	case TLP_INPUT_KERNEL_TS:
-		WESTON_TRACE_INSTANT_TIMESTAMP("event ts", ievent->seat->track.id, ievent->flow.id, CLOCK_MONOTONIC, kernel_input_ts);
+		WESTON_TRACE_BEGIN_ANNOTATION();
+		WESTON_TRACE_ANNOTATE(("seat track", &ievent->seat->track),
+				      ("event flow", &ievent->flow),
+				      ("event time", ievent->ts));
+		WESTON_TRACE_COMMIT_ANNOTATION("event");
 		break;
 	default:
 		assert(!"not reached");
