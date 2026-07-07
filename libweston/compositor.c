@@ -4587,6 +4587,8 @@ weston_output_finish_frame(struct weston_output *output,
 			   const struct timespec *stamp,
 			   uint32_t presented_flags)
 {
+	WESTON_TRACE_FLOW_TEMP(completion_flow);
+	WESTON_TRACE_FUNC(("completion flow", &completion_flow));
 	struct weston_compositor *compositor = output->compositor;
 	int32_t refresh_nsec;
 	struct timespec now;
@@ -4639,6 +4641,12 @@ weston_output_finish_frame(struct weston_output *output,
 							 CLOCK_MONOTONIC);
 	TL_POINT(compositor, TLP_CORE_REPAINT_FINISHED, TLP_OUTPUT(output),
 		 TLP_VBLANK(&vblank_monotonic), TLP_END);
+
+	WESTON_TRACE_ANNOTATE(("action", "update complete"),
+			      ("completion flow", &completion_flow),
+			      ("output track", &output->trace.track),
+			      ("time", vblank_monotonic));
+	WESTON_TRACE_COMMIT_ANNOTATION(loop_start ? "repaint loop start" : "vblank event");
 
 	refresh_nsec = millihz_to_nsec(output->current_mode->refresh);
 	if (!loop_start) {
