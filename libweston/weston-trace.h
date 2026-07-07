@@ -234,6 +234,9 @@ _weston_trace_scope_end(uint64_t *scope)
 
 #define _WESTON_TRACE_CLIENT_INIT(client) weston_trace_client_init(client)
 #define _WESTON_TRACE_CLIENT_FINI(client) weston_trace_client_fini(client)
+#define _WESTON_TRACE_CLIENT_ACTION(flow, client, action) \
+	WESTON_TRACE_FLOW_TEMP(flow);                     \
+	flow = weston_trace_client_action(client, action)
 
 #define _WESTON_TRACE_OUTPUT_INIT(output) weston_trace_output_init(output)
 #define _WESTON_TRACE_OUTPUT_FINI(output) weston_trace_output_fini(output)
@@ -263,6 +266,7 @@ _weston_trace_scope_end(uint64_t *scope)
 
 #define _WESTON_TRACE_CLIENT_INIT(client)
 #define _WESTON_TRACE_CLIENT_FINI(client)
+#define _WESTON_TRACE_CLIENT_ACTION(flow, client, action)
 
 #define _WESTON_TRACE_OUTPUT_INIT(output)
 #define _WESTON_TRACE_OUTPUT_FINI(output)
@@ -310,6 +314,8 @@ _weston_trace_scope_end(uint64_t *scope)
 
 #define WESTON_TRACE_CLIENT_INIT(client) _WESTON_TRACE_CLIENT_INIT(client)
 #define WESTON_TRACE_CLIENT_FINI(client) _WESTON_TRACE_CLIENT_FINI(client)
+#define WESTON_TRACE_CLIENT_ACTION(flow, client, action) \
+	_WESTON_TRACE_CLIENT_ACTION(flow, client, action)
 
 #define WESTON_TRACE_OUTPUT_INIT(output) _WESTON_TRACE_OUTPUT_INIT(output)
 #define WESTON_TRACE_OUTPUT_FINI(output) _WESTON_TRACE_OUTPUT_FINI(output)

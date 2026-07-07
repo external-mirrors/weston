@@ -5310,8 +5310,10 @@ weston_surface_is_pending_viewport_dst_size_int(
 static void
 surface_commit(struct wl_client *client, struct wl_resource *resource)
 {
+	WESTON_TRACE_CLIENT_ACTION(client_flow, client, "wl_surface.commit");
 	struct weston_surface *surface = wl_resource_get_user_data(resource);
-	WESTON_TRACE_FUNC(("surface state flow", &surface->pending.flow));
+	WESTON_TRACE_FUNC(("client flow", &client_flow),
+			  ("surface state flow", &surface->pending.flow));
 	struct weston_buffer *buffer;
 	int32_t tmp_w, tmp_h;
 

@@ -133,6 +133,22 @@ weston_trace_client_fini(struct weston_client *client)
 	weston_trace_track_clear(&client->trace.track);
 }
 
+struct weston_trace_flow
+weston_trace_client_action(struct wl_client *wclient,
+			   const char *action)
+{
+	struct weston_trace_flow client_flow = { 0 };
+	struct weston_client *client = weston_compositor_get_client(NULL, wclient);
+
+	WESTON_TRACE_BEGIN_ANNOTATION();
+	WESTON_TRACE_ANNOTATE(("client track", &client->trace.track),
+			      ("client flow", &client_flow),
+			      ("action", action));
+	WESTON_TRACE_COMMIT_ANNOTATION(action);
+
+	return client_flow;
+}
+
 void
 weston_trace_output_init(struct weston_output *output)
 {

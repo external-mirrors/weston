@@ -40,6 +40,10 @@ weston_trace_client_init(struct weston_client *client);
 void
 weston_trace_client_fini(struct weston_client *client);
 
+struct weston_trace_flow
+weston_trace_client_action(struct wl_client *wclient,
+			   const char *action);
+
 void
 weston_trace_output_init(struct weston_output *output);
 
