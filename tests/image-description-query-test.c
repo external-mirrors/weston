@@ -103,6 +103,40 @@ static const struct setup_args my_setup_args[] = {
 		},
 	},
 	{
+		.meta.name = "ICCv4 file ProPhotoRGB",
+		.icc_file = "ProPhotoRGB.icc",
+		.icc_size = 23108,
+		.param = {
+			.template = {
+				.tf.params[0] = 1.8f,
+				.primaries = {
+					.primary = {
+						{ 0.7347f, 0.2653f },
+						{ 0.1596f, 0.8404f },
+						{ 0.0366f, 0.0001f },
+					},
+					.white_point = { 0.3457f, 0.3585 },
+				},
+				.target_primaries = {
+					.primary = {
+						{ 0.7347f, 0.2653f },
+						{ 0.1596f, 0.8404f },
+						{ 0.0366f, 0.0001f },
+					},
+					.white_point = { 0.3457f, 0.3585 },
+				},
+				.min_luminance = 0.0f,
+				.max_luminance = 100.f,
+				.reference_white_luminance = 100.f,
+				.target_min_luminance = 0.0f,
+				.target_max_luminance = 100.f,
+				.maxCLL = NO_VALUE,
+				.maxFALL = NO_VALUE,
+			},
+			.tf = WESTON_TF_POWER,
+		},
+	},
+	{
 		.meta.name = "sRGB power 2.3",
 		.param = {
 			.template = {
