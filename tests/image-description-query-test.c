@@ -235,11 +235,11 @@ assert_params_equal(const struct weston_color_profile_params *ref,
 	float tol = 0.0001;
 	int indent = 4;
 
-	test_assert_color_gamut_eq(&tst->primaries, &ref->primaries, tol, indent, "primaries");
+	test_assert_color_gamut_eq(&ref->primaries, &tst->primaries, tol, indent, "primaries");
 	if (ref->primaries_info)
-		test_assert_enum_eq(tst->primaries_named, ref->primaries_info->protocol_primaries);
+		test_assert_enum_eq(ref->primaries_info->protocol_primaries, tst->primaries_named);
 
-	test_assert_enum_eq(tst->tf_named, ref->tf.info->protocol_tf);
+	test_assert_enum_eq(ref->tf.info->protocol_tf, tst->tf_named);
 	if (ref->tf.info->tf == WESTON_TF_POWER) {
 		test_assert_bit_set(tst->events_received, (1u << IMAGE_DESCR_INFO_EVENT_TF_POWER_EXP));
 		test_assert_f32_absdiff_lt(ref->tf.params[0], tst->tf_power, tol);
