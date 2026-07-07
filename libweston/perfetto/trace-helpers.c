@@ -186,6 +186,7 @@ weston_trace_surface_update(struct weston_surface *surface,
 		 * to send a bogus end.
 		 */
 		util_perfetto_trace_end(trace->damage_track.id);
+		util_perfetto_trace_end(trace->fifo_track.id);
 		return;
 	}
 
@@ -210,6 +211,7 @@ weston_trace_surface_update(struct weston_surface *surface,
 	trace->label = strdup(new_label);
 
 	weston_trace_track_clear(&trace->damage_track);
+	weston_trace_track_clear(&trace->fifo_track);
 
 	snprintf(track_name, sizeof(track_name), "%s #%d",
 		 new_label, surface->s_id);
@@ -217,11 +219,15 @@ weston_trace_surface_update(struct weston_surface *surface,
 	trace->damage_track.id =
 		util_perfetto_new_nested_track(track_name,
 					       trace->client_track.id);
+	trace->fifo_track.id =
+		util_perfetto_new_nested_track("FIFO barriers",
+					       trace->damage_track.id);
 }
 
 void
 weston_trace_surface_fini(struct weston_surface *surface)
 {
 	weston_trace_track_clear(&surface->trace.damage_track);
+	weston_trace_track_clear(&surface->trace.fifo_track);
 	free(surface->trace.label);
 }

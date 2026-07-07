@@ -148,6 +148,9 @@
 
 #define _WESTON_TRACE_INIT() util_perfetto_init()
 
+#define _WESTON_TRACE_FLOW_TEMP(flow_name) \
+	struct weston_trace_flow flow_name = { 0 }
+
 /* Helpers macros for recursive variadic expansion, never to
  * be used outside of this header.
  */
@@ -269,7 +272,7 @@ _weston_trace_scope_end(uint64_t *scope)
 
 #define _WESTON_TRACE_FLOW_START(flow)
 #define _WESTON_TRACE_FLOW_JOIN(target, flow)
-
+#define _WESTON_TRACE_FLOW_TEMP(flow_name)
 
 #define _WESTON_TRACE_CLIENT_INIT(client)
 #define _WESTON_TRACE_CLIENT_FINI(client)
@@ -319,6 +322,7 @@ _weston_trace_scope_end(uint64_t *scope)
 
 #define WESTON_TRACE_FLOW_START(flow) _WESTON_TRACE_FLOW_START(flow)
 #define WESTON_TRACE_FLOW_JOIN(target, flow) _WESTON_TRACE_FLOW_JOIN(target, flow)
+#define WESTON_TRACE_FLOW_TEMP(flow_name) _WESTON_TRACE_FLOW_TEMP(flow_name)
 
 #define WESTON_TRACE_CLIENT_INIT(client) _WESTON_TRACE_CLIENT_INIT(client)
 #define WESTON_TRACE_CLIENT_FINI(client) _WESTON_TRACE_CLIENT_FINI(client)

@@ -32,6 +32,7 @@
 #include "libweston-internal.h"
 #include "shared/helpers.h"
 #include "shared/xalloc.h"
+#include "weston-trace.h"
 
 struct weston_fifo {
 	struct weston_surface *surface;
@@ -191,6 +192,19 @@ fifo_setup(struct weston_compositor *compositor)
 static void
 weston_fifo_surface_clear_barrier(struct weston_surface *surface)
 {
+	WESTON_TRACE_FLOW_TEMP(clearing_flow);
+	WESTON_TRACE_FUNC(("clearing flow", &clearing_flow));
+
+	if (!surface->fifo_barrier)
+		return;
+
+	WESTON_TRACE_ANNOTATE(("fifo track", &surface->trace.fifo_track),
+			      ("fifo flow", &surface->trace.fifo_flow),
+			      ("clearing flow", &clearing_flow),
+			      ("action", "clear barrier"));
+	WESTON_TRACE_COMMIT_ANNOTATION("clear");
+	WESTON_TRACE_FLOW_START(&surface->trace.fifo_flow);
+
 	surface->fifo_barrier = false;
 	wl_list_remove(&surface->fifo_barrier_link);
 	wl_list_init(&surface->fifo_barrier_link);
@@ -199,6 +213,7 @@ weston_fifo_surface_clear_barrier(struct weston_surface *surface)
 void
 weston_fifo_surface_set_barrier(struct weston_surface *surface)
 {
+	WESTON_TRACE_FUNC(("fifo flow", &surface->trace.fifo_flow));
 	/* If nothing is waiting on barriers, we could set multiple times
 	 * before a repaint occurs.
 	 *
@@ -214,6 +229,11 @@ weston_fifo_surface_set_barrier(struct weston_surface *surface)
 	 */
 	if (!surface->output)
 		return;
+
+	WESTON_TRACE_ANNOTATE(("fifo track", &surface->trace.fifo_track),
+			      ("fifo flow", &surface->trace.fifo_flow),
+			      ("action", "set barrier"));
+	WESTON_TRACE_COMMIT_ANNOTATION("set");
 
 	surface->fifo_barrier = true;
 	wl_list_insert(&surface->output->fifo_barrier_surfaces,
@@ -241,6 +261,9 @@ bool
 weston_fifo_surface_state_ready(struct weston_surface *surface,
 				struct weston_surface_state *state)
 {
+	WESTON_TRACE_FLOW_TEMP(blocking_flow);
+	WESTON_TRACE_FUNC(("state flow", &state->flow),
+			  ("blocking flow", &blocking_flow));
 	struct weston_subsurface *sub = weston_surface_to_subsurface(surface);
 	bool e_sync = sub && sub->effectively_synchronized;
 
@@ -264,6 +287,12 @@ weston_fifo_surface_state_ready(struct weston_surface *surface,
 	/* Occluded surfaces ignore fifo */
 	if (!weston_surface_visibility_mask(surface))
 		return true;
+
+	WESTON_TRACE_ANNOTATE(("action", "block"),
+			      ("fifo track", &surface->trace.fifo_track),
+			      ("fifo flow", &surface->trace.fifo_flow),
+			      ("blocking flow", &blocking_flow));
+	WESTON_TRACE_COMMIT_ANNOTATION("block");
 
 	return false;
 }

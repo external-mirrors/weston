@@ -2057,6 +2057,8 @@ struct weston_trace_surface {
 	struct weston_trace_track client_track;
 	struct weston_trace_flow flow;
 	struct weston_trace_track damage_track;
+	struct weston_trace_track fifo_track;
+	struct weston_trace_flow fifo_flow;
 	char *label;
 };
 
