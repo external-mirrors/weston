@@ -2355,7 +2355,7 @@ drm_pending_state_apply_sync(struct drm_pending_state *pending_state)
 	struct drm_device *device = pending_state->device;
 	struct drm_output_state *output_state, *tmp;
 	struct drm_crtc *crtc;
-	bool failed;
+	bool failed = false;
 
 	if (device->atomic_modeset)
 		return drm_pending_state_apply_atomic(pending_state,
