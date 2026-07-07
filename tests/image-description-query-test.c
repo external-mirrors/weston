@@ -83,6 +83,26 @@ static const struct setup_args my_setup_args[] = {
 		},
 	},
 	{
+		.meta.name = "ICCv2 file sRGB",
+		.icc_file = "sRGB.icm",
+		.icc_size = 3004,
+		.param = {
+			.template = {
+				.primaries = prim_bt709,
+				.target_primaries = prim_bt709,
+				.min_luminance = 0.0f,
+				.max_luminance = 80.f,
+				.reference_white_luminance = 80.f,
+				.target_min_luminance = 0.0f,
+				.target_max_luminance = 80.f,
+				.maxCLL = NO_VALUE,
+				.maxFALL = NO_VALUE,
+			},
+			/* Profile contains a LUT, ignored. */
+			.tf = WESTON_TF_GAMMA22,
+		},
+	},
+	{
 		.meta.name = "sRGB power 2.3",
 		.param = {
 			.template = {
