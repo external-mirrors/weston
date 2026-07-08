@@ -3636,6 +3636,7 @@ drm_process_layoutput(struct wet_compositor *wet, struct wet_layoutput *lo)
 	while (lo->add.n > 0) {
 		if (!wl_list_empty(&lo->output_list)) {
 			weston_log("Error: independent-CRTC clone mode is not implemented.\n");
+			free(name);
 			return -1;
 		}
 
@@ -3659,6 +3660,7 @@ drm_process_layoutput(struct wet_compositor *wet, struct wet_layoutput *lo)
 		}
 	}
 
+	free(name);
 	return 0;
 }
 
