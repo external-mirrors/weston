@@ -423,7 +423,7 @@ gl_log_paint_node_bbox_and_region(struct gl_renderer *gr, struct weston_paint_no
 	const pixman_box32_t *rects;
 
 	if (!weston_log_scope_is_enabled(gr->paint_node_scope) &&
-	    !util_perfetto_is_tracing_enabled())
+	    !WESTON_TRACE_IS_TRACING())
 		return;
 
 	rects = pixman_region32_rectangles(damage, &n_rects);

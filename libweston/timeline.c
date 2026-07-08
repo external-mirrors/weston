@@ -576,7 +576,7 @@ weston_timeline_profiling(struct weston_log_scope *timeline_scope)
 	if (weston_log_scope_is_enabled(timeline_scope))
 		return true;
 
-	if (util_perfetto_is_tracing_enabled())
+	if (WESTON_TRACE_IS_TRACING())
 		return true;
 
 	return false;

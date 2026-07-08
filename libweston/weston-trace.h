@@ -12,12 +12,12 @@
 
 #include "config.h"
 
+#if defined(HAVE_PERFETTO)
+
 #include "perfetto/annotations.h"
 #include "perfetto/u_perfetto.h"
 #include "shared/weston-assert.h"
 #include <string.h>
-
-#if defined(HAVE_PERFETTO)
 
 #if !defined(HAVE___BUILTIN_EXPECT)
 #  define __builtin_expect(x, y) (x)
@@ -42,34 +42,36 @@
 /* note that util_perfetto_is_tracing_enabled always returns false until
  * util_perfetto_init is called
  */
+#define _WESTON_TRACE_IS_TRACING() unlikely(util_perfetto_is_tracing_enabled())
+
 #define _WESTON_TRACE_BEGIN(name)                                             \
 	do {                                                                  \
-		if (unlikely(util_perfetto_is_tracing_enabled()))             \
+		if (_WESTON_TRACE_IS_TRACING())                               \
 			util_perfetto_trace_begin(name);                      \
 	} while (0)
 
 #define _WESTON_TRACE_END()                                                   \
 	do {                                                                  \
-		if (unlikely(util_perfetto_is_tracing_enabled()))             \
+		if (_WESTON_TRACE_IS_TRACING())                               \
 			util_perfetto_trace_end();                            \
 	} while (0)
 
 #define _WESTON_TRACE_SET_COUNTER(name, value)                                \
 	do {                                                                  \
-		if (unlikely(util_perfetto_is_tracing_enabled()))             \
+		if (_WESTON_TRACE_IS_TRACING())                               \
 			util_perfetto_counter_set(name, value);               \
 	} while (0)
 
 #define _WESTON_TRACE_TIMESTAMP_BEGIN(name, track_id, flow_id, clock, timestamp) \
 	do {                                                                     \
-		if (unlikely(util_perfetto_is_tracing_enabled()))                \
+		if (_WESTON_TRACE_IS_TRACING())                                  \
 			util_perfetto_trace_full_begin(name, track_id, flow_id,  \
 						       clock, timestamp);        \
 	} while (0)
 
 #define _WESTON_TRACE_TIMESTAMP_END(track_id, clock, timestamp)               \
 	do {                                                                  \
-		if (unlikely(util_perfetto_is_tracing_enabled()))             \
+		if (_WESTON_TRACE_IS_TRACING())                               \
 			util_perfetto_trace_full_end(track_id, clock,         \
 						     timestamp);              \
 	} while (0)
@@ -129,7 +131,7 @@
 /* annotated funcs */
 #define _WESTON_TRACE_ANNOTATE_FUNC_BEGIN(name, annots)                                                 \
 	do {                                                                                            \
-		if (unlikely(util_perfetto_is_tracing_enabled())) {                                     \
+		if (_WESTON_TRACE_IS_TRACING()) {                                                       \
 			util_perfetto_trace_commit_annotate_func(name, annots);                         \
 		}                                                                                       \
 	} while (0)
@@ -165,7 +167,7 @@
 /* end of helper section */
 #define _WESTON_TRACE_INSTANT_TIMESTAMP(name, track_id, id, clock, timestamp) \
 	do {                                                                  \
-		if (unlikely(util_perfetto_is_tracing_enabled()))             \
+		if (WESTON_TRACE_IS_TRACING())                                \
 			_weston_trace_instant_timestamp(name, track_id, id,   \
 							clock, timestamp);    \
 	} while (0)
@@ -242,6 +244,7 @@ _weston_trace_scope_end(int *scope)
 #define _WESTON_TRACE_ANNOTATE(...)
 
 #define _WESTON_TRACE_INIT()
+#define _WESTON_TRACE_IS_TRACING() (false)
 
 #endif /* HAVE_PERFETTO */
 
@@ -276,5 +279,6 @@ _weston_trace_scope_end(int *scope)
 	_WESTON_TRACE_ANNOTATE(__VA_ARGS__)
 
 #define WESTON_TRACE_INIT() _WESTON_TRACE_INIT()
+#define WESTON_TRACE_IS_TRACING() _WESTON_TRACE_IS_TRACING()
 
 #endif /* WESTON_TRACE_H */
