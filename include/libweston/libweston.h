@@ -1546,6 +1546,14 @@ struct weston_compositor {
 	int global_weston_surface_disambiguator; /* surface ids to avoid using PID-reuse */
 
 	uint32_t state;
+
+	/**
+	 * Controls whether compositor wakes up on user input. Enabled by
+	 * default. Disabling this gives more control over the wake-up policy,
+	 * see weston_compositor_set_wake_on_input() for details.
+	 */
+	bool wake_up_on_input;
+
 	struct wl_event_source *idle_source;
 	uint32_t idle_inhibit;
 	int idle_time;			/* timeout, s */
@@ -2433,6 +2441,9 @@ weston_binding_destroy(struct weston_binding *binding);
 void
 weston_install_debug_key_binding(struct weston_compositor *compositor,
 				 uint32_t mod);
+
+void
+weston_compositor_set_wake_on_input(struct weston_compositor *wc, bool enable);
 
 void
 weston_compositor_set_default_pointer_grab(struct weston_compositor *compositor,

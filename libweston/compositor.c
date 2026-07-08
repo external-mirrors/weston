@@ -10511,6 +10511,8 @@ weston_compositor_create(struct wl_display *display,
 
 	ec->content_protection = NULL;
 
+	ec->wake_up_on_input = true;
+
 	if (!wl_global_create(ec->wl_display, &wl_compositor_interface, 5,
 			      ec, compositor_bind))
 		goto fail;
@@ -10701,6 +10703,31 @@ weston_compositor_exit_with_code(struct weston_compositor *compositor,
 		compositor->exit_code = exit_code;
 
 	weston_compositor_exit(compositor);
+}
+
+/** Set the wake-on-input behavior
+ *
+ * \param wc The compositor to configure.
+ * \param enable If true, wake-on-input is enabled. If false, disabled.
+ *
+ * When enabled, any input event wakes up the compositor. Otherwise, input does
+ * not wake the compositor automatically. This is enabled by default.
+ *
+ * Disabling wake-on-input does not stop Weston from processing input events to
+ * update its internal state and routing them through weston_*_grab_interface.
+ * The default grab forward events to clients, so callers should install custom
+ * grabs if they want different behavior.
+ *
+ * Combined with these custom grabs, disabling wake-on-input lets callers define
+ * their own wake-up policy. For instance, waking up only on a particular key
+ * press or via mechanisms unrelated to input events.
+ *
+ * \ingroup compositor
+ */
+WL_EXPORT void
+weston_compositor_set_wake_on_input(struct weston_compositor *wc, bool enable)
+{
+	wc->wake_up_on_input = enable;
 }
 
 /** weston_compositor_set_default_pointer_grab

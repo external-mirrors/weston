@@ -362,9 +362,24 @@ weston_seat_repick(struct weston_seat *seat)
 }
 
 static void
+maybe_wake_compositor(struct weston_compositor *wc)
+{
+	/**
+	 * We should allow waking up the compositor when it's already awake.
+	 * This can be used to start/re-start the idle timeout. wake-on-input
+	 * being disabled should only prevent calling weston_compositor_wake()
+	 * when it is idle, sleeping, etc.
+	 */
+	if (wc->state != WESTON_COMPOSITOR_ACTIVE && !wc->wake_up_on_input)
+		return;
+
+	weston_compositor_wake(wc);
+}
+
+static void
 weston_compositor_idle_inhibit(struct weston_compositor *compositor)
 {
-	weston_compositor_wake(compositor);
+	maybe_wake_compositor(compositor);
 	compositor->idle_inhibit++;
 }
 
@@ -372,7 +387,7 @@ static void
 weston_compositor_idle_release(struct weston_compositor *compositor)
 {
 	compositor->idle_inhibit--;
-	weston_compositor_wake(compositor);
+	maybe_wake_compositor(compositor);
 }
 
 static void
@@ -2353,7 +2368,7 @@ notify_motion(const struct weston_pointer_motion_event *event)
 	struct weston_compositor *ec = seat->compositor;
 	struct weston_pointer *pointer = weston_seat_get_pointer(seat);
 
-	weston_compositor_wake(ec);
+	maybe_wake_compositor(ec);
 	pointer->grab->interface->motion(pointer->grab, event);
 }
 
@@ -2471,7 +2486,7 @@ notify_axis(const struct weston_pointer_axis_event *event)
 	struct weston_compositor *compositor = seat->compositor;
 	struct weston_pointer *pointer = weston_seat_get_pointer(seat);
 
-	weston_compositor_wake(compositor);
+	maybe_wake_compositor(compositor);
 
 	if (weston_compositor_run_axis_binding(compositor, pointer, &event->base.ts, event))
 		return;
@@ -2485,7 +2500,7 @@ notify_axis_source(struct weston_seat *seat, uint32_t source)
 	struct weston_compositor *compositor = seat->compositor;
 	struct weston_pointer *pointer = weston_seat_get_pointer(seat);
 
-	weston_compositor_wake(compositor);
+	maybe_wake_compositor(compositor);
 
 	pointer->grab->interface->axis_source(pointer->grab, source);
 }
@@ -2496,7 +2511,7 @@ notify_pointer_frame(struct weston_seat *seat)
 	struct weston_compositor *compositor = seat->compositor;
 	struct weston_pointer *pointer = weston_seat_get_pointer(seat);
 
-	weston_compositor_wake(compositor);
+	maybe_wake_compositor(compositor);
 
 	pointer->grab->interface->frame(pointer->grab);
 }
@@ -3465,8 +3480,9 @@ notify_tablet_tool_motion(struct weston_tablet_tool *tool,
 			  struct weston_coord_global pos)
 {
 	struct weston_tablet_tool_grab *grab = tool->grab;
+	struct weston_compositor *wc = tool->seat->compositor;
 
-	weston_compositor_wake(tool->seat->compositor);
+	maybe_wake_compositor(wc);
 
 	grab->interface->motion(grab, time, pos);
 }
@@ -3476,8 +3492,9 @@ notify_tablet_tool_pressure(struct weston_tablet_tool *tool,
 			    const struct timespec *time, uint32_t pressure)
 {
 	struct weston_tablet_tool_grab *grab = tool->grab;
+	struct weston_compositor *wc = tool->seat->compositor;
 
-	weston_compositor_wake(tool->seat->compositor);
+	maybe_wake_compositor(wc);
 
 	grab->interface->pressure(grab, time, pressure);
 }
@@ -3487,8 +3504,9 @@ notify_tablet_tool_distance(struct weston_tablet_tool *tool,
 			    const struct timespec *time, uint32_t distance)
 {
 	struct weston_tablet_tool_grab *grab = tool->grab;
+	struct weston_compositor *wc = tool->seat->compositor;
 
-	weston_compositor_wake(tool->seat->compositor);
+	maybe_wake_compositor(wc);
 
 	grab->interface->distance(grab, time, distance);
 }
@@ -3499,8 +3517,9 @@ notify_tablet_tool_tilt(struct weston_tablet_tool *tool,
 			wl_fixed_t tilt_x, wl_fixed_t tilt_y)
 {
 	struct weston_tablet_tool_grab *grab = tool->grab;
+	struct weston_compositor *wc = tool->seat->compositor;
 
-	weston_compositor_wake(tool->seat->compositor);
+	maybe_wake_compositor(wc);
 
 	grab->interface->tilt(grab, time, tilt_x, tilt_y);
 }
