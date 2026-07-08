@@ -169,33 +169,33 @@ weston_timeline_perfetto(struct weston_log_scope *timeline_scope,
 	case TLP_CORE_REPAINT_EXIT_LOOP:
 		break;
 	case TLP_CORE_FLUSH_DAMAGE:
-		WESTON_TRACE_TIMESTAMP_END("Damaged", surface->damage_track_id, CLOCK_MONOTONIC, now_ns);
+		WESTON_TRACE_TIMESTAMP_END(surface->damage_track_id, CLOCK_MONOTONIC, now_ns);
 		WESTON_TRACE_TIMESTAMP_BEGIN("Clean", surface->damage_track_id, 0, CLOCK_MONOTONIC, now_ns);
 		break;
 	case TLP_CORE_REPAINT_BEGIN:
-		WESTON_TRACE_TIMESTAMP_END("Scheduled", output->paint_track_id, CLOCK_MONOTONIC, now_ns);
+		WESTON_TRACE_TIMESTAMP_END(output->paint_track_id, CLOCK_MONOTONIC, now_ns);
 		WESTON_TRACE_TIMESTAMP_BEGIN("Paint", output->paint_track_id, 0, CLOCK_MONOTONIC, now_ns);
 		break;
 	case TLP_CORE_REPAINT_POSTED:
-		WESTON_TRACE_TIMESTAMP_END("Paint", output->paint_track_id, CLOCK_MONOTONIC, now_ns);
+		WESTON_TRACE_TIMESTAMP_END(output->paint_track_id, CLOCK_MONOTONIC, now_ns);
 		WESTON_TRACE_TIMESTAMP_BEGIN("Posted", output->presentation_track_id, 0, CLOCK_MONOTONIC, now_ns);
 		break;
 	case TLP_CORE_REPAINT_FINISHED:
-		WESTON_TRACE_TIMESTAMP_END("Posted", output->presentation_track_id, CLOCK_MONOTONIC, vblank_ns);
+		WESTON_TRACE_TIMESTAMP_END(output->presentation_track_id, CLOCK_MONOTONIC, vblank_ns);
 		break;
 	case TLP_CORE_REPAINT_REQ:
 		WESTON_TRACE_TIMESTAMP_BEGIN("Scheduled", output->paint_track_id, 0, CLOCK_MONOTONIC, now_ns);
 		break;
 	case TLP_CORE_COMMIT_DAMAGE:
-		WESTON_TRACE_TIMESTAMP_END("Clean", surface->damage_track_id, CLOCK_MONOTONIC, now_ns);
-		WESTON_TRACE_TIMESTAMP_END("Damaged", surface->damage_track_id, CLOCK_MONOTONIC, now_ns);
+		WESTON_TRACE_TIMESTAMP_END(surface->damage_track_id, CLOCK_MONOTONIC, now_ns);
+		WESTON_TRACE_TIMESTAMP_END(surface->damage_track_id, CLOCK_MONOTONIC, now_ns);
 		WESTON_TRACE_TIMESTAMP_BEGIN("Damaged", surface->damage_track_id, surface->flow.id, CLOCK_MONOTONIC, now_ns);
 		break;
 	case TLP_RENDERER_GPU_BEGIN:
 		WESTON_TRACE_TIMESTAMP_BEGIN("Active", output->gpu_track_id, 0, CLOCK_MONOTONIC, gpu_ns);
 		break;
 	case TLP_RENDERER_GPU_END:
-		WESTON_TRACE_TIMESTAMP_END("Active", output->gpu_track_id, CLOCK_MONOTONIC, gpu_ns);
+		WESTON_TRACE_TIMESTAMP_END(output->gpu_track_id, CLOCK_MONOTONIC, gpu_ns);
 		break;
 	case TLP_INPUT_KERNEL_TS:
 		WESTON_TRACE_INSTANT_TIMESTAMP("event ts", ievent->seat->track_id, ievent->flow.id, CLOCK_MONOTONIC, kernel_input_ts);

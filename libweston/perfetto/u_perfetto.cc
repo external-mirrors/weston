@@ -129,7 +129,7 @@ util_perfetto_new_track(const char *name)
 }
 
 void
-util_perfetto_trace_full_end(const char *name, uint64_t track_id, clockid_t clock, uint64_t timestamp)
+util_perfetto_trace_full_end(uint64_t track_id, clockid_t clock, uint64_t timestamp)
 {
 	TRACE_EVENT_END(UTIL_PERFETTO_CATEGORY_DEFAULT_STR,
 			perfetto::Track(track_id),
