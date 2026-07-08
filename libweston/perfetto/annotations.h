@@ -31,6 +31,7 @@
 #include "perfetto/u_perfetto.h"
 
 typedef struct { const struct timespec ts; } weston_trace_time_since;
+typedef struct { const struct timespec ts; } weston_trace_time_until;
 
 void
 perfetto_annotate_int(struct weston_debug_annotations *annots,
@@ -90,6 +91,12 @@ perfetto_annotate_time_since(struct weston_debug_annotations *annots,
 			     const char *key,
 			     unsigned char key_size,
 			     weston_trace_time_since *since);
+
+void
+perfetto_annotate_time_until(struct weston_debug_annotations *annots,
+			     const char *key,
+			     unsigned char key_size,
+			     weston_trace_time_until *until);
 
 void
 perfetto_annotate_track(struct weston_debug_annotations *annots,

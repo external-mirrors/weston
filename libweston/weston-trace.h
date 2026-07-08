@@ -99,6 +99,7 @@
 			char *: perfetto_annotate_string,                                 \
 			const char *: perfetto_annotate_string,                           \
 			weston_trace_time_since *: perfetto_annotate_time_since,          \
+			weston_trace_time_until *: perfetto_annotate_time_until,          \
 			struct weston_buffer *: perfetto_annotate_buffer,                 \
 			const struct weston_buffer *: perfetto_annotate_buffer,           \
 			struct weston_trace_track *: perfetto_annotate_track,             \

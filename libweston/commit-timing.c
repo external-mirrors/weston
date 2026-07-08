@@ -208,12 +208,18 @@ bool
 weston_commit_timing_surface_state_ready(struct weston_surface *surface,
 					 struct weston_surface_state *state)
 {
+	WESTON_TRACE_FUNC(("surface state flow", &state->flow));
 	struct weston_output *output = surface->output;
 	struct timespec target_repaint;
 	struct timespec now_ts;
 
 	if (!state->update_time.valid || state->update_time.satisfied)
 		return true;
+
+	WESTON_TRACE_ANNOTATE(("surface state flow", &state->flow),
+			      ("action", "check timing"),
+			      ("ready in(us)", (weston_trace_time_until *)&state->update_time.time));
+	WESTON_TRACE_COMMIT_ANNOTATION("commit-timing check");
 
 	weston_compositor_read_presentation_clock(surface->compositor,
 						  &now_ts);

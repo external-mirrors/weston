@@ -335,6 +335,31 @@ perfetto_annotate_time_since(struct weston_debug_annotations *annots,
 	do_annotate_time_since(annots, annots->count, key, key_size, since);
 }
 
+static void
+do_annotate_time_until(struct weston_debug_annotations *annots,
+		       unsigned char parent,
+		       const char *key,
+		       unsigned char key_size,
+		       weston_trace_time_until *until)
+{
+	struct timespec now;
+	struct timespec target = until->ts;
+	double delta;
+
+	clock_gettime(CLOCK_MONOTONIC, &now);
+	delta = timespec_sub_to_nsec(&target, &now) / 1000.0;
+	do_annotate_double(annots, annots->count, key, key_size, delta);
+}
+
+WL_EXPORT void
+perfetto_annotate_time_until(struct weston_debug_annotations *annots,
+			     const char *key,
+			     unsigned char key_size,
+			     weston_trace_time_until *until)
+{
+	do_annotate_time_until(annots, annots->count, key, key_size, until);
+}
+
 WL_EXPORT void
 perfetto_annotate_track(struct weston_debug_annotations *annots,
 			const char *key,
