@@ -641,6 +641,7 @@ gl_shader_scope_new_subscription(struct weston_log_subscription *subs,
 					       "%6u: (%.1f) %s\n",
 					       shader->program,
 					       msecs / 1000.0, desc);
+		free(desc);
 	}
 	weston_log_subscription_printf(subs, "Total: %d programs.\n", count);
 }
