@@ -188,7 +188,6 @@ weston_timeline_perfetto(struct weston_log_scope *timeline_scope,
 		break;
 	case TLP_CORE_COMMIT_DAMAGE:
 		WESTON_TRACE_TIMESTAMP_END(surface->damage_track_id, CLOCK_MONOTONIC, now_ns);
-		WESTON_TRACE_TIMESTAMP_END(surface->damage_track_id, CLOCK_MONOTONIC, now_ns);
 		WESTON_TRACE_TIMESTAMP_BEGIN("Damaged", surface->damage_track_id, surface->flow.id, CLOCK_MONOTONIC, now_ns);
 		break;
 	case TLP_RENDERER_GPU_BEGIN:
