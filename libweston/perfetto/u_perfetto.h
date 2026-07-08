@@ -35,6 +35,10 @@
 
 #include "u_atomic.h"
 
+#ifndef HAVE_PERFETTO
+#error "u_perfetto.h must not be included in a non-perfetto build"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -66,8 +70,6 @@ struct weston_debug_annotations {
 	struct weston_debug_annotation *annots;
 	unsigned char count;
 };
-
-#ifdef HAVE_PERFETTO
 
 extern int util_perfetto_tracing_state;
 
@@ -101,79 +103,6 @@ void util_perfetto_trace_instant_timestamp(const char *name, uint64_t track_id,
 uint64_t util_perfetto_next_id(void);
 
 uint64_t util_perfetto_new_track(const char *name);
-
-#else /* HAVE_PERFETTO */
-
-static inline void
-util_perfetto_init(void)
-{
-}
-
-static inline bool
-util_perfetto_is_tracing_enabled(void)
-{
-	return false;
-}
-
-static inline void
-util_perfetto_trace_begin(const char *name)
-{
-}
-
-static inline void
-util_perfetto_trace_end(void)
-{
-}
-
-static inline void
-util_perfetto_trace_full_begin(const char *name, uint64_t track_id, uint64_t id, clockid_t clock, uint64_t timestamp)
-{
-}
-
-static inline void
-util_perfetto_trace_full_end(const char *name, uint64_t track_id, clockid_t clock, uint64_t timestamp)
-{
-}
-
-static inline void
-util_perfetto_trace_commit_debug_annots(uint64_t id, const char *name,
-					struct weston_debug_annotations *annots)
-{
-}
-
-static inline void
-util_perfetto_trace_commit_annotate_func(const char *name,
-					 struct weston_debug_annotations *annots)
-{
-}
-
-static inline void
-util_perfetto_trace_commit_annotate_func_flow(uint64_t id, const char *name,
-					      struct weston_debug_annotations *annots)
-{
-}
-
-static inline void
-util_perfetto_trace_instant_timestamp(const char *name, uint64_t track_id,
-				      clockid_t clock, uint64_t ts)
-{
-}
-
-static inline void util_perfetto_counter_set(const char *name, double value)
-{
-}
-
-static inline uint64_t util_perfetto_next_id(void)
-{
-	return 0;
-}
-
-static inline uint64_t util_perfetto_new_track(const char *name)
-{
-	return 0;
-}
-
-#endif /* HAVE_PERFETTO */
 
 #ifdef __cplusplus
 }
