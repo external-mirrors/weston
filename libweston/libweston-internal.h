@@ -276,6 +276,18 @@ struct weston_client {
 	struct wl_list link; /**< in weston_compositor::client_list */
 };
 
+struct weston_presentation_feedback {
+	struct wl_resource *resource;
+
+	struct weston_surface *surface;
+
+	/* XXX: could use just wl_resource_get_link() instead */
+	struct wl_list link;
+
+	/* The per-surface feedback flags */
+	uint32_t psf_flags;
+};
+
 bool
 weston_renderer_resize_output(struct weston_output *output,
 			      const struct weston_size *fb_size,

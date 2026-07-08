@@ -1025,18 +1025,6 @@ weston_view_create(struct weston_surface *surface)
 	return view;
 }
 
-struct weston_presentation_feedback {
-	struct wl_resource *resource;
-
-	struct weston_surface *surface;
-
-	/* XXX: could use just wl_resource_get_link() instead */
-	struct wl_list link;
-
-	/* The per-surface feedback flags */
-	uint32_t psf_flags;
-};
-
 static void
 weston_presentation_feedback_discard(
 		struct weston_presentation_feedback *feedback)
