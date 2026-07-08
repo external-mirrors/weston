@@ -2059,6 +2059,10 @@ struct weston_trace_surface {
 	struct weston_trace_track damage_track;
 	struct weston_trace_track fifo_track;
 	struct weston_trace_flow fifo_flow;
+	struct weston_trace_track real_track;
+	struct weston_trace_track ideal_track;
+	uint64_t buffer_count;
+	uint32_t queue_depth;
 	char *label;
 };
 

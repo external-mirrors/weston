@@ -28,6 +28,8 @@
 
 #include "perfetto/annotations.h"
 #include "perfetto/trace-helpers.h"
+#include "shared/xalloc.h"
+#include "shared/timespec-util.h"
 #include "weston-trace.h"
 
 static void
@@ -203,6 +205,8 @@ weston_trace_surface_update(struct weston_surface *surface,
 		 */
 		util_perfetto_trace_end(trace->damage_track.id);
 		util_perfetto_trace_end(trace->fifo_track.id);
+		util_perfetto_trace_end(trace->real_track.id);
+		util_perfetto_trace_end(trace->ideal_track.id);
 		return;
 	}
 
@@ -228,6 +232,8 @@ weston_trace_surface_update(struct weston_surface *surface,
 
 	weston_trace_track_clear(&trace->damage_track);
 	weston_trace_track_clear(&trace->fifo_track);
+	weston_trace_track_clear(&trace->real_track);
+	weston_trace_track_clear(&trace->ideal_track);
 
 	snprintf(track_name, sizeof(track_name), "%s #%d",
 		 new_label, surface->s_id);
@@ -238,6 +244,12 @@ weston_trace_surface_update(struct weston_surface *surface,
 	trace->fifo_track.id =
 		util_perfetto_new_nested_track("FIFO barriers",
 					       trace->damage_track.id);
+	trace->real_track.id =
+		util_perfetto_new_nested_track("Time:real",
+					       trace->damage_track.id);
+	trace->ideal_track.id =
+		util_perfetto_new_nested_track("Time:ideal",
+					       trace->damage_track.id);
 }
 
 void
@@ -245,5 +257,111 @@ weston_trace_surface_fini(struct weston_surface *surface)
 {
 	weston_trace_track_clear(&surface->trace.damage_track);
 	weston_trace_track_clear(&surface->trace.fifo_track);
+	weston_trace_track_clear(&surface->trace.real_track);
+	weston_trace_track_clear(&surface->trace.ideal_track);
 	free(surface->trace.label);
+}
+
+void
+weston_trace_feedback_create(struct weston_surface *surface,
+			     struct weston_surface_state *state)
+{
+	struct weston_presentation_feedback *feedback;
+	struct weston_trace_presentation_feedback *trace;
+
+	surface->trace.buffer_count++;
+	surface->trace.buffer_count %= 10000;
+
+	feedback = xzalloc(sizeof(*feedback));
+	wl_list_init(&feedback->link);
+
+	trace = &feedback->trace;
+
+	trace->synthetic = true;
+	trace->damage_track = surface->trace.damage_track;
+	trace->real_track = surface->trace.real_track;
+	trace->ideal_track = surface->trace.ideal_track;
+	trace->update_time = state->update_time;
+	trace->flow = surface->trace.flow;
+	trace->buffer_number = surface->trace.buffer_count;
+
+	WESTON_TRACE_BEGIN_ANNOTATION();
+	WESTON_TRACE_ANNOTATE(("action", "commit"),
+			      ("surface track", &trace->damage_track),
+			      ("feedback flow", &trace->flow),
+			      ("real flow", &trace->real_flow),
+			      ("ideal flow", &trace->ideal_flow));
+	WESTON_TRACE_COMMIT_ANNOTATION("prepare feedback request");
+
+	wl_list_insert(&state->feedback_list, &feedback->link);
+}
+
+bool
+weston_trace_feedback_discard(struct weston_presentation_feedback *feedback)
+{
+	struct weston_trace_presentation_feedback *trace = &feedback->trace;
+	struct weston_trace_flow ideal_flow = { 0 };
+
+	if (!feedback->trace.synthetic)
+		return false;
+
+	WESTON_TRACE_BEGIN_ANNOTATION();
+	WESTON_TRACE_ANNOTATE(("action", "drop"),
+			      ("surface track", &trace->damage_track),
+			      ("feedback flow", &trace->flow),
+			      ("ideal flow", &ideal_flow));
+
+	/* If we have a time, use it, otherwise we'll log this event at
+	 * the current time.
+	 */
+	if (trace->update_time.valid)
+		WESTON_TRACE_ANNOTATE(("paint time", trace->update_time.time));
+
+	WESTON_TRACE_COMMIT_ANNOTATION("discard");
+
+	wl_list_remove(&feedback->link);
+	free(feedback);
+
+	return true;
+}
+
+bool
+weston_trace_feedback_present(struct weston_presentation_feedback *feedback,
+			      struct weston_output *output,
+			      uint32_t refresh_nsec,
+			      const struct timespec *ts,
+			      uint64_t seq,
+			      uint32_t flags)
+{
+	struct weston_trace_presentation_feedback *trace = &feedback->trace;
+	uint64_t ideal_ns, real_ns;
+	double time_error_ms;
+	char buffer_count[20];
+
+	if (!trace->synthetic)
+		return false;
+
+	real_ns = timespec_to_nsec(ts);
+
+	if (trace->update_time.valid)
+		ideal_ns = timespec_to_nsec(&trace->update_time.time);
+	else
+		ideal_ns = real_ns;
+
+	snprintf(buffer_count, sizeof(buffer_count), "%" PRIu64, trace->buffer_number);
+	WESTON_TRACE_TIMESTAMP_END(trace->real_track.id, CLOCK_MONOTONIC, real_ns);
+	WESTON_TRACE_TIMESTAMP_BEGIN(buffer_count, trace->real_track.id, trace->real_flow.id, CLOCK_MONOTONIC, real_ns);
+
+	WESTON_TRACE_TIMESTAMP_END(trace->ideal_track.id, CLOCK_MONOTONIC, ideal_ns);
+	WESTON_TRACE_TIMESTAMP_BEGIN(buffer_count, trace->ideal_track.id, trace->ideal_flow.id, CLOCK_MONOTONIC, ideal_ns);
+
+	time_error_ms = real_ns;
+	time_error_ms -= ideal_ns;
+	time_error_ms /= 1000000.0;
+	WESTON_TRACE_SET_COUNTER(trace->damage_track, "Time:Error(ms)", time_error_ms);
+
+	wl_list_remove(&feedback->link);
+	free(feedback);
+
+	return true;
 }

@@ -27,6 +27,8 @@
 
 #include "perfetto/u_perfetto.h"
 
+struct weston_presentation_feedback;
+
 void
 weston_trace_flow_start(struct weston_trace_flow *flow);
 
@@ -60,3 +62,18 @@ weston_trace_surface_update(struct weston_surface *surface,
 
 void
 weston_trace_surface_fini(struct weston_surface *surface);
+
+void
+weston_trace_feedback_create(struct weston_surface *surface,
+			     struct weston_surface_state *state);
+
+bool
+weston_trace_feedback_discard(struct weston_presentation_feedback *feedback);
+
+bool
+weston_trace_feedback_present(struct weston_presentation_feedback *feedback,
+			      struct weston_output *output,
+			      uint32_t refresh_nsec,
+			      const struct timespec *ts,
+			      uint64_t seq,
+			      uint32_t flags);

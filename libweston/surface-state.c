@@ -412,6 +412,8 @@ weston_surface_apply_state(struct weston_surface *surface,
 					   &state->buffer_release_ref);
 
 		status |= weston_surface_attach(surface, state, status);
+
+		WESTON_TRACE_FEEDBACK_CREATE(surface, state);
 	} else if (status & WESTON_SURFACE_DIRTY_SIZE && surface->buffer_ref.buffer) {
 		bool size_ok;
 
@@ -754,6 +756,9 @@ weston_surface_find_parent_transaction_queue(struct weston_compositor *comp,
 static void
 weston_content_update_fini(struct weston_content_update *cu)
 {
+	cu->surface->trace.queue_depth--;
+	WESTON_TRACE_SET_COUNTER(cu->surface->trace.damage_track, "Queue depth",
+				 cu->surface->trace.queue_depth);
 	wl_list_remove(&cu->link);
 	weston_surface_state_fini(&cu->state);
 	wl_list_remove(&cu->surface_destroy_listener.link);
@@ -791,6 +796,10 @@ weston_transaction_add_content_update(struct weston_transaction *tr,
 {
 	WESTON_TRACE_FUNC();
 	struct weston_content_update *cu;
+
+	surface->trace.queue_depth++;
+	WESTON_TRACE_SET_COUNTER(surface->trace.damage_track, "Queue depth",
+				 surface->trace.queue_depth);
 
 	cu = xzalloc(sizeof *cu);
 	cu->transaction = tr;

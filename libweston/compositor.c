@@ -1038,8 +1038,10 @@ weston_presentation_feedback_discard_list(struct wl_list *list)
 {
 	struct weston_presentation_feedback *feedback, *tmp;
 
-	wl_list_for_each_safe(feedback, tmp, list, link)
+	wl_list_for_each_safe(feedback, tmp, list, link) {
+		WESTON_TRACE_FEEDBACK_DISCARD(feedback);
 		weston_presentation_feedback_discard(feedback);
+	}
 }
 
 static void
@@ -1102,10 +1104,14 @@ weston_presentation_feedback_present_list(struct wl_list *list,
 	assert(!(flags & WP_PRESENTATION_FEEDBACK_INVALID) ||
 	       wl_list_empty(list));
 
-	wl_list_for_each_safe(feedback, tmp, list, link)
+	wl_list_for_each_safe(feedback, tmp, list, link) {
+		WESTON_TRACE_FEEDBACK_PRESENT(feedback, output,
+					      refresh_nsec, ts, seq,
+					      flags);
 		weston_presentation_feedback_present(feedback, output,
 						     refresh_nsec, ts, seq,
 						     flags);
+	}
 }
 
 static void

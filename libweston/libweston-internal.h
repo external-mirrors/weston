@@ -276,7 +276,21 @@ struct weston_client {
 	struct wl_list link; /**< in weston_compositor::client_list */
 };
 
+struct weston_trace_presentation_feedback {
+	bool synthetic;
+	struct weston_trace_flow flow;
+	struct weston_trace_flow ideal_flow;
+	struct weston_trace_flow real_flow;
+	struct weston_trace_track damage_track;
+	struct weston_trace_track real_track;
+	struct weston_trace_track ideal_track;
+	struct weston_commit_timing_target update_time;
+	uint64_t buffer_number;
+};
+
 struct weston_presentation_feedback {
+	struct weston_trace_presentation_feedback trace;
+
 	struct wl_resource *resource;
 
 	struct weston_surface *surface;

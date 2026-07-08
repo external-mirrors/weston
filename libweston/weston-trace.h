@@ -246,6 +246,13 @@ _weston_trace_scope_end(uint64_t *scope)
 #define _WESTON_TRACE_SURFACE_UPDATE(surface, label) weston_trace_surface_update(surface, label)
 #define _WESTON_TRACE_SURFACE_FINI(surface) weston_trace_surface_fini(surface)
 
+#define _WESTON_TRACE_FEEDBACK_CREATE(surface, state) weston_trace_feedback_create(surface, state)
+#define _WESTON_TRACE_FEEDBACK_PRESENT(feedback, output, refresh_nsec, ts, seq, flags) \
+	if (weston_trace_feedback_present(feedback, output, refresh_nsec, ts, seq, flags)) continue;
+
+#define _WESTON_TRACE_FEEDBACK_DISCARD(feedback) \
+	if (weston_trace_feedback_discard(feedback)) continue;
+
 #else /* No perfetto, make these all do nothing */
 
 #define _WESTON_TRACE_SCOPE(name)
@@ -275,6 +282,10 @@ _weston_trace_scope_end(uint64_t *scope)
 #define _WESTON_TRACE_SURFACE_INIT(surface, client)
 #define _WESTON_TRACE_SURFACE_UPDATE(surface, label)
 #define _WESTON_TRACE_SURFACE_FINI(surface)
+
+#define _WESTON_TRACE_FEEDBACK_CREATE(surface, state)
+#define _WESTON_TRACE_FEEDBACK_DISCARD(feedback)
+#define _WESTON_TRACE_FEEDBACK_PRESENT(feedback, output, refresh_nsec, ts, seq, flags)
 
 #endif /* HAVE_PERFETTO */
 
@@ -324,5 +335,10 @@ _weston_trace_scope_end(uint64_t *scope)
 #define WESTON_TRACE_SURFACE_INIT(surface, client) _WESTON_TRACE_SURFACE_INIT(surface, client)
 #define WESTON_TRACE_SURFACE_UPDATE(surface, label) _WESTON_TRACE_SURFACE_UPDATE(surface, label)
 #define WESTON_TRACE_SURFACE_FINI(surface) _WESTON_TRACE_SURFACE_FINI(surface)
+
+#define WESTON_TRACE_FEEDBACK_CREATE(surface, state) _WESTON_TRACE_FEEDBACK_CREATE(surface, state)
+#define WESTON_TRACE_FEEDBACK_DISCARD(feedback) _WESTON_TRACE_FEEDBACK_DISCARD(feedback)
+#define WESTON_TRACE_FEEDBACK_PRESENT(feedback, output, refresh_nsec, ts, seq, flags) \
+	_WESTON_TRACE_FEEDBACK_PRESENT(feedback, output, refresh_nsec, ts, seq, flags)
 
 #endif /* WESTON_TRACE_H */
