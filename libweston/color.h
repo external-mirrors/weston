@@ -128,48 +128,6 @@ struct weston_color_profile {
 	uint32_t id;
 };
 
-/**
- * Color transfer function
- *
- * Includes any parameter values the enumerated transfer function might need.
- */
-struct weston_color_tf {
-	/** Encoding transfer characteristic by enumeration; always set. */
-	const struct weston_color_tf_info *info;
-
-	/** TF parameters, specific to TF. */
-	float params[1];
-
-	char padding[4];
-};
-
-/** Parameters that define a parametric color profile */
-struct weston_color_profile_params {
-	/* Primary color volume; always set. */
-	struct weston_color_gamut primaries;
-
-	/* Primary color volume by enumeration; optional, may be NULL. */
-	const struct weston_color_primaries_info *primaries_info;
-
-	/* Encoding transfer characteristic by enumeration; always set. */
-	struct weston_color_tf tf;
-
-	/* Primary color volume luminance parameters cd/m²; always set. */
-	float min_luminance, max_luminance;
-	float reference_white_luminance;
-
-	/* Target color volume; always set. */
-	struct weston_color_gamut target_primaries;
-
-	/* Target luminance parameters cd/m²; always set. */
-	float target_min_luminance, target_max_luminance;
-
-	/* Programme luminance parameters cd/m²; negative when not set */
-	float maxCLL, maxFALL;
-
-	char padding[4];
-};
-
 /** Type for parametric curves */
 enum weston_color_curve_parametric_type {
 	/** Transfer function named LINPOW
