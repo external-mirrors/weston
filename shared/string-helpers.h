@@ -130,6 +130,51 @@ str_printf(char **str_out, const char *fmt, ...)
 }
 
 /**
+ * Allocates memory, and prints the formatted string followed by ": " and
+ * strerror(errno) into it. errno value is read at entry.
+ *
+ * \param errmsg[out] Returns the pointer to the allocated string. If errmsg
+ * is \c NULL, does nothing. May return \c NULL on failure.
+ * \param fmt[in] printf format string and arguments
+ * \return Always false.
+ *
+ * May clobber \c errno .
+ */
+static inline bool  __attribute__ ((format (printf, 2, 3)))
+errno_error(char **errmsg, const char *fmt, ...)
+{
+	int myerr = errno;
+	char tmp[160];
+	FILE *fp;
+	char *msg = NULL;
+	size_t msg_size;
+	va_list ap;
+	int ret;
+
+	if (!errmsg)
+		return false;
+
+	fp = open_memstream(&msg, &msg_size);
+	if (!fp)
+		return false;
+
+	va_start(ap, fmt);
+	fprintf(fp, fmt, ap);
+	va_end(ap);
+
+	strerror_r(myerr, tmp, sizeof tmp);
+	fprintf(fp, ": %s", tmp);
+
+	ret = fclose(fp);
+	if (ret == 0)
+		*errmsg = msg;
+	else
+		*errmsg = NULL;
+
+	return false;
+}
+
+/**
  * Utility to print combination of enum values as string. Use an opened FILE
  * stream to write data.
  *
