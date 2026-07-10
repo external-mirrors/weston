@@ -2758,12 +2758,12 @@ init_kms_caps(struct drm_device *device)
 	if (b->compositor->color_manager) {
 		ret = drmSetClientCap(device->kms_device->fd,
 				      DRM_CLIENT_CAP_PLANE_COLOR_PIPELINE, 1);
-		device->color_pipeline_supported = (ret == 0);
+		device->plane_color_pipeline_supported = (ret == 0);
 	} else {
-		device->color_pipeline_supported = false;
+		device->plane_color_pipeline_supported = false;
 	}
 #else
-	device->color_pipeline_supported = false;
+	device->plane_color_pipeline_supported = false;
 #endif
 
 	ret = drmGetCap(device->kms_device->fd, DRM_CAP_ATOMIC_ASYNC_PAGE_FLIP, &cap);

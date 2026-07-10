@@ -1475,7 +1475,7 @@ drm_output_propose_state(struct weston_output *output_base,
 			pnode->try_view_on_plane_failure_reasons |=
 				FAILURE_REASONS_OUTPUT_COLOR_EFFECT;
 
-		if (pnode->surf_xform.transform && (!device->color_pipeline_supported ||
+		if (pnode->surf_xform.transform && (!device->plane_color_pipeline_supported ||
 						    !pnode->output->from_blend_to_output_by_backend))
 			pnode->try_view_on_plane_failure_reasons |=
 				FAILURE_REASONS_NO_COLOR_TRANSFORM;
