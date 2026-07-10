@@ -38,6 +38,7 @@ extern "C" {
 
 struct weston_compositor;
 struct weston_color_profile_param_builder;
+struct weston_color_profile_params;
 struct weston_color_profile;
 struct weston_color_transform;
 struct weston_color_tf_info;
@@ -288,6 +289,11 @@ weston_color_profile_param_builder_set_maxFALL(struct weston_color_profile_param
 bool
 weston_color_profile_param_builder_set_maxCLL(struct weston_color_profile_param_builder *builder,
 					      float maxCLL);
+
+struct weston_color_profile_params *
+weston_color_profile_param_builder_create_params(struct weston_color_profile_param_builder *builder,
+						 enum weston_color_profile_param_builder_error *err,
+						 char **err_msg);
 
 struct weston_color_profile *
 weston_color_profile_param_builder_create_color_profile(struct weston_color_profile_param_builder *builder,

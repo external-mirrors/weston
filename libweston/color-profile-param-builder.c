@@ -75,21 +75,15 @@ struct weston_color_profile_param_builder {
 };
 
 /**
- * Creates struct weston_color_profile_param_builder object. It should be used
- * to create color profiles from parameters.
- *
- * We expect it to be used by our frontend (to allow creating color profiles
- * from .ini files or similar) and by the color-management protocol
- * implementation (so that clients can create color profiles from parameters).
+ * Creates struct weston_color_profile_param_builder object. It can be used to
+ * create parametric color profiles in a compositor, or well-formed color
+ * parameter structures without a compositor.
  *
  * It is invalid to set the same parameter twice using this object.
  *
- * After creating the color profile from this object, it will be automatically
- * destroyed.
- *
- * \param compositor The weston compositor.
+ * \param compositor The weston compositor or NULL.
  * \return The struct weston_color_profile_param_builder object created.
-*/
+ */
 WL_EXPORT struct weston_color_profile_param_builder *
 weston_color_profile_param_builder_create(struct weston_compositor *compositor)
 {
@@ -267,6 +261,15 @@ validate_color_gamut(struct weston_color_profile_param_builder *builder,
 	}
 }
 
+static struct weston_color_manager *
+get_cm(const struct weston_color_profile_param_builder *builder)
+{
+	if (!builder->compositor)
+		return NULL;
+
+	return builder->compositor->color_manager;
+}
+
 /**
  * Sets primaries for struct weston_color_profile_param_builder object.
  *
@@ -287,10 +290,10 @@ WL_EXPORT bool
 weston_color_profile_param_builder_set_primaries(struct weston_color_profile_param_builder *builder,
 						 const struct weston_color_gamut *primaries)
 {
-	struct weston_color_manager *cm = builder->compositor->color_manager;
+	const struct weston_color_manager *cm = get_cm(builder);
 	bool success = true;
 
-	if (!((cm->supported_color_features >> WESTON_COLOR_FEATURE_SET_PRIMARIES) & 1)) {
+	if (cm && !((cm->supported_color_features >> WESTON_COLOR_FEATURE_SET_PRIMARIES) & 1)) {
 		store_error(builder, WESTON_COLOR_PROFILE_PARAM_BUILDER_ERROR_UNSUPPORTED,
 			    "set_primaries not supported by the color manager");
 		success = false;
@@ -333,8 +336,7 @@ WL_EXPORT bool
 weston_color_profile_param_builder_set_primaries_named(struct weston_color_profile_param_builder *builder,
 						       enum weston_color_primaries primaries)
 {
-	struct weston_compositor *compositor = builder->compositor;
-	struct weston_color_manager *cm = compositor->color_manager;
+	const struct weston_color_manager *cm = get_cm(builder);
 	const struct weston_color_primaries_info *info;
 	bool success = true;
 
@@ -350,7 +352,7 @@ weston_color_profile_param_builder_set_primaries_named(struct weston_color_profi
 			    "%d is not a known named color primaries",
 			    primaries);
 		success = false;
-	} else if (!((cm->supported_primaries_named >> primaries) & 1)) {
+	} else if (cm && !((cm->supported_primaries_named >> primaries) & 1)) {
 		store_error(builder, WESTON_COLOR_PROFILE_PARAM_BUILDER_ERROR_INVALID_PRIMARIES_NAMED,
 			    "primaries named %s not supported by the color manager",
 			    info->desc);
@@ -388,8 +390,7 @@ WL_EXPORT bool
 weston_color_profile_param_builder_set_tf_named(struct weston_color_profile_param_builder *builder,
 						enum weston_transfer_function tf)
 {
-	struct weston_compositor *compositor = builder->compositor;
-	struct weston_color_manager *cm = compositor->color_manager;
+	const struct weston_color_manager *cm = get_cm(builder);
 	const struct weston_color_tf_info *info;
 	bool success = true;
 
@@ -404,7 +405,7 @@ weston_color_profile_param_builder_set_tf_named(struct weston_color_profile_para
 		store_error(builder, WESTON_COLOR_PROFILE_PARAM_BUILDER_ERROR_INVALID_TF,
 			    "%d is not a known tf", tf);
 		success = false;
-	} else if (!((cm->supported_tf_named >> tf) & 1)) {
+	} else if (cm && !((cm->supported_tf_named >> tf) & 1)) {
 		store_error(builder, WESTON_COLOR_PROFILE_PARAM_BUILDER_ERROR_INVALID_TF,
 			    "%s not supported by the color manager", info->desc);
 		success = false;
@@ -444,11 +445,10 @@ WL_EXPORT bool
 weston_color_profile_param_builder_set_tf_power_exponent(struct weston_color_profile_param_builder *builder,
 							 float power_exponent)
 {
-	struct weston_compositor *compositor = builder->compositor;
-	struct weston_color_manager *cm = compositor->color_manager;
+	const struct weston_color_manager *cm = get_cm(builder);
 	bool success = true;
 
-	if (!((cm->supported_color_features >> WESTON_COLOR_FEATURE_SET_TF_POWER) & 1)) {
+	if (cm && !((cm->supported_color_features >> WESTON_COLOR_FEATURE_SET_TF_POWER) & 1)) {
 		store_error(builder, WESTON_COLOR_PROFILE_PARAM_BUILDER_ERROR_UNSUPPORTED,
 			    "set_tf_power not supported by the color manager");
 		success = false;
@@ -498,10 +498,10 @@ WL_EXPORT bool
 weston_color_profile_param_builder_set_primary_luminance(struct weston_color_profile_param_builder *builder,
 							 float ref_lum, float min_lum, float max_lum)
 {
-	struct weston_color_manager *cm = builder->compositor->color_manager;
+	const struct weston_color_manager *cm = get_cm(builder);
 	bool success = true;
 
-	if (!((cm->supported_color_features >> WESTON_COLOR_FEATURE_SET_LUMINANCES) & 1)) {
+	if (cm && !((cm->supported_color_features >> WESTON_COLOR_FEATURE_SET_LUMINANCES) & 1)) {
 		store_error(builder, WESTON_COLOR_PROFILE_PARAM_BUILDER_ERROR_UNSUPPORTED,
 			    "set_primary_luminance not supported by the color manager");
 		success = false;
@@ -557,10 +557,10 @@ WL_EXPORT bool
 weston_color_profile_param_builder_set_target_primaries(struct weston_color_profile_param_builder *builder,
 							const struct weston_color_gamut *target_primaries)
 {
-	struct weston_color_manager *cm = builder->compositor->color_manager;
+	const struct weston_color_manager *cm = get_cm(builder);
 	bool success = true;
 
-	if (!((cm->supported_color_features >> WESTON_COLOR_FEATURE_SET_MASTERING_DISPLAY_PRIMARIES) & 1)) {
+	if (cm && !((cm->supported_color_features >> WESTON_COLOR_FEATURE_SET_MASTERING_DISPLAY_PRIMARIES) & 1)) {
 		store_error(builder, WESTON_COLOR_PROFILE_PARAM_BUILDER_ERROR_UNSUPPORTED,
 			    "set_mastering_display_primaries not supported by " \
 			    "the color manager");
@@ -632,10 +632,10 @@ WL_EXPORT bool
 weston_color_profile_param_builder_set_target_luminance(struct weston_color_profile_param_builder *builder,
 							float min_lum, float max_lum)
 {
-	struct weston_color_manager *cm = builder->compositor->color_manager;
+	const struct weston_color_manager *cm = get_cm(builder);
 	bool success = true;
 
-	if (!((cm->supported_color_features >> WESTON_COLOR_FEATURE_SET_MASTERING_DISPLAY_PRIMARIES) & 1)) {
+	if (cm && !((cm->supported_color_features >> WESTON_COLOR_FEATURE_SET_MASTERING_DISPLAY_PRIMARIES) & 1)) {
 		store_error(builder, WESTON_COLOR_PROFILE_PARAM_BUILDER_ERROR_UNSUPPORTED,
 			    "set_mastering_display_primaries not supported by " \
 			    "the color manager, so setting target luminance is not allowed");
@@ -920,34 +920,29 @@ builder_complete_params(struct weston_color_profile_param_builder *builder)
 }
 
 /**
- * Creates a color profile from a struct weston_color_profile_param_builder
- * object.
+ * Creates a well-formed color profile parameter structure from a builder object.
  *
  * After creating the weston_color_profile_param_builder and setting the
- * appropriate parameters, this function should be called to finally create the
- * color profile. It checks if the parameters are consistent and, if so, call
- * the color manager to create the color profile.
+ * appropriate parameters, this function can be called to create the parametric
+ * structure. It checks if the parameters are consistent and fills in any
+ * values not yet set that are required for well-formedness.
  *
- * Also, this is a destructor function. It destroys the builder object.
+ * This is a destructor function. It destroys the builder object.
  *
  * \param builder The object that has the parameters set.
- * \param name_part A string to be used in describing the profile.
  * \param err Set if there's an error, untouched otherwise. The first error code caught.
  * \param err_msg Set if there's an error, untouched otherwise. Must be free()'d
  * by the caller. Combination of all error messages caught. Not terminated with
  * a new line character.
- * \return The color profile created, or NULL on failure.
+ * \return The color profile parameter structure, or NULL on error. The structure
+ * can be simply free()'d.
  */
-WL_EXPORT struct weston_color_profile *
-weston_color_profile_param_builder_create_color_profile(struct weston_color_profile_param_builder *builder,
-							const char *name_part,
-							enum weston_color_profile_param_builder_error *err,
-							char **err_msg)
+WL_EXPORT struct weston_color_profile_params *
+weston_color_profile_param_builder_create_params(struct weston_color_profile_param_builder *builder,
+						 enum weston_color_profile_param_builder_error *err,
+						 char **err_msg)
 {
-	struct weston_color_manager *cm = builder->compositor->color_manager;
-	struct weston_color_profile_params *params = &builder->params;
-	struct weston_color_profile *cprof = NULL;
-	bool ret;
+	struct weston_color_profile_params *params = NULL;
 
 	/*
 	 * See struct weston_color_profile_params description. That struct has
@@ -968,15 +963,64 @@ weston_color_profile_param_builder_create_color_profile(struct weston_color_prof
 		fflush(builder->err_fp);
 		*err_msg = strdup(builder->err_msg);
 		*err = builder->err;
+
 		goto out;
 	}
+
+	params = xzalloc(sizeof *params);
+	*params = builder->params;
+
+out:
+	weston_color_profile_param_builder_destroy(builder);
+
+	return params;
+}
+
+/**
+ * Creates a color profile from a struct weston_color_profile_param_builder
+ * object.
+ *
+ * After creating the weston_color_profile_param_builder with a non-NULL
+ * compositor and setting the appropriate parameters, this function should be
+ * called to finally create the color profile. It checks if the parameters are
+ * consistent and, if so, calls the color manager to create the color profile.
+ *
+ * This is a destructor function. It destroys the builder object.
+ *
+ * \param builder The object that has the parameters set.
+ * \param name_part A string to be used in describing the profile.
+ * \param err Set if there's an error, untouched otherwise. The first error code caught.
+ * \param err_msg Set if there's an error, untouched otherwise. Must be free()'d
+ * by the caller. Combination of all error messages caught. Not terminated with
+ * a new line character.
+ * \return The color profile created, or NULL on failure.
+ */
+WL_EXPORT struct weston_color_profile *
+weston_color_profile_param_builder_create_color_profile(struct weston_color_profile_param_builder *builder,
+							const char *name_part,
+							enum weston_color_profile_param_builder_error *err,
+							char **err_msg)
+{
+	struct weston_color_manager *cm = get_cm(builder);
+	struct weston_color_profile_params *params;
+	struct weston_color_profile *cprof = NULL;
+	bool ret;
+
+	if (!cm) {
+		store_error(builder, WESTON_COLOR_PROFILE_PARAM_BUILDER_ERROR_CREATE_FAILED,
+			    "%s() is illegal to call with a NULL compositor.", __func__);
+	}
+
+	params = weston_color_profile_param_builder_create_params(builder, err, err_msg);
+	if (!params)
+		return NULL;
 
 	ret = cm->get_color_profile_from_params(cm, params, name_part,
 						&cprof, err_msg);
 	if (!ret)
 		*err = WESTON_COLOR_PROFILE_PARAM_BUILDER_ERROR_CREATE_FAILED;
 
-out:
-	weston_color_profile_param_builder_destroy(builder);
+	free(params);
+
 	return cprof;
 }
