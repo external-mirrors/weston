@@ -37,35 +37,11 @@
 #include "weston-trace.h"
 
 static void
-build_track_name(struct weston_surface *surface, char *name, int size)
-{
-	/* Make sure we only call this once, so we don't accidentally
-	 * make multiple names for the same surface */
-	assert(surface->damage_track.id == 0);
-
-	snprintf(name, size, "%s #%d", surface->label, surface->s_id);
-}
-
-static void
 build_seat_track_name(struct weston_seat *seat, char *name, int size)
 {
 	assert(seat->track.id == 0);
 
 	snprintf(name, size, "seat: %s", seat->seat_name);
-}
-
-static void
-weston_perfetto_ensure_surface_id(struct weston_surface *surface)
-{
-	char track_name[600];
-
-	if (surface->damage_track.id)
-		return;
-
-	build_track_name(surface, track_name, sizeof(track_name));
-
-	surface->damage_track.id = util_perfetto_new_nested_track(track_name,
-								  surface->client_track.id);
 }
 
 static void
@@ -98,6 +74,7 @@ weston_timeline_perfetto(struct weston_log_scope *timeline_scope,
 {
 	struct weston_output *output = NULL;
 	struct weston_surface *surface = NULL;
+	struct weston_trace_surface *surf_tr = NULL;
 	struct weston_input_event *ievent = NULL;
 	struct timespec ts;
 	uint64_t now_ns;
@@ -126,7 +103,7 @@ weston_timeline_perfetto(struct weston_log_scope *timeline_scope,
 			break;
 		case TLT_SURFACE:
 			surface = obj;
-			weston_perfetto_ensure_surface_id(surface);
+			surf_tr = &surface->trace;
 			break;
 		case TLT_VBLANK:
 			vblank_ns = timespec_to_nsec(obj);
@@ -151,8 +128,8 @@ weston_timeline_perfetto(struct weston_log_scope *timeline_scope,
 	case TLP_CORE_REPAINT_EXIT_LOOP:
 		break;
 	case TLP_CORE_FLUSH_DAMAGE:
-		WESTON_TRACE_TIMESTAMP_END(surface->damage_track.id, CLOCK_MONOTONIC, now_ns);
-		WESTON_TRACE_TIMESTAMP_BEGIN("Clean", surface->damage_track.id, 0, CLOCK_MONOTONIC, now_ns);
+		WESTON_TRACE_TIMESTAMP_END(surf_tr->damage_track.id, CLOCK_MONOTONIC, now_ns);
+		WESTON_TRACE_TIMESTAMP_BEGIN("Clean", surf_tr->damage_track.id, 0, CLOCK_MONOTONIC, now_ns);
 		break;
 	case TLP_CORE_REPAINT_BEGIN:
 		WESTON_TRACE_TIMESTAMP_END(output->trace.paint_track.id, CLOCK_MONOTONIC, now_ns);
@@ -169,8 +146,8 @@ weston_timeline_perfetto(struct weston_log_scope *timeline_scope,
 		WESTON_TRACE_TIMESTAMP_BEGIN("Scheduled", output->trace.paint_track.id, 0, CLOCK_MONOTONIC, now_ns);
 		break;
 	case TLP_CORE_COMMIT_DAMAGE:
-		WESTON_TRACE_TIMESTAMP_END(surface->damage_track.id, CLOCK_MONOTONIC, now_ns);
-		WESTON_TRACE_TIMESTAMP_BEGIN("Damaged", surface->damage_track.id, surface->flow.id, CLOCK_MONOTONIC, now_ns);
+		WESTON_TRACE_TIMESTAMP_END(surf_tr->damage_track.id, CLOCK_MONOTONIC, now_ns);
+		WESTON_TRACE_TIMESTAMP_BEGIN("Damaged", surf_tr->damage_track.id, surf_tr->flow.id, CLOCK_MONOTONIC, now_ns);
 		break;
 	case TLP_RENDERER_GPU_BEGIN:
 		WESTON_TRACE_TIMESTAMP_BEGIN("Active", output->trace.gpu_track.id, 0, CLOCK_MONOTONIC, gpu_ns);

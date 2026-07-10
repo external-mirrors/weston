@@ -492,7 +492,7 @@ dma_feedback_update(struct drm_device *device,
 		     pnode->internal_name, action_str);
 
 	WESTON_TRACE_ANNOTATE(("feedback flow", &feedback_flow),
-			      ("surface track", &pnode->surface->damage_track),
+			      ("surface track", &pnode->surface->trace.damage_track),
 			      ("feedback", action_str));
 	WESTON_TRACE_COMMIT_ANNOTATION("dmabuf feedback");
 	weston_dmabuf_feedback_send_all(b->compositor, dmabuf_feedback,

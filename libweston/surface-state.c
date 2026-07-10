@@ -208,7 +208,7 @@ weston_surface_attach(struct weston_surface *surface,
 	struct weston_buffer *old_buffer = surface->buffer_ref.buffer;
 	enum weston_paint_node_status pnode_changes = WESTON_PAINT_NODE_CLEAN;
 
-	WESTON_TRACE_FUNC(("surface flow", &surface->flow),
+	WESTON_TRACE_FUNC(("surface flow", &surface->trace.flow),
 			  ("surface", surface->internal_name),
 			  ("new buffer", buffer));
 
@@ -384,7 +384,7 @@ weston_surface_apply_state(struct weston_surface *surface,
 
 	assert(!surface->compositor->latched);
 
-	surface->flow.id = state->flow.id;
+	surface->trace.flow.id = state->flow.id;
 	state->flow.id = 0;
 
 	/* wl_surface.set_buffer_transform */
@@ -929,7 +929,7 @@ weston_subsurface_update_effectively_synchronized(struct weston_subsurface *sub)
 	bool parent_e_sync = false;
 	struct weston_subsurface *child;
 	struct weston_surface *surf = sub->surface;
-	WESTON_TRACE_FUNC(("surface flow", &surf->flow));
+	WESTON_TRACE_FUNC(("surface flow", &surf->trace.flow));
 
 	if (sub->parent) {
 		struct weston_subsurface *parent;
@@ -960,7 +960,7 @@ weston_subsurface_update_effectively_synchronized(struct weston_subsurface *sub)
 void
 weston_subsurface_set_synchronized(struct weston_subsurface *sub, bool sync)
 {
-	WESTON_TRACE_FUNC(("subsurface flow", &sub->surface->flow));
+	WESTON_TRACE_FUNC(("subsurface flow", &sub->surface->trace.flow));
 	bool old_e_sync = sub->effectively_synchronized;
 
 	if (sub->synchronized == sync)

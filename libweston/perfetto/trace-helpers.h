@@ -38,3 +38,14 @@ weston_trace_output_init(struct weston_output *output);
 
 void
 weston_trace_output_fini(struct weston_output *output);
+
+void
+weston_trace_surface_init(struct weston_surface *surface,
+			  struct weston_client *client);
+
+void
+weston_trace_surface_update(struct weston_surface *surface,
+			    const char *new_label);
+
+void
+weston_trace_surface_fini(struct weston_surface *surface);

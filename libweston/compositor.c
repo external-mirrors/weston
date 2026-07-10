@@ -491,16 +491,15 @@ paint_node_update_view_visibility_mask(struct weston_paint_node *pnode)
 {
 	struct weston_output *output = pnode->output;
 	struct weston_view *view = pnode->view;
-	struct weston_surface *surf = pnode->surface;
 
 	if (pixman_region32_not_empty(&pnode->visible)) {
 		uint32_t old_mask = view->output_visibility_mask;
 
 		view->output_visibility_mask |= 1u << output->id;
 
-		if (!(old_mask & (1u << output->id)) && surf->damage_track.id) {
+		if (!(old_mask & (1u << output->id))) {
 			WESTON_TRACE_BEGIN_ANNOTATION();
-			WESTON_TRACE_ANNOTATE(("surface track", &surf->damage_track),
+			WESTON_TRACE_ANNOTATE(("surface track", &pnode->surface->trace.damage_track),
 					      ("Enter output", output->name));
 			WESTON_TRACE_COMMIT_ANNOTATION("visbility change");
 		}
@@ -1180,9 +1179,6 @@ weston_surface_create(struct weston_compositor *compositor,
 	if (surface == NULL)
 		return NULL;
 
-	if (client)
-		surface->client_track = client->trace.track;
-
 	wl_signal_init(&surface->destroy_signal);
 	wl_signal_init(&surface->commit_signal);
 	wl_signal_init(&surface->map_signal);
@@ -1248,6 +1244,9 @@ weston_surface_create(struct weston_compositor *compositor,
 	weston_reset_color_representation(&surface->color_representation);
 
 	wl_list_init(&surface->fifo_barrier_link);
+
+	/* This must be set up before setting the label */
+	WESTON_TRACE_SURFACE_INIT(surface, client);
 
 	/* Set default label */
 	weston_surface_set_label(surface, NULL);
@@ -2952,6 +2951,8 @@ weston_surface_unref(struct weston_surface *surface)
 
 	assert(surface->resource == NULL);
 
+	WESTON_TRACE_SURFACE_FINI(surface);
+
 	wl_signal_emit_mutable(&surface->destroy_signal, surface);
 
 	assert(wl_list_empty(&surface->subsurface_list_pending));
@@ -3554,7 +3555,7 @@ out:
 	/* We've flushed the surface's damage for *all* of its paint
 	 * nodes, so we can reset the surface flow_id here.
 	 */
-	surface->flow.id = 0;
+	surface->trace.flow.id = 0;
 }
 
 static void
@@ -3650,7 +3651,7 @@ output_accumulate_damage(struct weston_output *output)
 static struct weston_paint_node *
 view_ensure_paint_node(struct weston_view *view, struct weston_output *output)
 {
-	WESTON_TRACE_FUNC(("surface flow", &view->surface->flow));
+	WESTON_TRACE_FUNC(("surface flow", &view->surface->trace.flow));
 	struct weston_paint_node *pnode;
 
 	if (!output)
@@ -3727,7 +3728,7 @@ static void
 view_list_add(struct weston_compositor *compositor,
 	      struct weston_view *view)
 {
-	WESTON_TRACE_FUNC(("surface flow", &view->surface->flow));
+	WESTON_TRACE_FUNC(("surface flow", &view->surface->trace.flow));
 	struct weston_subsurface *sub;
 
 	weston_view_update_transform(view);
@@ -5692,6 +5693,9 @@ weston_surface_do_set_label(struct weston_surface *surface,
 			    char *label_dyn,
 			    const char *label_static)
 {
+	/* Do this first, because it needs to check the old strings */
+	WESTON_TRACE_SURFACE_UPDATE(surface, label_static);
+
 	free(surface->label_dyn);
 	surface->label_dyn = label_dyn;
 

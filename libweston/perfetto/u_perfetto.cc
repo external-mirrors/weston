@@ -130,6 +130,14 @@ util_perfetto_track_refresh(const char *name,
 }
 
 uint64_t
+util_perfetto_top_track(void)
+{
+	auto track = perfetto::Track(0);
+
+	return track.uuid;
+}
+
+uint64_t
 util_perfetto_new_track(const char *name)
 {
 	uint64_t track_id = util_perfetto_next_id();

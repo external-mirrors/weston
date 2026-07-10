@@ -244,6 +244,10 @@ _weston_trace_scope_end(uint64_t *scope)
 #define _WESTON_TRACE_OUTPUT_INIT(output) weston_trace_output_init(output)
 #define _WESTON_TRACE_OUTPUT_FINI(output) weston_trace_output_fini(output)
 
+#define _WESTON_TRACE_SURFACE_INIT(surface, client) weston_trace_surface_init(surface, client)
+#define _WESTON_TRACE_SURFACE_UPDATE(surface, label) weston_trace_surface_update(surface, label)
+#define _WESTON_TRACE_SURFACE_FINI(surface) weston_trace_surface_fini(surface)
+
 #else /* No perfetto, make these all do nothing */
 
 #define _WESTON_TRACE_SCOPE(name)
@@ -265,6 +269,10 @@ _weston_trace_scope_end(uint64_t *scope)
 
 #define _WESTON_TRACE_OUTPUT_INIT(output)
 #define _WESTON_TRACE_OUTPUT_FINI(output)
+
+#define _WESTON_TRACE_SURFACE_INIT(surface, client)
+#define _WESTON_TRACE_SURFACE_UPDATE(surface, label)
+#define _WESTON_TRACE_SURFACE_FINI(surface)
 
 #endif /* HAVE_PERFETTO */
 
@@ -306,5 +314,9 @@ _weston_trace_scope_end(uint64_t *scope)
 
 #define WESTON_TRACE_OUTPUT_INIT(output) _WESTON_TRACE_OUTPUT_INIT(output)
 #define WESTON_TRACE_OUTPUT_FINI(output) _WESTON_TRACE_OUTPUT_FINI(output)
+
+#define WESTON_TRACE_SURFACE_INIT(surface, client) _WESTON_TRACE_SURFACE_INIT(surface, client)
+#define WESTON_TRACE_SURFACE_UPDATE(surface, label) _WESTON_TRACE_SURFACE_UPDATE(surface, label)
+#define WESTON_TRACE_SURFACE_FINI(surface) _WESTON_TRACE_SURFACE_FINI(surface)
 
 #endif /* WESTON_TRACE_H */

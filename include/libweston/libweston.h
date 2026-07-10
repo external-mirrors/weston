@@ -2053,9 +2053,16 @@ struct weston_pointer_constraint {
 	struct wl_listener surface_activate_listener;
 };
 
-struct weston_surface {
+struct weston_trace_surface {
 	struct weston_trace_track client_track;
 	struct weston_trace_flow flow;
+	struct weston_trace_track damage_track;
+	char *label;
+};
+
+struct weston_surface {
+	struct weston_trace_surface trace;
+
 	/** Derived from weston_client::internal_id_counter */
 	uint64_t internal_id;
 	/** Short unique name derived from weston_client::internal_name and internal_id */
@@ -2193,8 +2200,6 @@ struct weston_surface {
 
 	struct wl_resource *color_representation_resource;
 	struct weston_color_representation color_representation;
-
-	struct weston_trace_track damage_track;
 
 	/** increments for each wl_surface::commit,
 	 * reset after each frame counter interval */

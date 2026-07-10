@@ -143,3 +143,69 @@ weston_trace_output_fini(struct weston_output *output)
 	weston_trace_track_clear(&output->trace.paint_track);
 	weston_trace_track_clear(&output->trace.presentation_track);
 }
+
+void
+weston_trace_surface_init(struct weston_surface *surface,
+			  struct weston_client *client)
+{
+	/* We may have a NULL client if the surface is a shell curtain */
+	if (client)
+		surface->trace.client_track = client->trace.track;
+	else
+		surface->trace.client_track.id = util_perfetto_top_track();
+}
+
+void
+weston_trace_surface_update(struct weston_surface *surface,
+			    const char *new_label)
+{
+	struct weston_trace_surface *trace = &surface->trace;
+	char track_name[600];
+
+	if (surface->label && !new_label) {
+		/* We're unmapping the surface, so take a hammer to any
+		 * currently open events.
+		 *
+		 * Even if there aren't open events, it seems to be harmless
+		 * to send a bogus end.
+		 */
+		util_perfetto_trace_end(trace->damage_track.id);
+		return;
+	}
+
+	if (!new_label)
+		return;
+
+	/* Same label that was in use already is a no-op for us. */
+	if (surface->label && strcmp(surface->label, new_label) == 0)
+		return;
+
+	/* If we're just re-using the most recently used name, we've
+	 * probably just unmapped and remapped. This happens all the
+	 * time for cursors.
+	 */
+	if (trace->label && strcmp(trace->label, new_label) == 0)
+		return;
+
+	/* We can't change the name of a perfetto track in a useful way,
+	 * so create a new one when we change the name.
+	 */
+	free(trace->label);
+	trace->label = strdup(new_label);
+
+	weston_trace_track_clear(&trace->damage_track);
+
+	snprintf(track_name, sizeof(track_name), "%s #%d",
+		 new_label, surface->s_id);
+
+	trace->damage_track.id =
+		util_perfetto_new_nested_track(track_name,
+					       trace->client_track.id);
+}
+
+void
+weston_trace_surface_fini(struct weston_surface *surface)
+{
+	weston_trace_track_clear(&surface->trace.damage_track);
+	free(surface->trace.label);
+}

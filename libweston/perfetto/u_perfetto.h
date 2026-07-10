@@ -105,6 +105,9 @@ void util_perfetto_trace_instant_timestamp(const char *name, uint64_t track_id,
 
 uint64_t util_perfetto_next_id(void);
 
+uint64_t
+util_perfetto_top_track(void);
+
 uint64_t util_perfetto_new_track(const char *name);
 
 uint64_t
