@@ -38,6 +38,7 @@
 #include "id-number-allocator.h"
 #include "shared/string-helpers.h"
 #include "shared/xalloc.h"
+#include "weston-trace.h"
 
 struct expected_params {
 	struct weston_color_profile_params template;
@@ -586,6 +587,8 @@ parametric_color_profile_parsing(struct wet_testsuite_data *suite_data,
 	};
 	struct weston_output mock_output = {};
 	struct weston_head mock_head = {};
+
+	WESTON_TRACE_INIT();
 
 	mock_cm.base.compositor = &mock_compositor;
 
