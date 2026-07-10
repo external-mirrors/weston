@@ -447,8 +447,7 @@ weston_render_intent_info_from_protocol(struct weston_compositor *compositor,
 }
 
 WL_EXPORT const struct weston_color_primaries_info *
-weston_color_primaries_info_from(struct weston_compositor *compositor,
-				 enum weston_color_primaries primaries)
+weston_color_primaries_info_from(enum weston_color_primaries primaries)
 {
 	unsigned int i;
 
@@ -456,7 +455,7 @@ weston_color_primaries_info_from(struct weston_compositor *compositor,
 		if (color_primaries_info_table[i].primaries == primaries)
 			return &color_primaries_info_table[i];
 
-	weston_assert_not_reached(compositor, "unknown primaries");
+	return NULL;
 }
 
 WL_EXPORT const struct weston_color_primaries_info *

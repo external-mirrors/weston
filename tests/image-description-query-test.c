@@ -201,8 +201,10 @@ params_from_template(const struct profile_params *tmp)
 
 	ret.tf.info = weston_color_tf_info_from(tmp->tf);
 	test_assert_ptr_not_null(ret.tf.info);
-	if (tmp->use_named_prim)
-		ret.primaries_info = weston_color_primaries_info_from(NULL, tmp->named_prim);
+	if (tmp->use_named_prim) {
+		ret.primaries_info = weston_color_primaries_info_from(tmp->named_prim);
+		test_assert_ptr_not_null(ret.primaries_info);
+	}
 
 	return ret;
 }

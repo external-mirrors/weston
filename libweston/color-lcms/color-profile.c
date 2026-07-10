@@ -546,13 +546,11 @@ make_icc_file_description(struct lcmsProfilePtr profile,
 struct cmlcms_color_profile *
 cmlcms_create_stock_profile(struct weston_color_manager_lcms *cm)
 {
-	struct weston_compositor *compositor = cm->base.compositor;
 	struct weston_color_profile_params p = {};
 	struct cmlcms_color_profile *stock;
 	char *desc = NULL;
 
-	p.primaries_info = weston_color_primaries_info_from(compositor,
-							    WESTON_PRIMARIES_CICP_SRGB);
+	p.primaries_info = weston_color_primaries_info_from(WESTON_PRIMARIES_CICP_SRGB);
 	p.primaries = p.primaries_info->color_gamut;
 	p.tf.info = weston_color_tf_info_from(WESTON_TF_GAMMA22);
 	p.reference_white_luminance = 80.0;

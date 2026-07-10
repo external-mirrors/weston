@@ -557,7 +557,8 @@ compare_results(struct weston_color_profile *tst,
 	test_assert_ptr_not_null(ref.tf.info);
 
 	if (expected->use_named_prim) {
-		ref.primaries_info = weston_color_primaries_info_from(NULL, expected->named_prim);
+		ref.primaries_info = weston_color_primaries_info_from(expected->named_prim);
+		test_assert_ptr_not_null(ref.primaries_info);
 	}
 
 	assert_params_equal(&ref, &mock_cprof->params);

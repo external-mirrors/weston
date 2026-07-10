@@ -1675,7 +1675,8 @@ bind_color_management(struct wl_client *client, void *data, uint32_t version,
 	for (i = 0; i < 32; i++) {
 		if (!((cm->supported_primaries_named >> i) & 1))
 			continue;
-		primaries = weston_color_primaries_info_from(compositor, i);
+		primaries = weston_color_primaries_info_from(i);
+		weston_assert_ptr_not_null(compositor, primaries);
 		wp_color_manager_v1_send_supported_primaries_named(resource,
 								   primaries->protocol_primaries);
 	}

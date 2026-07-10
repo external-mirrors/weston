@@ -338,18 +338,22 @@ weston_color_profile_param_builder_set_primaries_named(struct weston_color_profi
 	const struct weston_color_primaries_info *info;
 	bool success = true;
 
-	info = weston_color_primaries_info_from(compositor, primaries);
-
-	if (!((cm->supported_primaries_named >> primaries) & 1)) {
-		store_error(builder, WESTON_COLOR_PROFILE_PARAM_BUILDER_ERROR_INVALID_PRIMARIES_NAMED,
-			    "primaries named %s not supported by the color manager",
-			    info->desc);
-		success = false;
-	}
-
 	if (builder->group_mask & WESTON_COLOR_PROFILE_PARAMS_PRIMARIES) {
 		store_error(builder, WESTON_COLOR_PROFILE_PARAM_BUILDER_ERROR_ALREADY_SET,
 			    "primaries were already set");
+		success = false;
+	}
+
+	info = weston_color_primaries_info_from(primaries);
+	if (!info) {
+		store_error(builder, WESTON_COLOR_PROFILE_PARAM_BUILDER_ERROR_INVALID_PRIMARIES_NAMED,
+			    "%d is not a known named color primaries",
+			    primaries);
+		success = false;
+	} else if (!((cm->supported_primaries_named >> primaries) & 1)) {
+		store_error(builder, WESTON_COLOR_PROFILE_PARAM_BUILDER_ERROR_INVALID_PRIMARIES_NAMED,
+			    "primaries named %s not supported by the color manager",
+			    info->desc);
 		success = false;
 	}
 
@@ -599,7 +603,13 @@ weston_color_profile_param_builder_set_target_primaries_named(struct weston_colo
 {
 	const struct weston_color_primaries_info *info;
 
-	info = weston_color_primaries_info_from(builder->compositor, target_primaries);
+	info = weston_color_primaries_info_from(target_primaries);
+	if (!info) {
+		store_error(builder, WESTON_COLOR_PROFILE_PARAM_BUILDER_ERROR_INVALID_PRIMARIES_NAMED,
+			    "%d is not a known named color primaries",
+			    target_primaries);
+		return false;
+	}
 
 	return weston_color_profile_param_builder_set_target_primaries(builder, &info->color_gamut);
 }
