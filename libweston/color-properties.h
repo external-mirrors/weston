@@ -147,8 +147,7 @@ const struct weston_color_primaries_info *
 weston_color_primaries_info_from_protocol(uint32_t protocol_primaries);
 
 const struct weston_color_tf_info *
-weston_color_tf_info_from(struct weston_compositor *compositor,
-			  enum weston_transfer_function tf);
+weston_color_tf_info_from(enum weston_transfer_function tf);
 
 const struct weston_color_tf_info *
 weston_color_tf_info_from_protocol(uint32_t protocol_tf);

@@ -389,17 +389,20 @@ weston_color_profile_param_builder_set_tf_named(struct weston_color_profile_para
 	const struct weston_color_tf_info *info;
 	bool success = true;
 
-	info = weston_color_tf_info_from(compositor, tf);
-
-	if (!((cm->supported_tf_named >> tf) & 1)) {
-		store_error(builder, WESTON_COLOR_PROFILE_PARAM_BUILDER_ERROR_INVALID_TF,
-			    "%s not supported by the color manager", info->desc);
-		success = false;
-	}
-
 	if (builder->group_mask & WESTON_COLOR_PROFILE_PARAMS_TF) {
 		store_error(builder, WESTON_COLOR_PROFILE_PARAM_BUILDER_ERROR_ALREADY_SET,
 			    "tf was already set");
+		success = false;
+	}
+
+	info = weston_color_tf_info_from(tf);
+	if (!info) {
+		store_error(builder, WESTON_COLOR_PROFILE_PARAM_BUILDER_ERROR_INVALID_TF,
+			    "%d is not a known tf", tf);
+		success = false;
+	} else if (!((cm->supported_tf_named >> tf) & 1)) {
+		store_error(builder, WESTON_COLOR_PROFILE_PARAM_BUILDER_ERROR_INVALID_TF,
+			    "%s not supported by the color manager", info->desc);
 		success = false;
 	}
 
@@ -464,7 +467,7 @@ weston_color_profile_param_builder_set_tf_power_exponent(struct weston_color_pro
 	if (!success)
 		return false;
 
-	builder->params.tf.info = weston_color_tf_info_from(compositor, WESTON_TF_POWER);
+	builder->params.tf.info = weston_color_tf_info_from(WESTON_TF_POWER);
 	builder->params.tf.params[0] = power_exponent;
 
 	builder->group_mask |= WESTON_COLOR_PROFILE_PARAMS_TF;

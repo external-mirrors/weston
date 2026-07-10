@@ -1684,7 +1684,8 @@ bind_color_management(struct wl_client *client, void *data, uint32_t version,
 	for (i = 0; i < 32; i++) {
 		if (!((cm->supported_tf_named >> i) & 1))
 			continue;
-		tf = weston_color_tf_info_from(compositor, i);
+		tf = weston_color_tf_info_from(i);
+		weston_assert_ptr_not_null(compositor, tf);
 		wp_color_manager_v1_send_supported_tf_named(resource,
 							    tf->protocol_tf);
 	}

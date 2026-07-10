@@ -554,7 +554,7 @@ cmlcms_create_stock_profile(struct weston_color_manager_lcms *cm)
 	p.primaries_info = weston_color_primaries_info_from(compositor,
 							    WESTON_PRIMARIES_CICP_SRGB);
 	p.primaries = p.primaries_info->color_gamut;
-	p.tf.info = weston_color_tf_info_from(compositor, WESTON_TF_GAMMA22);
+	p.tf.info = weston_color_tf_info_from(WESTON_TF_GAMMA22);
 	p.reference_white_luminance = 80.0;
 	p.min_luminance = 0.2;
 	p.max_luminance = 80.0;
@@ -738,7 +738,7 @@ color_tf_from_icc(struct weston_compositor *compositor,
 	unsigned i;
 
 	struct weston_color_tf default_tf = {
-		.info = weston_color_tf_info_from(compositor, WESTON_TF_GAMMA22),
+		.info = weston_color_tf_info_from(WESTON_TF_GAMMA22),
 	};
 
 	/*

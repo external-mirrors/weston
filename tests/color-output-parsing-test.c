@@ -553,7 +553,8 @@ compare_results(struct weston_color_profile *tst,
 	const struct mock_color_profile *mock_cprof = to_mock_cprof(tst);
 	struct weston_color_profile_params ref = expected->template;
 
-	ref.tf.info = weston_color_tf_info_from(NULL, expected->tf);
+	ref.tf.info = weston_color_tf_info_from(expected->tf);
+	test_assert_ptr_not_null(ref.tf.info);
 
 	if (expected->use_named_prim) {
 		ref.primaries_info = weston_color_primaries_info_from(NULL, expected->named_prim);

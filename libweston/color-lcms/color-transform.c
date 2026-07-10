@@ -492,7 +492,7 @@ init_curve_from_type_1(struct weston_compositor *compositor,
 	if (!clamped_input &&
 	    is_lcms_curve_param_eq(type_1_params[0][0], type_1_params[1][0]) &&
 	    is_lcms_curve_param_eq(type_1_params[0][0], type_1_params[2][0])) {
-		tf_info = weston_color_tf_info_from(compositor, WESTON_TF_POWER);
+		tf_info = weston_color_tf_info_from(WESTON_TF_POWER);
 		curve->type = WESTON_COLOR_CURVE_TYPE_ENUM;
 		enumerated->tf = (struct weston_color_tf){
 			.info = tf_info,
@@ -575,7 +575,7 @@ init_curve_from_type_1_inverse(struct weston_compositor *compositor,
 			goto err;
 		}
 
-		tf_info = weston_color_tf_info_from(compositor, WESTON_TF_POWER);
+		tf_info = weston_color_tf_info_from(WESTON_TF_POWER);
 		curve->type = WESTON_COLOR_CURVE_TYPE_ENUM;
 		enumerated->tf = (struct weston_color_tf){
 			.info = tf_info,
