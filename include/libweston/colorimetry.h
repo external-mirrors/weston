@@ -40,6 +40,7 @@ struct weston_compositor;
 struct weston_color_profile_param_builder;
 struct weston_color_profile;
 struct weston_color_transform;
+struct weston_color_tf_info;
 
 /** Colorimetry mode for outputs and heads
  *
@@ -308,6 +309,24 @@ weston_color_profile_get_details(struct weston_color_profile *cprof);
 struct weston_color_profile *
 weston_compositor_load_icc_file(struct weston_compositor *compositor,
 				const char *path);
+
+const struct weston_color_tf_info *
+weston_color_tf_info_from(enum weston_transfer_function tf);
+
+const struct weston_color_tf_info *
+weston_color_tf_info_from_protocol(uint32_t protocol_tf);
+
+enum weston_transfer_function
+weston_color_tf_info_get_enum(const struct weston_color_tf_info *info);
+
+const char *
+weston_color_tf_info_get_desc(const struct weston_color_tf_info *info);
+
+uint32_t
+weston_color_tf_info_get_protocol_code(const struct weston_color_tf_info *info);
+
+unsigned
+weston_color_tf_info_get_parameter_count(const struct weston_color_tf_info *info);
 
 #ifdef  __cplusplus
 }

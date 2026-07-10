@@ -471,6 +471,18 @@ weston_color_primaries_info_from_protocol(uint32_t protocol_primaries)
 	return NULL;
 }
 
+/**
+ * \defgroup weston_color_tf_info Information about transfer functions
+ */
+
+/**
+ * Look up transfer function information
+ *
+ * \param tf the transfer function
+ * \return A valid pointer to TF info, or NULL for unknown.
+ *
+ * \ingroup weston_color_tf_info
+ */
 WL_EXPORT const struct weston_color_tf_info *
 weston_color_tf_info_from(enum weston_transfer_function tf)
 {
@@ -483,6 +495,14 @@ weston_color_tf_info_from(enum weston_transfer_function tf)
 	return NULL;
 }
 
+/**
+ * Look up transfer function information based on protocol code
+ *
+ * \param protocol_tf wp_color_manager_v1.transfer_function value
+ * \return A valid pointer to TF info, or NULL for unknown.
+ *
+ * \ingroup weston_color_tf_info
+ */
 WL_EXPORT const struct weston_color_tf_info *
 weston_color_tf_info_from_protocol(uint32_t protocol_tf)
 {
@@ -503,6 +523,62 @@ weston_color_tf_info_from_protocol(uint32_t protocol_tf)
         }
 
         return NULL;
+}
+
+/**
+ * Get enum weston_transfer_function
+ *
+ * \param info The transfer function info pointer.
+ * \return The matching enum value.
+ *
+ * \ingroup weston_color_tf_info
+ */
+WL_EXPORT enum weston_transfer_function
+weston_color_tf_info_get_enum(const struct weston_color_tf_info *info)
+{
+	return info->tf;
+}
+
+/**
+ * Get transfer function description string
+ *
+ * \param info The transfer function info pointer.
+ * \return A human-readable description string.
+ *
+ * \ingroup weston_color_tf_info
+ */
+WL_EXPORT const char *
+weston_color_tf_info_get_desc(const struct weston_color_tf_info *info)
+{
+	return info->desc;
+}
+
+/**
+ * Get protocol code value
+ *
+ * \param info The transfer function info pointer.
+ * \return The matching wp_color_manager_v1.transfer_function value.
+ *
+ * \ingroup weston_color_tf_info
+ */
+WL_EXPORT uint32_t
+weston_color_tf_info_get_protocol_code(const struct weston_color_tf_info *info)
+{
+	return info->protocol_tf;
+}
+
+/**
+ * Get transfer function parameter count
+ *
+ * \param info The transfer function info pointer.
+ * \return The number of free parameters.
+ *
+ * \ingroup weston_color_tf_info
+ */
+WL_EXPORT unsigned
+weston_color_tf_info_get_parameter_count(const struct weston_color_tf_info *info)
+{
+	return info->count_parameters;
 }
 
 WL_EXPORT const struct weston_color_tf_info *
