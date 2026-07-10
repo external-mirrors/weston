@@ -446,6 +446,18 @@ weston_render_intent_info_from_protocol(struct weston_compositor *compositor,
 	return NULL;
 }
 
+/**
+ * \defgroup weston_color_primaries_info Information about named color primaries
+ */
+
+/**
+ * Look up named color primaries information
+ *
+ * \param primaries The named primaries.
+ * \return A valid pointer to primaries info, or NULL for unknown.
+ *
+ * \ingroup weston_color_primaries_info
+ */
 WL_EXPORT const struct weston_color_primaries_info *
 weston_color_primaries_info_from(enum weston_color_primaries primaries)
 {
@@ -458,6 +470,14 @@ weston_color_primaries_info_from(enum weston_color_primaries primaries)
 	return NULL;
 }
 
+/**
+ * Look up named color primaries information based on protocol code
+ *
+ * \param protocol_primaries wp_color_manager_v1.primaries value
+ * \return A valid pointer to primaries info, or NULL for unknown.
+ *
+ * \ingroup weston_color_primaries_info
+ */
 WL_EXPORT const struct weston_color_primaries_info *
 weston_color_primaries_info_from_protocol(uint32_t protocol_primaries)
 {
@@ -522,6 +542,63 @@ weston_color_tf_info_from_protocol(uint32_t protocol_tf)
         }
 
         return NULL;
+}
+
+/**
+ * Get enum weston_color_primaries
+ *
+ * \param info The named color primaries info pointer.
+ * \return The matching enum value.
+ *
+ * \ingroup weston_color_primaries_info
+ */
+WL_EXPORT enum weston_color_primaries
+weston_color_primaries_info_get_enum(const struct weston_color_primaries_info *info)
+{
+	return info->primaries;
+}
+
+/**
+ * Get color gamut
+ *
+ * \param info The named color primaries info pointer.
+ * \return The structure with the CIE 1931 2-degree observer xy coordinates
+ * for the three primaries and the white point.
+ *
+ * \ingroup weston_color_primaries_info
+ */
+WL_EXPORT const struct weston_color_gamut *
+weston_color_primaries_info_get_gamut(const struct weston_color_primaries_info *info)
+{
+	return &info->color_gamut;
+}
+
+/**
+ * Get named color primaries' description string
+ *
+ * \param info The named color primaries info pointer.
+ * \return A human-readable description string.
+ *
+ * \ingroup weston_color_primaries_info
+ */
+WL_EXPORT const char *
+weston_color_primaries_info_get_desc(const struct weston_color_primaries_info *info)
+{
+	return info->desc;
+}
+
+/**
+ * Get protocol code value
+ *
+ * \param info The named color primaries info pointer.
+ * \return The matching wp_color_manager_v1.primaries value.
+ *
+ * \ingroup weston_color_primaries_info
+ */
+WL_EXPORT uint32_t
+weston_color_primaries_info_get_protocol_code(const struct weston_color_primaries_info *info)
+{
+	return info->protocol_primaries;
 }
 
 /**

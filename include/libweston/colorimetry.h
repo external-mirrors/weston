@@ -41,6 +41,7 @@ struct weston_color_profile_param_builder;
 struct weston_color_profile;
 struct weston_color_transform;
 struct weston_color_tf_info;
+struct weston_color_primaries_info;
 
 /** Colorimetry mode for outputs and heads
  *
@@ -327,6 +328,24 @@ weston_color_tf_info_get_protocol_code(const struct weston_color_tf_info *info);
 
 unsigned
 weston_color_tf_info_get_parameter_count(const struct weston_color_tf_info *info);
+
+const struct weston_color_primaries_info *
+weston_color_primaries_info_from(enum weston_color_primaries primaries);
+
+const struct weston_color_primaries_info *
+weston_color_primaries_info_from_protocol(uint32_t protocol_primaries);
+
+enum weston_color_primaries
+weston_color_primaries_info_get_enum(const struct weston_color_primaries_info *info);
+
+const struct weston_color_gamut *
+weston_color_primaries_info_get_gamut(const struct weston_color_primaries_info *info);
+
+const char *
+weston_color_primaries_info_get_desc(const struct weston_color_primaries_info *info);
+
+uint32_t
+weston_color_primaries_info_get_protocol_code(const struct weston_color_primaries_info *info);
 
 #ifdef  __cplusplus
 }

@@ -139,12 +139,6 @@ const struct weston_render_intent_info *
 weston_render_intent_info_from_protocol(struct weston_compositor *compositor,
                                         uint32_t protocol_intent);
 
-const struct weston_color_primaries_info *
-weston_color_primaries_info_from(enum weston_color_primaries primaries);
-
-const struct weston_color_primaries_info *
-weston_color_primaries_info_from_protocol(uint32_t protocol_primaries);
-
 const struct weston_color_tf_info *
 weston_color_tf_info_from_parametric_curve(struct weston_color_curve_parametric *curve);
 
