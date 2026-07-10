@@ -140,6 +140,7 @@
 			_WESTON_TRACE_ANNOTATE_PAIR, __VA_ARGS__))          \
 	} while (0)
 
+#define _WESTON_TRACE_INIT() util_perfetto_init()
 
 /* Helpers macros for recursive variadic expansion, never to
  * be used outside of this header.
@@ -240,6 +241,8 @@ _weston_trace_scope_end(int *scope)
 #define _WESTON_TRACE_COMMIT_ANNOTATION(name)
 #define _WESTON_TRACE_ANNOTATE(...)
 
+#define _WESTON_TRACE_INIT()
+
 #endif /* HAVE_PERFETTO */
 
 #define WESTON_TRACE_SCOPE(name) _WESTON_TRACE_SCOPE(name)
@@ -271,5 +274,7 @@ _weston_trace_scope_end(int *scope)
  */
 #define WESTON_TRACE_ANNOTATE(...)                                          \
 	_WESTON_TRACE_ANNOTATE(__VA_ARGS__)
+
+#define WESTON_TRACE_INIT() _WESTON_TRACE_INIT()
 
 #endif /* WESTON_TRACE_H */

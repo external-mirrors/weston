@@ -10461,7 +10461,7 @@ weston_compositor_create(struct wl_display *display,
 	if (!ec)
 		return NULL;
 
-	util_perfetto_init();
+	WESTON_TRACE_INIT();
 
 	if (test_data)
 		ec->test_data = *test_data;
