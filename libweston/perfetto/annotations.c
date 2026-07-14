@@ -390,6 +390,23 @@ perfetto_annotate_time(struct weston_debug_annotations *annots,
 	annots->when = when;
 }
 
+WL_EXPORT void
+perfetto_annotate_timer(struct weston_debug_annotations *annots,
+			const char *key,
+			unsigned char key_size,
+			struct itimerspec when)
+{
+	struct timespec now;
+	struct timespec target;
+	int64_t nsec;
+
+	clock_gettime(CLOCK_MONOTONIC, &now);
+	nsec = timespec_to_nsec(&when.it_value);
+	timespec_add_nsec(&target, &now, nsec);
+
+	perfetto_annotate_time(annots, key, key_size, target);
+}
+
 static void
 do_annotate_bitflags(struct weston_debug_annotations *annots,
 		     unsigned char parent,

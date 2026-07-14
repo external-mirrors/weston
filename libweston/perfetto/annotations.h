@@ -116,6 +116,12 @@ perfetto_annotate_time(struct weston_debug_annotations *annots,
 		       struct timespec when);
 
 void
+perfetto_annotate_timer(struct weston_debug_annotations *annots,
+			const char *key,
+			unsigned char key_size,
+			struct itimerspec when);
+
+void
 perfetto_annotate_bitflags(struct weston_debug_annotations *annots,
 			   const char *key,
 			   unsigned char key_size,
