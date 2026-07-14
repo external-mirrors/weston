@@ -4588,6 +4588,7 @@ weston_output_finish_frame(struct weston_output *output,
 	int32_t refresh_nsec;
 	struct timespec now;
 	struct timespec vblank_monotonic;
+	bool loop_start = presented_flags & WP_PRESENTATION_FEEDBACK_INVALID;
 	int64_t msec_rel;
 
 	assert(output->repaint_status == REPAINT_AWAITING_COMPLETION);
@@ -4605,8 +4606,7 @@ weston_output_finish_frame(struct weston_output *output,
 	 * was scheduled before weston_backend_set_deferred() was called.
 	 * Make sure we only defer if we're in a running repaint loop.
 	 */
-	if (output->backend->deferred &&
-	    !(presented_flags & WP_PRESENTATION_FEEDBACK_INVALID)) {
+	if (output->backend->deferred && !loop_start) {
 		output->repaint_status = REPAINT_DEFERRED;
 		return;
 	}
@@ -4638,7 +4638,7 @@ weston_output_finish_frame(struct weston_output *output,
 		 TLP_VBLANK(&vblank_monotonic), TLP_END);
 
 	refresh_nsec = millihz_to_nsec(output->current_mode->refresh);
-	if (!(presented_flags & WP_PRESENTATION_FEEDBACK_INVALID)) {
+	if (!loop_start) {
 		weston_presentation_feedback_present_list(&output->feedback_list,
 							  output, refresh_nsec, stamp,
 							  output->msc,
@@ -4698,8 +4698,7 @@ weston_output_finish_frame(struct weston_output *output,
 	 * the repaint loop with VRR, because in that case we can potentially
 	 * just repaint right away.
 	 */
-	while (!output->forced_present.valid &&
-	       presented_flags == WP_PRESENTATION_FEEDBACK_INVALID &&
+	while (!output->forced_present.valid && loop_start &&
 	       output->vrr_mode != WESTON_VRR_MODE_GAME &&
 	       timespec_sub_to_msec(&output->next_present, &now) < weston_output_repaint_msec(output))
 		timespec_add_nsec(&output->next_present,
