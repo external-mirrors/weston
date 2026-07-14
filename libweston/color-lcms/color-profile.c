@@ -550,7 +550,7 @@ cmlcms_create_stock_profile(struct weston_color_manager_lcms *cm)
 	struct cmlcms_color_profile *stock;
 	char *desc = NULL;
 
-	p.primaries_info = weston_color_primaries_info_from(WESTON_PRIMARIES_CICP_SRGB);
+	p.primaries_info = weston_color_primaries_info_from(WESTON_PRIMARIES_SRGB);
 	p.primaries = p.primaries_info->color_gamut;
 	p.tf.info = weston_color_tf_info_from(WESTON_TF_GAMMA22);
 	p.reference_white_luminance = 80.0;

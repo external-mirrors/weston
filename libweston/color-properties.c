@@ -129,7 +129,7 @@ static const struct weston_render_intent_info render_intent_info_table[] = {
 
 static const struct weston_color_primaries_info color_primaries_info_table[] = {
 	{
-		.primaries = WESTON_PRIMARIES_CICP_SRGB,
+		.primaries = WESTON_PRIMARIES_SRGB,
 		.desc = "sRGB & BT.709",
 		.protocol_primaries = WP_COLOR_MANAGER_V1_PRIMARIES_SRGB,
 		.color_gamut = {
@@ -141,7 +141,7 @@ static const struct weston_color_primaries_info color_primaries_info_table[] = {
 		},
 	},
 	{
-		.primaries = WESTON_PRIMARIES_CICP_PAL_M,
+		.primaries = WESTON_PRIMARIES_PAL_M,
 		.desc = "PAL-M (BT.470)",
 		.protocol_primaries = WP_COLOR_MANAGER_V1_PRIMARIES_PAL_M,
 		.color_gamut = {
@@ -153,7 +153,7 @@ static const struct weston_color_primaries_info color_primaries_info_table[] = {
 		},
 	},
 	{
-		.primaries = WESTON_PRIMARIES_CICP_PAL,
+		.primaries = WESTON_PRIMARIES_PAL,
 		.desc = "PAL (BT.601)",
 		.protocol_primaries = WP_COLOR_MANAGER_V1_PRIMARIES_PAL,
 		.color_gamut = {
@@ -165,7 +165,7 @@ static const struct weston_color_primaries_info color_primaries_info_table[] = {
 		},
 	},
 	{
-		.primaries = WESTON_PRIMARIES_CICP_NTSC,
+		.primaries = WESTON_PRIMARIES_NTSC,
 		.desc = "NTSC (BT.601)",
 		.protocol_primaries = WP_COLOR_MANAGER_V1_PRIMARIES_NTSC,
 		.color_gamut = {
@@ -177,7 +177,7 @@ static const struct weston_color_primaries_info color_primaries_info_table[] = {
 		},
 	},
 	{
-		.primaries = WESTON_PRIMARIES_CICP_GENERIC_FILM,
+		.primaries = WESTON_PRIMARIES_GENERIC_FILM,
 		.desc = "Generic film with color filters using Illuminant C",
 		.protocol_primaries = WP_COLOR_MANAGER_V1_PRIMARIES_GENERIC_FILM,
 		.color_gamut = {
@@ -189,7 +189,7 @@ static const struct weston_color_primaries_info color_primaries_info_table[] = {
 		},
 	},
 	{
-		.primaries = WESTON_PRIMARIES_CICP_BT2020,
+		.primaries = WESTON_PRIMARIES_BT2020,
 		.desc = "BT.2020 & BT.2100",
 		.protocol_primaries = WP_COLOR_MANAGER_V1_PRIMARIES_BT2020,
 		.color_gamut = {
@@ -201,7 +201,7 @@ static const struct weston_color_primaries_info color_primaries_info_table[] = {
 		},
 	},
 	{
-		.primaries = WESTON_PRIMARIES_CICP_CIE1931_XYZ,
+		.primaries = WESTON_PRIMARIES_CIE1931_XYZ,
 		.desc = "CIE 1931 XYZ & SMPTE ST 428-1",
 		.protocol_primaries = WP_COLOR_MANAGER_V1_PRIMARIES_CIE1931_XYZ,
 		.color_gamut = {
@@ -213,7 +213,7 @@ static const struct weston_color_primaries_info color_primaries_info_table[] = {
 		},
 	},
 	{
-		.primaries = WESTON_PRIMARIES_CICP_DCI_P3,
+		.primaries = WESTON_PRIMARIES_DCI_P3,
 		.desc = "DCI P3 (SMPTE RP 431)",
 		.protocol_primaries = WP_COLOR_MANAGER_V1_PRIMARIES_DCI_P3,
 		.color_gamut = {
@@ -225,7 +225,7 @@ static const struct weston_color_primaries_info color_primaries_info_table[] = {
 		},
 	},
 	{
-		.primaries = WESTON_PRIMARIES_CICP_DISPLAY_P3,
+		.primaries = WESTON_PRIMARIES_DISPLAY_P3,
 		.desc = "Display P3",
 		.protocol_primaries = WP_COLOR_MANAGER_V1_PRIMARIES_DISPLAY_P3,
 		.color_gamut = {

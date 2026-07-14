@@ -519,15 +519,15 @@ weston_color_manager_create(struct weston_compositor *compositor)
 					       (1 << WESTON_RENDER_INTENT_RELATIVE) |
 					       (1 << WESTON_RENDER_INTENT_RELATIVE_BPC);
 
-	cm->base.supported_primaries_named = (1 << WESTON_PRIMARIES_CICP_SRGB) |
-					     (1 << WESTON_PRIMARIES_CICP_PAL_M) |
-					     (1 << WESTON_PRIMARIES_CICP_PAL) |
-					     (1 << WESTON_PRIMARIES_CICP_NTSC) |
-					     (1 << WESTON_PRIMARIES_CICP_GENERIC_FILM) |
-					     (1 << WESTON_PRIMARIES_CICP_BT2020) |
-					     (1 << WESTON_PRIMARIES_CICP_CIE1931_XYZ) |
-					     (1 << WESTON_PRIMARIES_CICP_DCI_P3) |
-					     (1 << WESTON_PRIMARIES_CICP_DISPLAY_P3) |
+	cm->base.supported_primaries_named = (1 << WESTON_PRIMARIES_SRGB) |
+					     (1 << WESTON_PRIMARIES_PAL_M) |
+					     (1 << WESTON_PRIMARIES_PAL) |
+					     (1 << WESTON_PRIMARIES_NTSC) |
+					     (1 << WESTON_PRIMARIES_GENERIC_FILM) |
+					     (1 << WESTON_PRIMARIES_BT2020) |
+					     (1 << WESTON_PRIMARIES_CIE1931_XYZ) |
+					     (1 << WESTON_PRIMARIES_DCI_P3) |
+					     (1 << WESTON_PRIMARIES_DISPLAY_P3) |
 					     (1 << WESTON_PRIMARIES_ADOBE_RGB);
 
 	cm->base.supported_tf_named = (1 << WESTON_TF_GAMMA22) |

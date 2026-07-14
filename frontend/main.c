@@ -1402,15 +1402,15 @@ parse_CIExy(struct weston_CIExy *chrom, const char *str, char **errmsg)
 }
 
 static const struct weston_enum_map config_primaries_map[] = {
-	{ "srgb",         WESTON_PRIMARIES_CICP_SRGB },
-	{ "pal_m",        WESTON_PRIMARIES_CICP_PAL_M },
-	{ "pal",          WESTON_PRIMARIES_CICP_PAL },
-	{ "ntsc",         WESTON_PRIMARIES_CICP_NTSC },
-	{ "generic_film", WESTON_PRIMARIES_CICP_GENERIC_FILM },
-	{ "bt2020",       WESTON_PRIMARIES_CICP_BT2020 },
-	{ "cie1931_xyz",  WESTON_PRIMARIES_CICP_CIE1931_XYZ },
-	{ "dci_p3",       WESTON_PRIMARIES_CICP_DCI_P3 },
-	{ "display_p3",   WESTON_PRIMARIES_CICP_DISPLAY_P3 },
+	{ "srgb",         WESTON_PRIMARIES_SRGB },
+	{ "pal_m",        WESTON_PRIMARIES_PAL_M },
+	{ "pal",          WESTON_PRIMARIES_PAL },
+	{ "ntsc",         WESTON_PRIMARIES_NTSC },
+	{ "generic_film", WESTON_PRIMARIES_GENERIC_FILM },
+	{ "bt2020",       WESTON_PRIMARIES_BT2020 },
+	{ "cie1931_xyz",  WESTON_PRIMARIES_CIE1931_XYZ },
+	{ "dci_p3",       WESTON_PRIMARIES_DCI_P3 },
+	{ "display_p3",   WESTON_PRIMARIES_DISPLAY_P3 },
 	{ "adobe_rgb",    WESTON_PRIMARIES_ADOBE_RGB },
 };
 
@@ -1715,7 +1715,7 @@ wet_create_sRGB_profile(struct weston_compositor *compositor)
 	char *err_msg = NULL;
 
 	builder = weston_color_profile_param_builder_create(compositor);
-	weston_color_profile_param_builder_set_primaries_named(builder, WESTON_PRIMARIES_CICP_SRGB);
+	weston_color_profile_param_builder_set_primaries_named(builder, WESTON_PRIMARIES_SRGB);
 	weston_color_profile_param_builder_set_tf_named(builder, WESTON_TF_GAMMA22);
 
 	cprof = weston_color_profile_param_builder_create_color_profile(builder, "frontend sRGB",
@@ -1782,21 +1782,21 @@ cta861_primaries(struct weston_color_profile_param_builder *builder,
 	switch (colorimetry) {
 	case WESTON_COLORIMETRY_MODE_NONE:
 	case WESTON_COLORIMETRY_MODE_DEFAULT:
-		weston_color_profile_param_builder_set_primaries_named(builder, WESTON_PRIMARIES_CICP_SRGB);
+		weston_color_profile_param_builder_set_primaries_named(builder, WESTON_PRIMARIES_SRGB);
 		break;
 	case WESTON_COLORIMETRY_MODE_BT2020_CYCC:
 	case WESTON_COLORIMETRY_MODE_BT2020_YCC:
 	case WESTON_COLORIMETRY_MODE_BT2020_RGB:
-		weston_color_profile_param_builder_set_primaries_named(builder, WESTON_PRIMARIES_CICP_BT2020);
+		weston_color_profile_param_builder_set_primaries_named(builder, WESTON_PRIMARIES_BT2020);
 		break;
 	case WESTON_COLORIMETRY_MODE_P3D65:
-		weston_color_profile_param_builder_set_primaries_named(builder, WESTON_PRIMARIES_CICP_DISPLAY_P3);
+		weston_color_profile_param_builder_set_primaries_named(builder, WESTON_PRIMARIES_DISPLAY_P3);
 		break;
 	case WESTON_COLORIMETRY_MODE_P3DCI:
-		weston_color_profile_param_builder_set_primaries_named(builder, WESTON_PRIMARIES_CICP_DCI_P3);
+		weston_color_profile_param_builder_set_primaries_named(builder, WESTON_PRIMARIES_DCI_P3);
 		break;
 	case WESTON_COLORIMETRY_MODE_ICTCP:
-		weston_color_profile_param_builder_set_primaries_named(builder, WESTON_PRIMARIES_CICP_BT2020);
+		weston_color_profile_param_builder_set_primaries_named(builder, WESTON_PRIMARIES_BT2020);
 		break;
 	}
 }

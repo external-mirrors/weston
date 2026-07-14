@@ -523,23 +523,23 @@ static const char *
 primaries_to_name(const struct weston_color_primaries_info *info)
 {
 	switch (info->primaries) {
-	case WESTON_PRIMARIES_CICP_SRGB:
+	case WESTON_PRIMARIES_SRGB:
 		return "srgb";
-	case WESTON_PRIMARIES_CICP_PAL_M:
+	case WESTON_PRIMARIES_PAL_M:
 		return "pal_m";
-	case WESTON_PRIMARIES_CICP_PAL:
+	case WESTON_PRIMARIES_PAL:
 		return "pal";
-	case WESTON_PRIMARIES_CICP_NTSC:
+	case WESTON_PRIMARIES_NTSC:
 		return "ntsc";
-	case WESTON_PRIMARIES_CICP_GENERIC_FILM:
+	case WESTON_PRIMARIES_GENERIC_FILM:
 		return "generic_film";
-	case WESTON_PRIMARIES_CICP_BT2020:
+	case WESTON_PRIMARIES_BT2020:
 		return "bt2020";
-	case WESTON_PRIMARIES_CICP_CIE1931_XYZ:
+	case WESTON_PRIMARIES_CIE1931_XYZ:
 		return "cie1931_xyz";
-	case WESTON_PRIMARIES_CICP_DCI_P3:
+	case WESTON_PRIMARIES_DCI_P3:
 		return "dci_p3";
-	case WESTON_PRIMARIES_CICP_DISPLAY_P3:
+	case WESTON_PRIMARIES_DISPLAY_P3:
 		return "display_p3";
 	case WESTON_PRIMARIES_ADOBE_RGB:
 		return "adobe_rgb";
