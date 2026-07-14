@@ -113,6 +113,9 @@ struct weston_color_tf_info {
         /** CM&HDR protocol extension value representing the tf. */
         uint32_t protocol_tf;
 
+	/** H.273 CICP TransferCharacteristics value, or 0 if no match */
+	uint8_t cicp;
+
 	/** KMS 1D curve colorop value representing the tf. */
 	uint32_t kms_colorop;
 	uint32_t kms_colorop_inverse;

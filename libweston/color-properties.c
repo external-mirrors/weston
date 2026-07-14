@@ -288,6 +288,7 @@ static const struct weston_color_tf_info color_tf_info_table[] = {
 		.tf = WESTON_TF_BT1886,
 		.desc = "BT.1886",
 		.protocol_tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_BT1886,
+		.cicp = 1,
 		.kms_colorop = WDRM_COLOROP_CURVE_1D__COUNT,
 		.kms_colorop_inverse = WDRM_COLOROP_CURVE_1D__COUNT,
 		.count_parameters = 0,
@@ -303,6 +304,7 @@ static const struct weston_color_tf_info color_tf_info_table[] = {
 		.tf = WESTON_TF_GAMMA22,
 		.desc = "assumed display gamma 2.2",
 		.protocol_tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_GAMMA22,
+		.cicp = 4,
 		.kms_colorop = WDRM_COLOROP_CURVE_1D_GAMMA_22,
 		.kms_colorop_inverse = WDRM_COLOROP_CURVE_1D_GAMMA_22_INV,
 		.count_parameters = 0,
@@ -314,6 +316,7 @@ static const struct weston_color_tf_info color_tf_info_table[] = {
 		.tf = WESTON_TF_GAMMA28,
 		.desc = "assumed display gamma 2.8",
 		.protocol_tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_GAMMA28,
+		.cicp = 5,
 		.kms_colorop = WDRM_COLOROP_CURVE_1D__COUNT,
 		.kms_colorop_inverse = WDRM_COLOROP_CURVE_1D__COUNT,
 		.count_parameters = 0,
@@ -325,6 +328,7 @@ static const struct weston_color_tf_info color_tf_info_table[] = {
 		.tf = WESTON_TF_EXT_LINEAR,
 		.desc = "extended linear",
 		.protocol_tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_EXT_LINEAR,
+		.cicp = 8, /* linear, not extended */
 		.kms_colorop = WDRM_COLOROP_CURVE_1D__COUNT,
 		.kms_colorop_inverse = WDRM_COLOROP_CURVE_1D__COUNT,
 		.count_parameters = 0,
@@ -333,6 +337,7 @@ static const struct weston_color_tf_info color_tf_info_table[] = {
 		.tf = WESTON_TF_SRGB,
 		.desc = "sRGB piece-wise",
 		.protocol_tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_SRGB,
+		.cicp = 13,
 		.kms_colorop = WDRM_COLOROP_CURVE_1D_SRGB_EOTF,
 		.kms_colorop_inverse = WDRM_COLOROP_CURVE_1D_SRGB_INV_EOTF,
 		.count_parameters = 0,
@@ -355,6 +360,7 @@ static const struct weston_color_tf_info color_tf_info_table[] = {
 		.tf = WESTON_TF_ST240,
 		.desc = "SMPTE ST 240",
 		.protocol_tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_ST240,
+		.cicp = 7,
 		.kms_colorop = WDRM_COLOROP_CURVE_1D__COUNT,
 		.kms_colorop_inverse = WDRM_COLOROP_CURVE_1D__COUNT,
 		.count_parameters = 0,
@@ -363,6 +369,7 @@ static const struct weston_color_tf_info color_tf_info_table[] = {
 		.tf = WESTON_TF_ST428,
 		.desc = "SMPTE ST 428",
 		.protocol_tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_ST428,
+		.cicp = 17,
 		.kms_colorop = WDRM_COLOROP_CURVE_1D__COUNT,
 		.kms_colorop_inverse = WDRM_COLOROP_CURVE_1D__COUNT,
 		.count_parameters = 0,
@@ -371,6 +378,7 @@ static const struct weston_color_tf_info color_tf_info_table[] = {
 		.tf = WESTON_TF_ST2084_PQ,
 		.desc = "Perceptual Quantizer",
 		.protocol_tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_ST2084_PQ,
+		.cicp = 16,
 		.kms_colorop = WDRM_COLOROP_CURVE_1D__COUNT,
 		.kms_colorop_inverse = WDRM_COLOROP_CURVE_1D__COUNT,
 		.count_parameters = 0,
@@ -379,6 +387,7 @@ static const struct weston_color_tf_info color_tf_info_table[] = {
 		.tf = WESTON_TF_LOG_100,
 		.desc = "logarithmic 100:1",
 		.protocol_tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_LOG_100,
+		.cicp = 9,
 		.kms_colorop = WDRM_COLOROP_CURVE_1D__COUNT,
 		.kms_colorop_inverse = WDRM_COLOROP_CURVE_1D__COUNT,
 		.count_parameters = 0,
@@ -387,6 +396,7 @@ static const struct weston_color_tf_info color_tf_info_table[] = {
 		.tf = WESTON_TF_LOG_316,
 		.desc = "logarithmic (100*Sqrt(10) : 1)",
 		.protocol_tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_LOG_316,
+		.cicp = 10,
 		.kms_colorop = WDRM_COLOROP_CURVE_1D__COUNT,
 		.kms_colorop_inverse = WDRM_COLOROP_CURVE_1D__COUNT,
 		.count_parameters = 0,
@@ -395,6 +405,7 @@ static const struct weston_color_tf_info color_tf_info_table[] = {
 		.tf = WESTON_TF_XVYCC,
 		.desc = "IEC 61966-2-4 (xvYCC)",
 		.protocol_tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_XVYCC,
+		.cicp = 11,
 		.kms_colorop = WDRM_COLOROP_CURVE_1D__COUNT,
 		.kms_colorop_inverse = WDRM_COLOROP_CURVE_1D__COUNT,
 		.count_parameters = 0,
@@ -403,6 +414,7 @@ static const struct weston_color_tf_info color_tf_info_table[] = {
 		.tf = WESTON_TF_HLG,
 		.desc = "Hybrid log-gamma",
 		.protocol_tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_HLG,
+		.cicp = 18,
 		.kms_colorop = WDRM_COLOROP_CURVE_1D__COUNT,
 		.kms_colorop_inverse = WDRM_COLOROP_CURVE_1D__COUNT,
 		.count_parameters = 0,
@@ -586,6 +598,41 @@ weston_color_tf_info_from_protocol(uint32_t protocol_tf)
 }
 
 /**
+ * Look up transfer function information based on H.273 CICP
+ *
+ * \param cicp H.273 TransferCharacteristics value
+ * \return A valid pointer to TF info, or NULL for unknown.
+ *
+ * \ingroup weston_color_tf_info
+ */
+WL_EXPORT const struct weston_color_tf_info *
+weston_color_tf_info_from_cicp(uint8_t cicp)
+{
+	unsigned int i;
+
+	switch (cicp) {
+	/* Reserve 0 for none */
+	case 0:
+		return NULL;
+	/* Normalize duplicate codes so they can be matched */
+	case 6:
+	case 14:
+	case 15:
+		cicp = 1;
+		break;
+	default:
+		break;
+	}
+
+	for (i = 0; i < ARRAY_LENGTH(color_tf_info_table); i++) {
+		if (color_tf_info_table[i].cicp == cicp)
+			return &color_tf_info_table[i];
+	}
+
+	return NULL;
+}
+
+/**
  * Get enum weston_color_primaries
  *
  * \param info The named color primaries info pointer.
@@ -696,6 +743,20 @@ WL_EXPORT uint32_t
 weston_color_tf_info_get_protocol_code(const struct weston_color_tf_info *info)
 {
 	return info->protocol_tf;
+}
+
+/**
+ * Get H.273 TransferCharacteristics value
+ *
+ * \param info The transfer function info pointer.
+ * \return The matching H.273 TransferCharacteristics value, or 0 for none.
+ *
+ * \ingroup weston_color_tf_info
+ */
+WL_EXPORT uint8_t
+weston_color_tf_info_get_cicp(const struct weston_color_tf_info *info)
+{
+	return info->cicp;
 }
 
 /**
