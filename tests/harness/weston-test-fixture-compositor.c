@@ -518,36 +518,6 @@ cfgln(const char *fmt, ...)
 	return str;
 }
 
-
-static const char *
-primaries_to_name(const struct weston_color_primaries_info *info)
-{
-	switch (info->primaries) {
-	case WESTON_PRIMARIES_SRGB:
-		return "srgb";
-	case WESTON_PRIMARIES_PAL_M:
-		return "pal_m";
-	case WESTON_PRIMARIES_PAL:
-		return "pal";
-	case WESTON_PRIMARIES_NTSC:
-		return "ntsc";
-	case WESTON_PRIMARIES_GENERIC_FILM:
-		return "generic_film";
-	case WESTON_PRIMARIES_BT2020:
-		return "bt2020";
-	case WESTON_PRIMARIES_CIE1931_XYZ:
-		return "cie1931_xyz";
-	case WESTON_PRIMARIES_DCI_P3:
-		return "dci_p3";
-	case WESTON_PRIMARIES_DISPLAY_P3:
-		return "display_p3";
-	case WESTON_PRIMARIES_ADOBE_RGB:
-		return "adobe_rgb";
-	}
-
-	return "ERROR!";
-}
-
 static const char *
 tf_to_name(const struct weston_color_tf_info *info)
 {
@@ -628,7 +598,8 @@ cfg_color_profile_params(const char *name,
 	}
 
 	if (p->primaries_info) {
-		fprintf(fp, "prim_named=%s\n", primaries_to_name(p->primaries_info));
+		fprintf(fp, "prim_named=%s\n",
+			weston_color_primaries_info_get_codeword(p->primaries_info));
 	} else {
 		gamut_to_config("prim", p->primaries, fp);
 	}

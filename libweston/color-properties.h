@@ -90,6 +90,9 @@ struct weston_color_primaries_info {
         /** Our internal representation for the primaries. */
         enum weston_color_primaries primaries;
 
+	/** Unique string identifier usable in config files */
+	const char *codeword;
+
 	/** Raw values for the primaries. */
 	struct weston_color_gamut color_gamut;
 

@@ -130,6 +130,7 @@ static const struct weston_render_intent_info render_intent_info_table[] = {
 static const struct weston_color_primaries_info color_primaries_info_table[] = {
 	{
 		.primaries = WESTON_PRIMARIES_SRGB,
+		.codeword = "srgb",
 		.desc = "sRGB & BT.709",
 		.protocol_primaries = WP_COLOR_MANAGER_V1_PRIMARIES_SRGB,
 		.cicp = 1,
@@ -143,6 +144,7 @@ static const struct weston_color_primaries_info color_primaries_info_table[] = {
 	},
 	{
 		.primaries = WESTON_PRIMARIES_PAL_M,
+		.codeword = "pal_m",
 		.desc = "PAL-M (BT.470)",
 		.protocol_primaries = WP_COLOR_MANAGER_V1_PRIMARIES_PAL_M,
 		.cicp = 4,
@@ -156,6 +158,7 @@ static const struct weston_color_primaries_info color_primaries_info_table[] = {
 	},
 	{
 		.primaries = WESTON_PRIMARIES_PAL,
+		.codeword = "pal",
 		.desc = "PAL (BT.601)",
 		.protocol_primaries = WP_COLOR_MANAGER_V1_PRIMARIES_PAL,
 		.cicp = 5,
@@ -169,6 +172,7 @@ static const struct weston_color_primaries_info color_primaries_info_table[] = {
 	},
 	{
 		.primaries = WESTON_PRIMARIES_NTSC,
+		.codeword = "ntsc",
 		.desc = "NTSC (BT.601)",
 		.protocol_primaries = WP_COLOR_MANAGER_V1_PRIMARIES_NTSC,
 		.cicp = 6,
@@ -182,6 +186,7 @@ static const struct weston_color_primaries_info color_primaries_info_table[] = {
 	},
 	{
 		.primaries = WESTON_PRIMARIES_GENERIC_FILM,
+		.codeword = "generic_film",
 		.desc = "Generic film with color filters using Illuminant C",
 		.protocol_primaries = WP_COLOR_MANAGER_V1_PRIMARIES_GENERIC_FILM,
 		.cicp = 8,
@@ -195,6 +200,7 @@ static const struct weston_color_primaries_info color_primaries_info_table[] = {
 	},
 	{
 		.primaries = WESTON_PRIMARIES_BT2020,
+		.codeword = "bt2020",
 		.desc = "BT.2020 & BT.2100",
 		.protocol_primaries = WP_COLOR_MANAGER_V1_PRIMARIES_BT2020,
 		.cicp = 9,
@@ -208,6 +214,7 @@ static const struct weston_color_primaries_info color_primaries_info_table[] = {
 	},
 	{
 		.primaries = WESTON_PRIMARIES_CIE1931_XYZ,
+		.codeword = "cie1931_xyz",
 		.desc = "CIE 1931 XYZ & SMPTE ST 428-1",
 		.protocol_primaries = WP_COLOR_MANAGER_V1_PRIMARIES_CIE1931_XYZ,
 		.cicp = 10,
@@ -221,6 +228,7 @@ static const struct weston_color_primaries_info color_primaries_info_table[] = {
 	},
 	{
 		.primaries = WESTON_PRIMARIES_DCI_P3,
+		.codeword = "dci_p3",
 		.desc = "DCI P3 (SMPTE RP 431)",
 		.protocol_primaries = WP_COLOR_MANAGER_V1_PRIMARIES_DCI_P3,
 		.cicp = 11,
@@ -234,6 +242,7 @@ static const struct weston_color_primaries_info color_primaries_info_table[] = {
 	},
 	{
 		.primaries = WESTON_PRIMARIES_DISPLAY_P3,
+		.codeword = "display_p3",
 		.desc = "Display P3",
 		.protocol_primaries = WP_COLOR_MANAGER_V1_PRIMARIES_DISPLAY_P3,
 		.cicp = 12,
@@ -247,6 +256,7 @@ static const struct weston_color_primaries_info color_primaries_info_table[] = {
 	},
 	{
 		.primaries = WESTON_PRIMARIES_ADOBE_RGB,
+		.codeword = "adobe_rgb",
 		.desc = "Adobe RGB (ISO 12640)",
 		.protocol_primaries = WP_COLOR_MANAGER_V1_PRIMARIES_ADOBE_RGB,
 		.color_gamut = {
@@ -558,6 +568,27 @@ weston_color_primaries_info_from_cicp(uint8_t cicp)
 }
 
 /**
+ * Look up named color primaries information based on code word
+ *
+ * \param word A codeword for a named primaries.
+ * \return A valid pointer to primaries info, or NULL for unknown.
+ *
+ * \ingroup weston_color_primaries_info
+ */
+WL_EXPORT const struct weston_color_primaries_info *
+weston_color_primaries_info_from_codeword(const char *word)
+{
+	unsigned int i;
+
+	for (i = 0; i < ARRAY_LENGTH(color_primaries_info_table); i++) {
+		if (strcmp(color_primaries_info_table[i].codeword, word) == 0)
+			return &color_primaries_info_table[i];
+	}
+
+	return NULL;
+}
+
+/**
  * \defgroup weston_color_tf_info Information about transfer functions
  */
 
@@ -736,6 +767,23 @@ WL_EXPORT uint8_t
 weston_color_primaries_info_get_cicp(const struct weston_color_primaries_info *info)
 {
 	return info->cicp;
+}
+
+/**
+ * Get the codeword for the named color primaries
+ *
+ * The codeword is a short word usable on configuration files and others,
+ * uniquely identifying the transfer function, parameters notwithstanding.
+ *
+ * \param info The named color primaries info pointer.
+ * \return The codeword.
+ *
+ * \ingroup weston_color_primaries_info
+ */
+WL_EXPORT const char *
+weston_color_primaries_info_get_codeword(const struct weston_color_primaries_info *info)
+{
+	return info->codeword;
 }
 
 /**

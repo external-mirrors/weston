@@ -401,6 +401,9 @@ weston_color_primaries_info_from_protocol(uint32_t protocol_primaries);
 const struct weston_color_primaries_info *
 weston_color_primaries_info_from_cicp(uint8_t cicp);
 
+const struct weston_color_primaries_info *
+weston_color_primaries_info_from_codeword(const char *word);
+
 enum weston_color_primaries
 weston_color_primaries_info_get_enum(const struct weston_color_primaries_info *info);
 
@@ -415,6 +418,9 @@ weston_color_primaries_info_get_protocol_code(const struct weston_color_primarie
 
 uint8_t
 weston_color_primaries_info_get_cicp(const struct weston_color_primaries_info *info);
+
+const char *
+weston_color_primaries_info_get_codeword(const struct weston_color_primaries_info *info);
 
 #ifdef  __cplusplus
 }
