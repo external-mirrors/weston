@@ -49,6 +49,8 @@
 #include "commit-timing-v1-client-protocol.h"
 #include "fifo-v1-client-protocol.h"
 #include "presentation-time-client-protocol.h"
+#include "single-pixel-buffer-v1-client-protocol.h"
+#include "viewporter-client-protocol.h"
 
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
 
@@ -64,6 +66,8 @@ struct display {
 	struct wl_shm *shm;
 	struct wp_commit_timing_manager_v1 *commit_timing_manager;
 	struct wp_fifo_manager_v1 *fifo_manager;
+	struct wp_single_pixel_buffer_manager_v1 *spb_manager;
+	struct wp_viewporter *viewporter;
 	struct wp_presentation *presentation;
 	bool have_clock_id;
 	clockid_t presentation_clock_id;
@@ -91,6 +95,7 @@ struct window {
 	struct wl_list buffer_list;
 	struct wp_fifo_v1 *fifo;
 	struct wp_commit_timer_v1 *commit_timer;
+	struct wp_viewport *viewport;
 	bool wait_for_configure;
 	bool maximized;
 	bool fullscreen;
@@ -175,6 +180,23 @@ buffer_release(void *data, struct wl_buffer *buffer)
 static const struct wl_buffer_listener buffer_listener = {
 	buffer_release
 };
+
+static int
+create_sp_buffer(struct window *window, struct buffer *buffer)
+{
+	struct display *display = window->display;
+
+	if (!display->spb_manager || !window->viewport)
+		return -1;
+
+	buffer->buffer =
+		wp_single_pixel_buffer_manager_v1_create_u32_rgba_buffer(display->spb_manager,
+									 0.0, UINT32_MAX,
+									 0.0, UINT32_MAX);
+	wl_buffer_add_listener(buffer->buffer, &buffer_listener, buffer);
+
+	return 0;
+}
 
 static int
 create_shm_buffer(struct window *window, struct buffer *buffer)
@@ -372,6 +394,10 @@ create_window(struct display *display, int width, int height)
 						   window->surface);
 	window->commit_timer = wp_commit_timing_manager_v1_get_timer(display->commit_timing_manager,
 								     window->surface);
+	if (display->viewporter)
+		window->viewport = wp_viewporter_get_viewport(display->viewporter,
+							      window->surface);
+
 	window->needs_update_buffer = false;
 	wl_list_init(&window->buffer_list);
 
@@ -424,6 +450,9 @@ destroy_window(struct window *window)
 	if (window->commit_timer)
 		wp_commit_timer_v1_destroy(window->commit_timer);
 
+	if (window->viewport)
+		wp_viewport_destroy(window->viewport);
+
 	free(window);
 }
 
@@ -448,14 +477,16 @@ window_next_buffer(struct window *window)
 		return NULL;
 
 	if (!buffer->buffer) {
-		ret = create_shm_buffer(window, buffer);
-
+		ret = create_sp_buffer(window, buffer);
+		if (ret < 0)
+			ret = create_shm_buffer(window, buffer);
 		if (ret < 0)
 			return NULL;
 
 		/* paint the padding */
-		memset(buffer->shm_data, 0xff,
-		       window->width * window->height * 4);
+		if (buffer->shm_data)
+			memset(buffer->shm_data, 0xff,
+			       window->width * window->height * 4);
 	}
 
 	return buffer;
@@ -629,8 +660,14 @@ finish_run(struct window *window)
 	buffer = window_next_buffer(window);
 	assert(buffer);
 
-	paint_pixels(buffer->shm_data, window->width,
-		     window->height, 1);
+	if (buffer->shm_data)
+		paint_pixels(buffer->shm_data, window->width,
+			     window->height, 1);
+
+	if (window->viewport)
+		wp_viewport_set_destination(window->viewport,
+					    window->width,
+					    window->height);
 
 	wl_surface_attach(window->surface, buffer->buffer, 0, 0);
 	wl_surface_damage(window->surface, 0, 0, window->width, window->height);
@@ -659,8 +696,14 @@ draw_for_time(void *data, int64_t time, bool wait_fifo)
 	buffer = window_next_buffer(window);
 	assert(buffer);
 
-	paint_pixels(buffer->shm_data, window->width,
-		     window->height, time / 1000000);
+	if (buffer->shm_data)
+		paint_pixels(buffer->shm_data, window->width,
+			     window->height, time / 1000000);
+
+	if (window->viewport)
+		wp_viewport_set_destination(window->viewport,
+					    window->width,
+					    window->height);
 
 	wl_surface_attach(window->surface, buffer->buffer, 0, 0);
 	wl_surface_damage(window->surface, 0, 0, window->width, window->height);
@@ -748,6 +791,13 @@ registry_handle_global(void *data, struct wl_registry *registry,
 						   2);
 		wp_presentation_add_listener(d->presentation,
 					     &presentation_listener, d);
+	} else if (strcmp(interface, wp_single_pixel_buffer_manager_v1_interface.name) == 0) {
+		d->spb_manager = wl_registry_bind(registry, id,
+						  &wp_single_pixel_buffer_manager_v1_interface,
+						  1);
+	} else if (strcmp(interface, wp_viewporter_interface.name) == 0) {
+		d->viewporter = wl_registry_bind(registry, id,
+						 &wp_viewporter_interface, 1);
 	}
 }
 
@@ -812,6 +862,12 @@ destroy_display(struct display *display)
 
 	if (display->seat)
 		wl_seat_destroy(display->seat);
+
+	if (display->spb_manager)
+		wp_single_pixel_buffer_manager_v1_destroy(display->spb_manager);
+
+	if (display->viewporter)
+		wp_viewporter_destroy(display->viewporter);
 
 	wl_registry_destroy(display->registry);
 	wl_display_flush(display->display);

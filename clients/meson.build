@@ -172,6 +172,10 @@ simple_clients = [
 			fifo_v1_protocol_c,
 			presentation_time_client_protocol_h,
 			presentation_time_protocol_c,
+			single_pixel_buffer_v1_client_protocol_h,
+			single_pixel_buffer_v1_protocol_c,
+			viewporter_client_protocol_h,
+			viewporter_protocol_c,
 		],
 		'dep_objs': [ dep_wayland_client, dep_libshared ]
 	},
