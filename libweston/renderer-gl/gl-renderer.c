@@ -444,7 +444,7 @@ gl_log_paint_node_bbox_and_region(struct gl_renderer *gr, struct weston_paint_no
 			      ("box_width", box_width),
 			      ("box_height", box_height));
 
-	WESTON_TRACE_COMMIT_ANNOTATION();
+	WESTON_TRACE_COMMIT_ANNOTATION("region");
 
 	if (!weston_log_scope_is_enabled(gr->paint_node_scope))
 		return;
@@ -2382,7 +2382,7 @@ set_blend_state(struct gl_renderer *gr, struct weston_paint_node *pnode, bool st
 				      ("paint node", pnode->internal_name));
 	}
 
-	WESTON_TRACE_COMMIT_ANNOTATION();
+	WESTON_TRACE_COMMIT_ANNOTATION("blend state");
 
 	gr->blend_state = state;
 }
@@ -2563,7 +2563,7 @@ apply_color_effect(struct gl_renderer *gr, struct weston_paint_node *pnode, stru
 		gl_log_paint_node(gr, "\t\tcolor effect: inversion\n");
 		WESTON_TRACE_ANNOTATE(("paint node flow", &pnode->flow),
 				      ("color effect", "inversion"));
-		WESTON_TRACE_COMMIT_ANNOTATION();
+		WESTON_TRACE_COMMIT_ANNOTATION("color effect");
 		return;
 	case WESTON_OUTPUT_COLOR_EFFECT_TYPE_GRAYSCALE:
 		*r = 0.2126f * (*r) + 0.7152f * (*g) + 0.0722f * (*b);
@@ -2572,7 +2572,7 @@ apply_color_effect(struct gl_renderer *gr, struct weston_paint_node *pnode, stru
 		gl_log_paint_node(gr, "\t\tcolor effect: grayscale\n");
 		WESTON_TRACE_ANNOTATE(("paint node flow", &pnode->flow),
 				      ("color effect", "greyscale"));
-		WESTON_TRACE_COMMIT_ANNOTATION();
+		WESTON_TRACE_COMMIT_ANNOTATION("color effect");
 		return;
 	case WESTON_OUTPUT_COLOR_EFFECT_TYPE_CVD_CORRECTION:
 		/**
@@ -2589,7 +2589,7 @@ apply_color_effect(struct gl_renderer *gr, struct weston_paint_node *pnode, stru
 		WESTON_TRACE_ANNOTATE(("paint node flow", &pnode->flow),
 				      ("color effect",
 				weston_output_cvd_type_to_str(effect->u.cvd)));
-		WESTON_TRACE_COMMIT_ANNOTATION();
+		WESTON_TRACE_COMMIT_ANNOTATION("color effect");
 		return;
 	};
 
@@ -2741,7 +2741,7 @@ draw_paint_node(struct weston_paint_node *pnode,
 	pixman_region32_fini(&surface_opaque);
 
 out:
-	WESTON_TRACE_COMMIT_ANNOTATION();
+	WESTON_TRACE_COMMIT_ANNOTATION("render check");
 	pixman_region32_fini(&repaint);
 }
 

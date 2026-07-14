@@ -1000,7 +1000,7 @@ gl_shader_load_config(struct gl_renderer *gr, struct weston_paint_node *pnode,
 					    TEX_UNIT_FB_STORE_CURVE);
 	}
 
-	WESTON_TRACE_COMMIT_ANNOTATION();
+	WESTON_TRACE_COMMIT_ANNOTATION("shader config");
 
 	glActiveTexture(GL_TEXTURE0);
 }

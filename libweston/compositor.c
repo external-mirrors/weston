@@ -1519,7 +1519,7 @@ weston_surface_send_enter_leave(struct weston_surface *surface,
 			      ("label", surface->label),
 			      ("output", head->output->name));
 
-	WESTON_TRACE_COMMIT_ANNOTATION();
+	WESTON_TRACE_COMMIT_ANNOTATION("presence change");
 
 	client = wl_resource_get_client(surface->resource);
 	wl_resource_for_each(wloutput, &head->resource_list) {

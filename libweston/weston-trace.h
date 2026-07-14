@@ -104,10 +104,27 @@
 		_WESTON_TRACE_ANNOTATE_ADD_GENERIC(k, v); \
 	} while (0)
 
-#define _WESTON_TRACE_COMMIT_ANNOTATION(name)                                                           \
+#define _WESTON_TRACE_COMMIT_ANNOTATION_DO(name)                                                        \
 	do {                                                                                            \
 		_weston_trace_scope_annotate_commit(name, &__pd_annots);                                \
 	} while (0)
+
+/* Allow either 1 or 0 parameters, if 0 use __func__. This works by
+ * _WESTON_TRACE_COMMIT_ANNOTATION evaluating to:
+ * _PICK_HELPER(, _WESTON_TRACE_COMMIT_ANNOTATION_1, WESTON_TRACE_COMMIT_ANNOTATION_0)(...)
+ * when there are no arguments, or
+ * _PICK_HELPER(_WESTON_TRACE_COMMIT_ANNOTATION_1, WESTON_TRACE_COMMIT_ANNOTATION_0)(...)
+ * When there are arguments. _PICK_HELPER then evaluates to the second argument, and it
+ * gets handed the (...)
+ * _WESTON_TRACE_COMMIT_ANNOTATION_1(...) or _WESTON_TRACE_COMMIT_ANNOTATION_0()
+ */
+#define _WESTON_TRACE_COMMIT_ANNOTATION_1(name) _WESTON_TRACE_COMMIT_ANNOTATION_DO(name)
+#define _WESTON_TRACE_COMMIT_ANNOTATION_0() _WESTON_TRACE_COMMIT_ANNOTATION_DO(__func__)
+#define _PICK_HELPER(_discard, FINAL_MACRO, ...) FINAL_MACRO
+#define _WESTON_TRACE_COMMIT_ANNOTATION(...)                         \
+	_PICK_HELPER(__VA_OPT__(,)                                   \
+		     _WESTON_TRACE_COMMIT_ANNOTATION_1,              \
+		     _WESTON_TRACE_COMMIT_ANNOTATION_0)(__VA_ARGS__)
 
 /* annotated funcs */
 #define _WESTON_TRACE_ANNOTATE_FUNC_BEGIN(name, annots)                                                 \
@@ -238,8 +255,8 @@ _weston_trace_scope_end(int *scope)
 #define WESTON_TRACE_BEGIN_ANNOTATION() \
         _WESTON_TRACE_BEGIN_ANNOTATION()
 
-#define WESTON_TRACE_COMMIT_ANNOTATION() \
-        _WESTON_TRACE_COMMIT_ANNOTATION(__func__)
+#define WESTON_TRACE_COMMIT_ANNOTATION(name) \
+        _WESTON_TRACE_COMMIT_ANNOTATION(name)
 
 #define WESTON_TRACE_FUNC(...)                          \
 	WESTON_TRACE_BEGIN_ANNOTATION();                \
