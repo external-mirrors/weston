@@ -1492,11 +1492,19 @@ struct weston_dmabuf_feedback_format_table;
 struct weston_renderer;
 struct weston_content_update;
 
+
+struct weston_trace_compositor {
+	struct weston_trace_track repaint_track;
+	struct weston_trace_track timer_track;
+	struct weston_trace_flow repaint_flow;
+};
+
 /** Main object, container-like structure which aggregates all other objects.
  *
  * \ingroup compositor
  */
 struct weston_compositor {
+	struct weston_trace_compositor trace;
 	struct wl_signal destroy_signal;
 	bool shutting_down;
 

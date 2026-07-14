@@ -152,9 +152,31 @@ weston_trace_client_action(struct wl_client *wclient,
 }
 
 void
+weston_trace_compositor_init(struct weston_compositor *compositor)
+{
+	compositor->trace.repaint_track.id =
+		util_perfetto_new_track("repaint");
+
+	compositor->trace.timer_track.id =
+		util_perfetto_new_nested_track("repaint timer",
+					       compositor->trace.repaint_track.id);
+}
+
+void
+weston_trace_compositor_fini(struct weston_compositor *compositor)
+{
+	weston_trace_track_clear(&compositor->trace.repaint_track);
+	weston_trace_track_clear(&compositor->trace.timer_track);
+}
+
+void
 weston_trace_output_init(struct weston_output *output)
 {
-	output->trace.track.id = util_perfetto_new_track(output->name);
+	struct weston_compositor *compositor = output->compositor;
+
+	output->trace.track.id =
+		util_perfetto_new_nested_track(output->name,
+					       compositor->trace.repaint_track.id);
 
 	output->trace.gpu_track.id =
 		util_perfetto_new_nested_track("GPU activity",

@@ -47,6 +47,12 @@ weston_trace_client_action(struct wl_client *wclient,
 			   const char *action);
 
 void
+weston_trace_compositor_init(struct weston_compositor *compositor);
+
+void
+weston_trace_compositor_fini(struct weston_compositor *compositor);
+
+void
 weston_trace_output_init(struct weston_output *output);
 
 void

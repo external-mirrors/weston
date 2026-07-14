@@ -4293,7 +4293,7 @@ void
 weston_repaint_timer_arm(struct weston_compositor *compositor)
 {
 	WESTON_TRACE_FUNC();
-	struct weston_output *output;
+	struct weston_output *output, *target_output = NULL;
 	bool any_should_repaint = false;
 	struct timespec now;
 	struct itimerspec next_time_its = { 0 };
@@ -4338,14 +4338,25 @@ weston_repaint_timer_arm(struct weston_compositor *compositor)
 
 		nsec_to_this = timespec_sub_to_nsec(&output->next_repaint,
 						    &now);
-		if (!any_should_repaint || nsec_to_this < nsec_to_next)
+		if (!any_should_repaint || nsec_to_this < nsec_to_next) {
 			nsec_to_next = nsec_to_this;
+			target_output = output;
+		}
 
 		any_should_repaint = true;
 	}
 
 	if (!any_should_repaint)
 		return;
+
+	WESTON_TRACE_FLOW_START(&compositor->trace.repaint_flow);
+	WESTON_TRACE_FLOW_TEMP(arm_flow);
+	WESTON_TRACE_ANNOTATE(("arm flow", &arm_flow));
+	WESTON_TRACE_COMMIT_ANNOTATION();
+	WESTON_TRACE_ANNOTATE(("repaint track", &compositor->trace.repaint_track),
+			      ("repaint flow", &compositor->trace.repaint_flow),
+			      ("arm flow", &arm_flow));
+	WESTON_TRACE_COMMIT_ANNOTATION("arm repaint timer");
 
 	/* Even if we should repaint immediately, add the minimum 1 ns delay.
 	 * This is a workaround to allow coalescing multiple output repaints
@@ -4358,6 +4369,18 @@ weston_repaint_timer_arm(struct weston_compositor *compositor)
 
 	timespec_from_nsec(&next_time_its.it_value, nsec_to_next);
 	timerfd_settime(compositor->repaint_timer_fd, 0, &next_time_its, NULL);
+	WESTON_TRACE_FLOW_TEMP(output_flow);
+	WESTON_TRACE_ANNOTATE(("timer track", &compositor->trace.timer_track),
+			      ("repaint flow", &compositor->trace.repaint_flow),
+			      ("output flow", &output_flow),
+			      ("target time", next_time_its));
+	WESTON_TRACE_COMMIT_ANNOTATION("scheduled repaint start time");
+	if (target_output) {
+		WESTON_TRACE_ANNOTATE(("output track", &target_output->trace.track),
+				      ("output flow", &output_flow),
+				      ("target time", target_output->next_present));
+		WESTON_TRACE_COMMIT_ANNOTATION("estimated target vblank");
+	}
 }
 
 WL_EXPORT void
@@ -4459,6 +4482,14 @@ output_repaint_timer_handler(int fd, uint32_t mask, void *data)
 	int ret = 0;
 	uint64_t e;
 	ssize_t size;
+
+	WESTON_TRACE_FLOW_TEMP(completion_flow);
+	WESTON_TRACE_ANNOTATE(("completion flow", &completion_flow));
+	WESTON_TRACE_COMMIT_ANNOTATION();
+	WESTON_TRACE_ANNOTATE(("completion flow", &completion_flow),
+			      ("repaint track", &compositor->trace.repaint_track),
+			      ("repaint flow", &compositor->trace.repaint_flow));
+	WESTON_TRACE_COMMIT_ANNOTATION("timer handled");
 
 	do {
 		size = read(compositor->repaint_timer_fd, &e, sizeof e);
@@ -10651,6 +10682,8 @@ weston_compositor_create(struct wl_display *display,
 		weston_compositor_add_log_scope(ec, "libseat-debug",
 						"libseat debug messages\n",
 						NULL, NULL, NULL);
+	WESTON_TRACE_COMPOSITOR_INIT(ec);
+
 	return ec;
 
 fail:
@@ -11176,6 +11209,8 @@ weston_compositor_destroy(struct weston_compositor *compositor)
 		weston_dmabuf_feedback_destroy(compositor->default_dmabuf_feedback);
 		weston_dmabuf_feedback_format_table_destroy(compositor->dmabuf_feedback_format_table);
 	}
+
+	WESTON_TRACE_COMPOSITOR_FINI(compositor);
 
 	free(compositor);
 }
