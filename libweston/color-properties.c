@@ -132,6 +132,7 @@ static const struct weston_color_primaries_info color_primaries_info_table[] = {
 		.primaries = WESTON_PRIMARIES_SRGB,
 		.desc = "sRGB & BT.709",
 		.protocol_primaries = WP_COLOR_MANAGER_V1_PRIMARIES_SRGB,
+		.cicp = 1,
 		.color_gamut = {
 			.primary = { { 0.64, 0.33 }, /* RGB order */
 				     { 0.30, 0.60 },
@@ -144,6 +145,7 @@ static const struct weston_color_primaries_info color_primaries_info_table[] = {
 		.primaries = WESTON_PRIMARIES_PAL_M,
 		.desc = "PAL-M (BT.470)",
 		.protocol_primaries = WP_COLOR_MANAGER_V1_PRIMARIES_PAL_M,
+		.cicp = 4,
 		.color_gamut = {
 			.primary = { { 0.67, 0.33 }, /* RGB order */
 				     { 0.21, 0.71 },
@@ -156,6 +158,7 @@ static const struct weston_color_primaries_info color_primaries_info_table[] = {
 		.primaries = WESTON_PRIMARIES_PAL,
 		.desc = "PAL (BT.601)",
 		.protocol_primaries = WP_COLOR_MANAGER_V1_PRIMARIES_PAL,
+		.cicp = 5,
 		.color_gamut = {
 			.primary = { { 0.64, 0.33 }, /* RGB order */
 				     { 0.29, 0.60 },
@@ -168,6 +171,7 @@ static const struct weston_color_primaries_info color_primaries_info_table[] = {
 		.primaries = WESTON_PRIMARIES_NTSC,
 		.desc = "NTSC (BT.601)",
 		.protocol_primaries = WP_COLOR_MANAGER_V1_PRIMARIES_NTSC,
+		.cicp = 6,
 		.color_gamut = {
 			.primary = { { 0.630, 0.340 }, /* RGB order */
 				     { 0.310, 0.595 },
@@ -180,6 +184,7 @@ static const struct weston_color_primaries_info color_primaries_info_table[] = {
 		.primaries = WESTON_PRIMARIES_GENERIC_FILM,
 		.desc = "Generic film with color filters using Illuminant C",
 		.protocol_primaries = WP_COLOR_MANAGER_V1_PRIMARIES_GENERIC_FILM,
+		.cicp = 8,
 		.color_gamut = {
 			.primary = { { 0.681, 0.319 }, /* RGB order */
 				     { 0.243, 0.692 },
@@ -192,6 +197,7 @@ static const struct weston_color_primaries_info color_primaries_info_table[] = {
 		.primaries = WESTON_PRIMARIES_BT2020,
 		.desc = "BT.2020 & BT.2100",
 		.protocol_primaries = WP_COLOR_MANAGER_V1_PRIMARIES_BT2020,
+		.cicp = 9,
 		.color_gamut = {
 			.primary = { { 0.708, 0.292 }, /* RGB order */
 				     { 0.170, 0.797 },
@@ -204,6 +210,7 @@ static const struct weston_color_primaries_info color_primaries_info_table[] = {
 		.primaries = WESTON_PRIMARIES_CIE1931_XYZ,
 		.desc = "CIE 1931 XYZ & SMPTE ST 428-1",
 		.protocol_primaries = WP_COLOR_MANAGER_V1_PRIMARIES_CIE1931_XYZ,
+		.cicp = 10,
 		.color_gamut = {
 			.primary = { { 1.0, 0.0 }, /* RGB order */
 				     { 0.0, 1.0 },
@@ -216,6 +223,7 @@ static const struct weston_color_primaries_info color_primaries_info_table[] = {
 		.primaries = WESTON_PRIMARIES_DCI_P3,
 		.desc = "DCI P3 (SMPTE RP 431)",
 		.protocol_primaries = WP_COLOR_MANAGER_V1_PRIMARIES_DCI_P3,
+		.cicp = 11,
 		.color_gamut = {
 			.primary = { { 0.680, 0.320 }, /* RGB order */
 				     { 0.265, 0.690 },
@@ -228,6 +236,7 @@ static const struct weston_color_primaries_info color_primaries_info_table[] = {
 		.primaries = WESTON_PRIMARIES_DISPLAY_P3,
 		.desc = "Display P3",
 		.protocol_primaries = WP_COLOR_MANAGER_V1_PRIMARIES_DISPLAY_P3,
+		.cicp = 12,
 		.color_gamut = {
 			.primary = { { 0.680, 0.320 }, /* RGB order */
 				     { 0.265, 0.690 },
@@ -491,6 +500,38 @@ weston_color_primaries_info_from_protocol(uint32_t protocol_primaries)
 }
 
 /**
+ * Look up named color primaries information based on H.273 CICP
+ *
+ * \param cicp H.273 ColourPrimaries values
+ * \return A valid pointer to primaries info, or NULL for unknown.
+ *
+ * \ingroup weston_color_primaries_info
+ */
+WL_EXPORT const struct weston_color_primaries_info *
+weston_color_primaries_info_from_cicp(uint8_t cicp)
+{
+	unsigned int i;
+
+	switch (cicp) {
+	/* Reserve 0 for none */
+	case 0:
+		return NULL;
+	/* Normalize duplicate codes so they can be matched */
+	case 7:
+		cicp = 6;
+		break;
+	default:
+		break;
+	}
+
+	for (i = 0; i < ARRAY_LENGTH(color_primaries_info_table); i++)
+		if (color_primaries_info_table[i].cicp == cicp)
+			return &color_primaries_info_table[i];
+
+	return NULL;
+}
+
+/**
  * \defgroup weston_color_tf_info Information about transfer functions
  */
 
@@ -599,6 +640,20 @@ WL_EXPORT uint32_t
 weston_color_primaries_info_get_protocol_code(const struct weston_color_primaries_info *info)
 {
 	return info->protocol_primaries;
+}
+
+/**
+ * Get H.273 ColourPrimaries value
+ *
+ * \param info The named color primaries info pointer.
+ * \return The matching H.273 ColourPrimaries value, or 0 for none.
+ *
+ * \ingroup weston_color_primaries_info
+ */
+WL_EXPORT uint8_t
+weston_color_primaries_info_get_cicp(const struct weston_color_primaries_info *info)
+{
+	return info->cicp;
 }
 
 /**

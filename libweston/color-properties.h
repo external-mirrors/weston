@@ -98,6 +98,9 @@ struct weston_color_primaries_info {
 
         /** CM&HDR protocol extension value representing the primaries. */
         uint32_t protocol_primaries;
+
+	/** H.273 CICP ColourPrimaries value, or 0 if no match */
+	uint8_t cicp;
 };
 
 struct weston_color_tf_info {
