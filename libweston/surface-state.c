@@ -812,13 +812,13 @@ weston_transaction_add_content_update(struct weston_transaction *tr,
 static void
 weston_surface_create_transaction(struct weston_compositor *comp,
 				  struct weston_surface *surface,
-				  struct weston_surface_state *state)
+				  struct weston_surface_state *state,
+				  struct weston_transaction_queue *parent)
 {
 	struct weston_trace_flow transaction_flow = {};
 	WESTON_TRACE_ANNOTATE_FUNC(("transaction flow", &transaction_flow));
 
 	struct weston_transaction *tr;
-	struct weston_transaction_queue *parent;
 	bool need_schedule = false;
 
 	tr = xzalloc(sizeof *tr);
@@ -827,8 +827,6 @@ weston_surface_create_transaction(struct weston_compositor *comp,
 
 	weston_transaction_add_content_update(tr, surface, state);
 
-	/* Figure out if we need to be blocked behind an existing transaction */
-	parent = weston_surface_find_parent_transaction_queue(comp, surface);
 	if (!parent) {
 		/* We weren't blocked by any existing transactions, so set up
 		 * a new list so content updates for this surface can block
@@ -888,7 +886,7 @@ weston_surface_commit(struct weston_surface *surface)
 	 */
 	tq = weston_surface_find_parent_transaction_queue(comp, surface);
 	if (tq || !weston_surface_state_ready(surface, state)) {
-		weston_surface_create_transaction(comp, surface, state);
+		weston_surface_create_transaction(comp, surface, state, tq);
 		return;
 	}
 
