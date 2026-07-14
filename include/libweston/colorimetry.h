@@ -371,6 +371,9 @@ weston_color_tf_info_from_protocol(uint32_t protocol_tf);
 const struct weston_color_tf_info *
 weston_color_tf_info_from_cicp(uint8_t cicp);
 
+const struct weston_color_tf_info *
+weston_color_tf_info_from_codeword(const char *word);
+
 enum weston_transfer_function
 weston_color_tf_info_get_enum(const struct weston_color_tf_info *info);
 
@@ -382,6 +385,9 @@ weston_color_tf_info_get_protocol_code(const struct weston_color_tf_info *info);
 
 uint8_t
 weston_color_tf_info_get_cicp(const struct weston_color_tf_info *info);
+
+const char *
+weston_color_tf_info_get_codeword(const struct weston_color_tf_info *info);
 
 unsigned
 weston_color_tf_info_get_parameter_count(const struct weston_color_tf_info *info);

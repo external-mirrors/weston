@@ -107,6 +107,9 @@ struct weston_color_tf_info {
         /** Our internal representation for the tf. */
         enum weston_transfer_function tf;
 
+	/** Unique string identifier usable in config files */
+	const char *codeword;
+
         /** String describing the tf. */
         const char *desc;
 

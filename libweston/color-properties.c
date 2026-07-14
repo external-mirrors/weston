@@ -286,6 +286,7 @@ static const struct weston_color_primaries_info color_primaries_info_table[] = {
 static const struct weston_color_tf_info color_tf_info_table[] = {
 	{
 		.tf = WESTON_TF_BT1886,
+		.codeword = "bt1886",
 		.desc = "BT.1886",
 		.protocol_tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_BT1886,
 		.cicp = 1,
@@ -302,6 +303,7 @@ static const struct weston_color_tf_info color_tf_info_table[] = {
 	},
 	{
 		.tf = WESTON_TF_GAMMA22,
+		.codeword = "gamma22",
 		.desc = "assumed display gamma 2.2",
 		.protocol_tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_GAMMA22,
 		.cicp = 4,
@@ -314,6 +316,7 @@ static const struct weston_color_tf_info color_tf_info_table[] = {
 	},
 	{
 		.tf = WESTON_TF_GAMMA28,
+		.codeword = "gamma28",
 		.desc = "assumed display gamma 2.8",
 		.protocol_tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_GAMMA28,
 		.cicp = 5,
@@ -326,6 +329,7 @@ static const struct weston_color_tf_info color_tf_info_table[] = {
 	},
 	{
 		.tf = WESTON_TF_EXT_LINEAR,
+		.codeword = "linear",
 		.desc = "extended linear",
 		.protocol_tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_EXT_LINEAR,
 		.cicp = 8, /* linear, not extended */
@@ -335,6 +339,7 @@ static const struct weston_color_tf_info color_tf_info_table[] = {
 	},
 	{
 		.tf = WESTON_TF_SRGB,
+		.codeword = "compound_power_2_4",
 		.desc = "sRGB piece-wise",
 		.protocol_tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_SRGB,
 		.cicp = 13,
@@ -347,6 +352,7 @@ static const struct weston_color_tf_info color_tf_info_table[] = {
 	},
 	{
 		.tf = WESTON_TF_EXT_SRGB,
+		.codeword = "compound_power_2_4_ext",
 		.desc = "Extended sRGB piece-wise",
 		.protocol_tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_EXT_SRGB,
 		.kms_colorop = WDRM_COLOROP_CURVE_1D__COUNT,
@@ -358,6 +364,7 @@ static const struct weston_color_tf_info color_tf_info_table[] = {
 	},
 	{
 		.tf = WESTON_TF_ST240,
+		.codeword = "st240",
 		.desc = "SMPTE ST 240",
 		.protocol_tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_ST240,
 		.cicp = 7,
@@ -367,6 +374,7 @@ static const struct weston_color_tf_info color_tf_info_table[] = {
 	},
 	{
 		.tf = WESTON_TF_ST428,
+		.codeword = "st428",
 		.desc = "SMPTE ST 428",
 		.protocol_tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_ST428,
 		.cicp = 17,
@@ -376,6 +384,7 @@ static const struct weston_color_tf_info color_tf_info_table[] = {
 	},
 	{
 		.tf = WESTON_TF_ST2084_PQ,
+		.codeword = "st2084",
 		.desc = "Perceptual Quantizer",
 		.protocol_tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_ST2084_PQ,
 		.cicp = 16,
@@ -385,6 +394,7 @@ static const struct weston_color_tf_info color_tf_info_table[] = {
 	},
 	{
 		.tf = WESTON_TF_LOG_100,
+		.codeword = "log100",
 		.desc = "logarithmic 100:1",
 		.protocol_tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_LOG_100,
 		.cicp = 9,
@@ -394,6 +404,7 @@ static const struct weston_color_tf_info color_tf_info_table[] = {
 	},
 	{
 		.tf = WESTON_TF_LOG_316,
+		.codeword = "log316",
 		.desc = "logarithmic (100*Sqrt(10) : 1)",
 		.protocol_tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_LOG_316,
 		.cicp = 10,
@@ -403,6 +414,7 @@ static const struct weston_color_tf_info color_tf_info_table[] = {
 	},
 	{
 		.tf = WESTON_TF_XVYCC,
+		.codeword = "xvycc",
 		.desc = "IEC 61966-2-4 (xvYCC)",
 		.protocol_tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_XVYCC,
 		.cicp = 11,
@@ -412,6 +424,7 @@ static const struct weston_color_tf_info color_tf_info_table[] = {
 	},
 	{
 		.tf = WESTON_TF_HLG,
+		.codeword = "hlg",
 		.desc = "Hybrid log-gamma",
 		.protocol_tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_HLG,
 		.cicp = 18,
@@ -421,6 +434,7 @@ static const struct weston_color_tf_info color_tf_info_table[] = {
 	},
 	{
 		.tf = WESTON_TF_POWER,
+		.codeword = "power",
 		.desc = "power-law with custom exponent",
 		.kms_colorop = WDRM_COLOROP_CURVE_1D__COUNT,
 		.kms_colorop_inverse = WDRM_COLOROP_CURVE_1D__COUNT,
@@ -633,6 +647,27 @@ weston_color_tf_info_from_cicp(uint8_t cicp)
 }
 
 /**
+ * Look up transfer function information based on codeword
+ *
+ * \param word A codeword for a transfer function.
+ * \return A valid pointer to TF info, or NULL for unknown.
+ *
+ * \ingroup weston_color_tf_info
+ */
+WL_EXPORT const struct weston_color_tf_info *
+weston_color_tf_info_from_codeword(const char *word)
+{
+	unsigned int i;
+
+	for (i = 0; i < ARRAY_LENGTH(color_tf_info_table); i++) {
+		if (strcmp(color_tf_info_table[i].codeword, word) == 0)
+			return &color_tf_info_table[i];
+	}
+
+	return NULL;
+}
+
+/**
  * Get enum weston_color_primaries
  *
  * \param info The named color primaries info pointer.
@@ -757,6 +792,23 @@ WL_EXPORT uint8_t
 weston_color_tf_info_get_cicp(const struct weston_color_tf_info *info)
 {
 	return info->cicp;
+}
+
+/**
+ * Get the codeword for the transfer function
+ *
+ * The codeword is a short word usable on configuration files and others,
+ * uniquely identifying the transfer function, parameters notwithstanding.
+ *
+ * \param info The transfer function info pointer.
+ * \return The codeword.
+ *
+ * \ingroup weston_color_tf_info
+ */
+WL_EXPORT const char *
+weston_color_tf_info_get_codeword(const struct weston_color_tf_info *info)
+{
+	return info->codeword;
 }
 
 /**

@@ -553,27 +553,17 @@ tf_to_name(const struct weston_color_tf_info *info)
 {
 	switch (info->tf) {
 	case WESTON_TF_BT1886:
-		return "bt1886";
 	case WESTON_TF_GAMMA22:
-		return "gamma22";
 	case WESTON_TF_GAMMA28:
-		return "gamma28";
 	case WESTON_TF_ST240:
-		return "st240";
 	case WESTON_TF_ST428:
-		return "st428";
 	case WESTON_TF_ST2084_PQ:
-		return "st2084";
 	case WESTON_TF_EXT_LINEAR:
-		return "linear";
 	case WESTON_TF_LOG_100:
-		return "log100";
 	case WESTON_TF_LOG_316:
-		return "log316";
 	case WESTON_TF_XVYCC:
-		return "xvycc";
 	case WESTON_TF_HLG:
-		return "hlg";
+		return weston_color_tf_info_get_codeword(info);
 	/* The following cannot be set by 'tf_named' key. */
 	case WESTON_TF_SRGB:
 	case WESTON_TF_EXT_SRGB:
