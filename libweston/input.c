@@ -3286,12 +3286,13 @@ tablet_tool_cursor_surface_committed(struct weston_surface *es,
 	struct weston_tablet_tool *tool = es->committed_private;
 	struct weston_coord_surface hotspot_inv;
 
-	if (es->width == 0)
-		return;
-
 	assert(es == tool->sprite->surface);
 
 	tool->hotspot = weston_coord_surface_sub(tool->hotspot, new_origin);
+
+	if (!weston_surface_has_content(es))
+		return;
+
 	hotspot_inv = weston_coord_surface_invert(tool->hotspot);
 	weston_view_set_position_with_offset(tool->sprite,
 					     tool->pos, hotspot_inv);
@@ -3578,13 +3579,14 @@ pointer_cursor_surface_committed(struct weston_surface *es,
 	struct weston_pointer *pointer = es->committed_private;
 	struct weston_coord_surface hotspot_inv;
 
-	if (es->width == 0)
-		return;
-
 	assert(es == pointer->sprite->surface);
 
 	pointer->hotspot = weston_coord_surface_sub(pointer->hotspot,
 						    new_origin);
+
+	if (!weston_surface_has_content(es))
+		return;
+
 	hotspot_inv = weston_coord_surface_invert(pointer->hotspot);
 	weston_view_set_position_with_offset(pointer->sprite,
 					     pointer->pos, hotspot_inv);
