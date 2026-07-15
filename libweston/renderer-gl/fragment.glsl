@@ -82,7 +82,23 @@
 #define HIGHPRECISION mediump
 #endif
 
+#define NEED_COLOR_PIPELINE \
+	(DEF_COLOR_PRE_CURVE != SHADER_COLOR_CURVE_IDENTITY || \
+	 DEF_COLOR_MAPPING != SHADER_COLOR_MAPPING_IDENTITY || \
+	 DEF_COLOR_POST_CURVE != SHADER_COLOR_CURVE_IDENTITY)
+
+/*
+ * Color management requires accuracy, so HIGHPRECISION is used as the default
+ * float precision. Otherwise, mediump is used. Variables unrelated to color
+ * management that still require high precision should explicitly be qualified
+ * with HIGHPRECISION. Types not covered by 'precision float' (e.g. sampler3D)
+ * must always be qualified explicitly.
+ */
+#ifdef NEED_COLOR_PIPELINE
 precision HIGHPRECISION float;
+#else
+precision mediump float;
+#endif
 
 /*
  * These undeclared identifiers will be #defined by a runtime generated code
@@ -101,10 +117,7 @@ compile_const bool c_need_swizzle_idx = DEF_NEED_SWIZZLE_IDX;
 compile_const bool c_input_is_premult = DEF_INPUT_IS_PREMULT;
 compile_const bool c_tint = DEF_TINT;
 compile_const bool c_wireframe = DEF_WIREFRAME;
-compile_const bool c_need_color_pipeline =
-	c_color_pre_curve != SHADER_COLOR_CURVE_IDENTITY ||
-	c_color_mapping != SHADER_COLOR_MAPPING_IDENTITY ||
-	c_color_post_curve != SHADER_COLOR_CURVE_IDENTITY;
+compile_const bool c_need_color_pipeline = NEED_COLOR_PIPELINE;
 compile_const bool c_need_straight_alpha =
 	c_need_color_pipeline ||
 	c_color_effect == SHADER_COLOR_EFFECT_INVERSION;
