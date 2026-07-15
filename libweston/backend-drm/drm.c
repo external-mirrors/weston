@@ -1360,6 +1360,9 @@ drm_output_switch_mode(struct weston_output *output_base, struct weston_mode *mo
 	return drm_output_apply_mode(output);
 }
 
+static void
+drm_output_reset_planes(struct drm_output *output);
+
 static int
 drm_output_apply_mode(struct drm_output *output)
 {
@@ -1380,6 +1383,13 @@ drm_output_apply_mode(struct drm_output *output)
 
 	if (!weston_renderer_resize_output(&output->base, &fb_size, NULL))
 		return -1;
+
+	/*
+	 * Remove all potential drm_fb references to GBM BOs, so that the
+	 * renderer tear-down can destroy the originating GBM/Vulkan
+	 * surface without leaving dangling drm_fb pointers.
+	 */
+	drm_output_reset_planes(output);
 
 	if (b->compositor->renderer->type == WESTON_RENDERER_GL) {
 		drm_output_fini_egl(output);
@@ -2717,19 +2727,30 @@ drm_output_init_planes(struct drm_output *output)
 	return 0;
 }
 
+static void
+drm_output_reset_planes(struct drm_output *output)
+{
+	struct drm_device *device = output->device;
+
+	if (output->cursor_handle) {
+		/* Turn off hardware cursor */
+		drmModeSetCursor(device->kms_device->fd, output->crtc->crtc_id, 0, 0, 0);
+		drm_plane_reset_state(output->cursor_handle->plane);
+	}
+
+	if (output->scanout_handle)
+		drm_plane_reset_state(output->scanout_handle->plane);
+}
+
 /** The opposite of drm_output_init_planes(). First of all it removes the planes
  * from the plane stacking list. After all it sets the planes of the output as NULL.
  */
 static void
 drm_output_deinit_planes(struct drm_output *output)
 {
-	struct drm_device *device = output->device;
 	struct drm_plane_handle *handle, *next_handle;
 
-	if (output->cursor_handle) {
-		/* Turn off hardware cursor */
-		drmModeSetCursor(device->kms_device->fd, output->crtc->crtc_id, 0, 0, 0);
-	}
+	drm_output_reset_planes(output);
 
 	/* With universal planes, the planes are allocated at startup,
 	 * freed at shutdown, and live on the plane list in between.
@@ -2737,13 +2758,11 @@ drm_output_deinit_planes(struct drm_output *output)
 	 * for other outputs.
 	 */
 	if (output->cursor_handle) {
-		drm_plane_reset_state(output->cursor_handle->plane);
 		drm_plane_destroy_handle(output->cursor_handle);
 		output->cursor_handle = NULL;
 	}
 
 	if (output->scanout_handle) {
-		drm_plane_reset_state(output->scanout_handle->plane);
 		drm_plane_destroy_handle(output->scanout_handle);
 		output->scanout_handle = NULL;
 	}
