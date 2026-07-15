@@ -131,7 +131,6 @@ uniform sampler2D tex;
 #endif
 
 varying HIGHPRECISION vec2 v_texcoord;
-varying HIGHPRECISION vec4 v_color;
 varying HIGHPRECISION vec3 v_barycentric;
 
 uniform sampler2D tex1;
