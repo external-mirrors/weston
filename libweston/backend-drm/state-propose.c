@@ -45,6 +45,7 @@
 #include "presentation-time-server-protocol.h"
 #include "linux-dmabuf-unstable-v1-server-protocol.h"
 #include "weston-trace.h"
+#include "shared/fd-util.h"
 #include "shared/string-helpers.h"
 #include "shared/weston-assert.h"
 
@@ -181,6 +182,7 @@ drm_output_try_paint_node_on_plane(struct drm_plane_handle *handle,
 	struct drm_plane *plane = handle->plane;
 	struct drm_plane_state *state = NULL;
 	enum blend_mode_error err_blend_mode;
+	int fence_fd = -1;
 
 	assert(!device->disable_client_buffer_scanout);
 	assert(output == handle->output);
@@ -212,7 +214,9 @@ drm_output_try_paint_node_on_plane(struct drm_plane_handle *handle,
 	 * here to live within the state. */
 	state->paint_node = pnode;
 	state->fb = drm_fb_ref(fb);
-	state->in_fence_fd = surface->acquire_fence_fd;
+	if (surface->acquire_fence_fd >= 0)
+		fence_fd = dup(surface->acquire_fence_fd);
+	fd_update(&state->in_fence_fd, fence_fd);
 
 	drm_color_pipeline_state_unref(state->pipeline_state);
 	state->pipeline_state = NULL;
@@ -1226,6 +1230,7 @@ drm_output_propose_state_try_reuse(struct weston_output *output_base,
 		struct drm_plane_state *pstate;
 		struct drm_plane *plane;
 		struct drm_fb *fb;
+		int fence_fd = -1;
 
 		/* we don't care about renderer views */
 		if (pnode->plane == &output_base->primary_plane) {
@@ -1278,7 +1283,9 @@ drm_output_propose_state_try_reuse(struct weston_output *output_base,
 		drm_fb_unref(pstate->fb);
 		pstate->fb = fb;
 
-		pstate->in_fence_fd = pnode->surface->acquire_fence_fd;
+		if (pnode->surface->acquire_fence_fd >= 0)
+			fence_fd = dup(pnode->surface->acquire_fence_fd);
+		fd_update(&pstate->in_fence_fd, fence_fd);
 		drm_debug(b, "\t\t[reuse] successfully stole away pnode %s to reused plane\n", pnode->internal_name);
 		/* XXX: When we set non-default color states in DRM, make sure they match */
 		weston_buffer_reference(&pstate->fb_ref.buffer,

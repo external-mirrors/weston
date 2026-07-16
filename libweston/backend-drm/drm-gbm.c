@@ -45,6 +45,7 @@
 #include "shared/weston-egl-ext.h"
 #include "linux-dmabuf.h"
 #include "linux-explicit-synchronization.h"
+#include "shared/fd-util.h"
 #include "shared/xalloc.h"
 #include "weston-trace.h"
 
@@ -821,6 +822,7 @@ drm_output_render_vulkan(struct drm_output_state *state, pixman_region32_t *dama
 	struct drm_device *device = output->device;
 	struct linux_dmabuf_memory *dmabuf;
 	struct drm_fb *ret;
+	int fence_fd;
 
 	renderer->repaint_output(&output->base, damage,
 				 output->renderbuffer[output->current_image]);
@@ -840,12 +842,13 @@ drm_output_render_vulkan(struct drm_output_state *state, pixman_region32_t *dama
 		return NULL;
 	}
 
-	pstate->in_fence_fd = renderer->vulkan->create_fence_fd(&output->base);
-	if (pstate->in_fence_fd < 1) {
+	fence_fd = renderer->vulkan->create_fence_fd(&output->base);
+	if (fence_fd < 0) {
 		weston_log("failed to get fence fd from rendering\n");
 		drm_fb_unref(ret);
 		return NULL;
 	}
+	fd_update(&pstate->in_fence_fd, fence_fd);
 
 	output->current_image = (output->current_image + 1) % ARRAY_LENGTH(output->renderbuffer);
 

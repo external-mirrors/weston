@@ -494,7 +494,6 @@ struct drm_plane_state {
 
 	bool complete;
 
-	/* We don't own the fd, so we shouldn't close it */
 	int in_fence_fd;
 
 	uint32_t damage_blob_id; /* damage to kernel */
