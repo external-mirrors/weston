@@ -658,7 +658,6 @@ fifo_when_occlusion_changes(struct wet_testsuite_data *suite_data)
 	wp_fifo_v1_set_barrier(fifo);
 	wp_fifo_v1_wait_barrier(fifo);
 	buf_main[2] = surface_commit_color(client, client->surface->wl_surface, &red, 210, 210);
-	client_roundtrip(client);
 
 	width = get_surface_width(client, client->surface->wl_surface,
 				  suite_data, true);
