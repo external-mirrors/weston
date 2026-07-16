@@ -32,6 +32,7 @@
 #include "image-iter.h"
 
 #include <cairo.h>
+#include "image-file-lib/png-writer.h"
 
 #define max(a, b) (((a) > (b)) ? (a) : (b))
 #define min(a, b) (((a) > (b)) ? (b) : (a))
@@ -61,32 +62,6 @@ format_cairo2pixman(cairo_format_t fmt)
 	test_assert_not_reached("unknown Cairo pixel format");
 
 	return 0;
-}
-
-static bool
-format_pixman2cairo_try(pixman_format_code_t fmt, cairo_format_t *cairo_fmt)
-{
-	unsigned i;
-
-	for (i = 0; i < ARRAY_LENGTH(format_map); i++) {
-		if (format_map[i].pixman == fmt) {
-			*cairo_fmt = format_map[i].cairo;
-			return true;
-		}
-	}
-
-	return false;
-}
-
-static cairo_format_t
-format_pixman2cairo(pixman_format_code_t fmt)
-{
-	cairo_format_t cairo_fmt;
-
-	if (!format_pixman2cairo_try(fmt, &cairo_fmt))
-		test_assert_not_reached("unknown Pixman pixel format");
-
-	return cairo_fmt;
 }
 
 /**
@@ -365,45 +340,23 @@ visualize_image_difference(pixman_image_t *img_a, pixman_image_t *img_b,
  *
  * \returns true if successfully saved file; false otherwise.
  *
- * \note Only image formats directly supported by Cairo are accepted, not all
- * Pixman formats.
+ * All RGB-model integer pixel formats are accepted. The PNG is saved as 16-bit
+ * if any channel has more than 8 bits.
  */
 bool
 write_image_as_png(pixman_image_t *image, const char *fname)
 {
-	cairo_surface_t *cairo_surface;
-	cairo_status_t status;
-	struct image_header ih = image_header_from(image);
-	pixman_image_t *converted = NULL;
-	cairo_format_t fmt;
+	struct weston_png_write_task task = {
+		.img = image,
+	};
+	char *errmsg = NULL;
 
-	/* Cairo has no equivalent of the byte-order Pixman formats, so
-	 * convert rather than relabel. */
-	if (!format_pixman2cairo_try(ih.pixman_format, &fmt)) {
-		converted = image_convert_to_a8r8g8b8(image);
-		ih = image_header_from(converted);
-		fmt = format_pixman2cairo(ih.pixman_format);
-	}
-
-	cairo_surface = cairo_image_surface_create_for_data(ih.data, fmt,
-							    ih.width, ih.height,
-							    ih.stride_bytes);
-
-	status = cairo_surface_write_to_png(cairo_surface, fname);
-	if (status != CAIRO_STATUS_SUCCESS) {
-		testlog("Failed to save image '%s': %s\n", fname,
-			cairo_status_to_string(status));
-
-		cairo_surface_destroy(cairo_surface);
-		if (converted)
-			pixman_image_unref(converted);
+	if (!weston_png_write_path(fname, &task, &errmsg)) {
+		testlog("Failed to save image '%s': %s\n", fname, errmsg);
+		free(errmsg);
 
 		return false;
 	}
-
-	cairo_surface_destroy(cairo_surface);
-	if (converted)
-		pixman_image_unref(converted);
 
 	return true;
 }

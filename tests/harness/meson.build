@@ -68,6 +68,7 @@ lib_test_client = static_library(
 		dep_wayland_client,
 		dep_libexec_weston,
 		dep_libweston_private,
+		dep_png_writer,
 		dep_libdrm_headers,
 		dep_pixman,
                 dep_threads,
