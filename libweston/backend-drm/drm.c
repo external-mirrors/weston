@@ -1381,9 +1381,6 @@ drm_output_apply_mode(struct drm_output *output)
 	fb_size.width = output->base.current_mode->width;
 	fb_size.height = output->base.current_mode->height;
 
-	if (!weston_renderer_resize_output(&output->base, &fb_size, NULL))
-		return -1;
-
 	/*
 	 * Remove all potential drm_fb references to GBM BOs, so that the
 	 * renderer tear-down can destroy the originating GBM/Vulkan
@@ -1405,7 +1402,11 @@ drm_output_apply_mode(struct drm_output *output)
 				   "new mode");
 			return -1;
 		}
+	} else {
+		if (!weston_renderer_resize_output(&output->base, &fb_size, NULL))
+			return -1;
 	}
+
 
 	if (device->atomic_modeset)
 		weston_output_update_capture_info(&output->base,
