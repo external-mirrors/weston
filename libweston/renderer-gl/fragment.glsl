@@ -182,7 +182,7 @@ uniform HIGHPRECISION vec2 color_mapping_lut_scale_offset;
 uniform HIGHPRECISION mat3 color_mapping_matrix;
 uniform HIGHPRECISION vec3 color_mapping_offset;
 
-uniform HIGHPRECISION mat3 cvd_correction_matrix;
+uniform mat3 cvd_correction_matrix;
 
 uniform lut_2d_t fb_fetch_curve_lut;
 uniform parametric_curve_t fb_fetch_curve_par;
