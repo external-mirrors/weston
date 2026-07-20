@@ -239,8 +239,6 @@ struct drm_device {
 
 	int32_t atomic_completes_pending;
 
-	bool atomic_modeset;
-
 	bool tearing_supported;
 
 	bool aspect_ratio_supported;
@@ -657,7 +655,6 @@ struct drm_output {
 	/* drm_head::disable_head_link */
 	struct wl_list disable_head;
 
-	bool page_flip_pending;
 	bool atomic_complete_pending;
 	bool destroy_pending;
 	bool disable_pending;

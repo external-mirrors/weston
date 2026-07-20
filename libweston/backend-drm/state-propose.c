@@ -181,7 +181,6 @@ drm_output_try_paint_node_on_plane(struct drm_plane_handle *handle,
 
 	assert(!device->disable_client_buffer_scanout);
 	assert(output == handle->output);
-	assert(device->atomic_modeset);
 	assert(fb);
 	assert(mode == DRM_OUTPUT_PROPOSE_STATE_PLANES_ONLY ||
 	       (mode == DRM_OUTPUT_PROPOSE_STATE_MIXED &&

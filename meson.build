@@ -222,10 +222,6 @@ else
 	prog_glslang = find_program('', required : false)
 endif
 
-if get_option('allow-deprecated-modeset')
-	config_h.set('ALLOW_DEPRECATED_MODESET', '1')
-endif
-
 subdir('include')
 subdir('protocol')
 subdir('shared')

@@ -457,7 +457,7 @@ prune_eotf_modes_by_kms_support(struct drm_head *head, uint32_t *eotf_mask)
 	/* Without the KMS property, cannot do anything but SDR. */
 
 	info = &head->connector.props[WDRM_CONNECTOR_HDR_OUTPUT_METADATA];
-	if (!head->connector.device->atomic_modeset || info->prop_id == 0)
+	if (info->prop_id == 0)
 		*eotf_mask = WESTON_EOTF_MODE_SDR;
 }
 
@@ -465,10 +465,6 @@ static uint32_t
 drm_head_get_kms_colorimetry_modes(const struct drm_head *head)
 {
 	const struct drm_property_info *info;
-
-	/* Cannot bother implementing without atomic */
-	if (!head->connector.device->atomic_modeset)
-		return WESTON_COLORIMETRY_MODE_DEFAULT;
 
 	info = &head->connector.props[WDRM_CONNECTOR_COLORSPACE];
 	if (info->prop_id == 0)
@@ -578,10 +574,6 @@ drm_head_get_kms_color_formats(const struct drm_head *head)
 	const struct drm_property_info *info;
 	uint32_t color_formats = WESTON_COLOR_FORMAT_AUTO;
 	unsigned i;
-
-	/* Cannot bother implementing without atomic */
-	if (!head->connector.device->atomic_modeset)
-		return color_formats;
 
 	info = &head->connector.props[WDRM_CONNECTOR_COLOR_FORMAT];
 	if (info->prop_id == 0)

@@ -218,13 +218,6 @@ option(
 )
 
 option(
-	'allow-deprecated-modeset',
-	type: 'boolean',
-	value: false,
-	description: 'DEPRECATED: Allow non-atomic modeset paths which will be removed soon'
-)
-
-option(
 	'build-string',
 	type: 'string',
 	value: '',

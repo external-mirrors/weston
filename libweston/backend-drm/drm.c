@@ -91,10 +91,6 @@ drm_device_recovery_schedule(struct drm_device *device)
 	 */
 	weston_compositor_damage_all(compositor);
 
-	/* Without atomics, the first head to repaint is a recovery */
-	if (!device->atomic_modeset)
-		return;
-
 	/* We've scheduled updates on everything we know about, so defer anything
 	 * else until that completes.
 	 */
@@ -124,10 +120,6 @@ drm_device_recovery_complete(struct drm_device *device)
 	assert(device->recovery_status == DRM_RECOVERY_APPLIED);
 
 	device->recovery_status = DRM_RECOVERY_UNNECESSARY;
-
-	/* Without atomics, we didn't defer anything, so bail now. */
-	if (!device->atomic_modeset)
-		return;
 
 	weston_backend_clear_deferred(&backend->base, compositor);
 }
@@ -780,8 +772,6 @@ drm_output_pick_writeback_capture_task(struct drm_output *output)
 	const struct weston_drm_format_array *writeback_formats =
 		weston_output_get_writeback_formats(&output->base);
 
-	assert(output->device->atomic_modeset);
-
 	ct = weston_output_pull_capture_task(&output->base,
 					     WESTON_OUTPUT_CAPTURE_SOURCE_WRITEBACK,
 					     width, height, NULL, writeback_formats);
@@ -989,8 +979,7 @@ drm_output_repaint(struct weston_output *output_base)
 	if (drm_output_ensure_hdr_output_metadata_blob(output) < 0)
 		goto err;
 
-	if (device->atomic_modeset)
-		drm_output_pick_writeback_capture_task(output);
+	drm_output_pick_writeback_capture_task(output);
 
 	/* Skip the renderer if our mode allows it */
 	if (state->mode == DRM_OUTPUT_PROPOSE_STATE_PLANES_ONLY)
@@ -1146,7 +1135,6 @@ drm_output_start_repaint_loop(struct weston_output *output_base)
 	 * Use pageflip fallback.
 	 */
 
-	assert(!output->page_flip_pending);
 	assert(!output->state_last);
 
 	pending_state = drm_pending_state_alloc(device);
@@ -1352,7 +1340,7 @@ drm_output_switch_mode(struct weston_output *output_base, struct weston_mode *mo
 	output->base.current_mode->flags =
 		WL_OUTPUT_MODE_CURRENT | WL_OUTPUT_MODE_PREFERRED;
 
-	if (output->page_flip_pending || output->atomic_complete_pending) {
+	if (output->atomic_complete_pending) {
 		output->mode_switch_pending = true;
 		return 0;
 	}
@@ -1408,13 +1396,12 @@ drm_output_apply_mode(struct drm_output *output)
 	}
 
 
-	if (device->atomic_modeset)
-		weston_output_update_capture_info(&output->base,
-						  WESTON_OUTPUT_CAPTURE_SOURCE_WRITEBACK,
-						  output->base.current_mode->width,
-						  output->base.current_mode->height,
-						  NULL,
-						  weston_output_get_writeback_formats(&output->base));
+	weston_output_update_capture_info(&output->base,
+					  WESTON_OUTPUT_CAPTURE_SOURCE_WRITEBACK,
+					  output->base.current_mode->width,
+					  output->base.current_mode->height,
+					  NULL,
+					  weston_output_get_writeback_formats(&output->base));
 
 	return 0;
 }
@@ -2971,13 +2958,12 @@ drm_output_enable(struct weston_output *base)
 	output->base.set_dpms = drm_set_dpms;
 	output->base.switch_mode = drm_output_switch_mode;
 
-	if (device->atomic_modeset)
-		weston_output_update_capture_info(base,
-						  WESTON_OUTPUT_CAPTURE_SOURCE_WRITEBACK,
-						  base->current_mode->width,
-						  base->current_mode->height,
-						  NULL,
-						  weston_output_get_writeback_formats(&output->base));
+	weston_output_update_capture_info(base,
+					  WESTON_OUTPUT_CAPTURE_SOURCE_WRITEBACK,
+					  base->current_mode->width,
+					  base->current_mode->height,
+					  NULL,
+					  weston_output_get_writeback_formats(&output->base));
 
 	weston_log("Output %s (crtc %d) video modes:\n",
 		   output->base.name, output->crtc->crtc_id);
@@ -3041,7 +3027,7 @@ drm_output_destroy(struct weston_output *base)
 	assert(output);
 	assert(!output->is_virtual);
 
-	if (output->page_flip_pending || output->atomic_complete_pending) {
+	if (output->atomic_complete_pending) {
 		if (!base->compositor->shutting_down) {
 			/* We are not shutting down, so we can wait for flip
 			 * completion. */
@@ -3085,7 +3071,7 @@ drm_output_disable(struct weston_output *base)
 	assert(output);
 	assert(!output->is_virtual);
 
-	if (output->page_flip_pending || output->atomic_complete_pending) {
+	if (output->atomic_complete_pending) {
 		output->disable_pending = true;
 		return -1;
 	}
@@ -4217,7 +4203,7 @@ drm_shutdown(struct weston_backend *backend)
 	 */
 	wl_list_for_each(output_base, &ec->output_list, link) {
 		output = to_drm_output(output_base);
-		if (output && (output->page_flip_pending || output->atomic_complete_pending)) {
+		if (output && output->atomic_complete_pending) {
 			drm_output_state_free(output->state_last);
 			output->state_last = NULL;
 		}
@@ -4546,9 +4532,7 @@ planes_binding(struct weston_keyboard *keyboard, const struct timespec *time,
 		device->cursors_are_broken ^= true;
 		break;
 	case KEY_V:
-		/* We don't support hardware planes usage with legacy KMS. */
-		if (device->atomic_modeset)
-			device->disable_client_buffer_scanout ^= true;
+		device->disable_client_buffer_scanout ^= true;
 		break;
 	default:
 		break;
@@ -4873,10 +4857,9 @@ drm_backend_create(struct weston_compositor *compositor,
 				   " synchronization support failed.\n");
 	}
 
-	if (device->atomic_modeset)
-		if (weston_compositor_enable_content_protection(compositor) < 0)
-			weston_log("Error: initializing content-protection "
-				   "support failed.\n");
+	if (weston_compositor_enable_content_protection(compositor) < 0)
+		weston_log("Error: initializing content-protection "
+			   "support failed.\n");
 
 	ret = weston_plugin_api_register(compositor, WESTON_DRM_OUTPUT_API_NAME,
 					 &api, sizeof(api));
