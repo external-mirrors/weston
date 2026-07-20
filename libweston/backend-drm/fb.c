@@ -474,20 +474,17 @@ drm_fb_get_from_dmabuf_attributes(struct dmabuf_attributes *attributes,
 			}
 			fb->num_duped_fds++;
 		}
-
-		goto bo_import_skip;
+	} else {
+		fb->bo = gbm_bo_import(backend->gbm, GBM_BO_IMPORT_FD_MODIFIER,
+				       &import_mod, GBM_BO_USE_SCANOUT);
+		if (!fb->bo) {
+			if (try_view_on_plane_failure_reasons)
+				*try_view_on_plane_failure_reasons |=
+					FAILURE_REASONS_GBM_BO_IMPORT_FAILED;
+			goto err_free;
+		}
 	}
 
-	fb->bo = gbm_bo_import(backend->gbm, GBM_BO_IMPORT_FD_MODIFIER,
-			       &import_mod, GBM_BO_USE_SCANOUT);
-	if (!fb->bo) {
-		if (try_view_on_plane_failure_reasons)
-			*try_view_on_plane_failure_reasons |=
-				FAILURE_REASONS_GBM_BO_IMPORT_FAILED;
-		goto err_free;
-	}
-
-bo_import_skip:
 	fb->width = attributes->width;
 	fb->height = attributes->height;
 	fb->modifier = attributes->modifier;
