@@ -1699,7 +1699,6 @@ struct weston_solid_buffer_values {
 enum weston_buffer_type {
 	WESTON_BUFFER_SHM,
 	WESTON_BUFFER_DMABUF,
-	WESTON_BUFFER_RENDERER_OPAQUE,
 	WESTON_BUFFER_SOLID,
 };
 
@@ -1718,7 +1717,6 @@ struct weston_buffer {
 	union {
 		struct wl_shm_buffer *shm_buffer;
 		void *dmabuf;
-		void *legacy_buffer;
 		struct weston_solid_buffer_values solid;
 	};
 

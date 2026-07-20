@@ -1744,8 +1744,7 @@ drm_assign_planes(struct weston_output *output_base)
 		if (weston_paint_node_has_valid_buffer(pnode)) {
 			struct weston_buffer *buffer =
 				surface->buffer_ref.buffer;
-			if (buffer->type == WESTON_BUFFER_DMABUF ||
-			    buffer->type == WESTON_BUFFER_RENDERER_OPAQUE)
+			if (buffer->type == WESTON_BUFFER_DMABUF)
 				surface->keep_buffer = true;
 			else if (buffer->type == WESTON_BUFFER_SHM &&
 				 (surface->width <= device->cursor_width &&

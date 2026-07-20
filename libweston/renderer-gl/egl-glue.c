@@ -766,13 +766,6 @@ gl_renderer_setup_egl_extensions(struct weston_compositor *ec)
 		GET_PROC_ADDRESS(gr->destroy_image, "eglDestroyImageKHR");
 	}
 
-	if (egl_display_has(gr, EXTENSION_WL_BIND_WAYLAND_DISPLAY)) {
-		GET_PROC_ADDRESS(gr->bind_display, "eglBindWaylandDisplayWL");
-		GET_PROC_ADDRESS(gr->unbind_display,
-				 "eglUnbindWaylandDisplayWL");
-		GET_PROC_ADDRESS(gr->query_buffer, "eglQueryWaylandBufferWL");
-	}
-
 	if (egl_display_has(gr, EXTENSION_KHR_PARTIAL_UPDATE))
 		GET_PROC_ADDRESS(gr->set_damage_region,
 				 "eglSetDamageRegionKHR");

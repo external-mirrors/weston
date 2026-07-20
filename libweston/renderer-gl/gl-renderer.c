@@ -3658,144 +3658,6 @@ gl_renderer_attach_shm(struct weston_surface *es, struct weston_buffer *buffer)
 	}
 }
 
-static bool
-gl_renderer_fill_buffer_info(struct weston_compositor *ec,
-			     struct weston_buffer *buffer)
-{
-	struct gl_renderer *gr = get_renderer(ec);
-	struct gl_buffer_state *gb;
-	EGLint format;
-	uint32_t fourcc;
-	EGLint y_inverted;
-	bool rgb, ret = true;
-	int i;
-
-	/* Ensure that EGL_WL_bind_wayland_display (and EGL_KHR_image_base) is
-	 * available and that the Wayland display is bound. */
-	if (!gr->display_bound)
-		return false;
-
-	gb = zalloc(sizeof(*gb));
-	if (!gb)
-		return false;
-
-	gb->gr = gr;
-	pixman_region32_init(&gb->texture_damage);
-
-	buffer->legacy_buffer = (struct wl_buffer *)buffer->resource;
-	ret &= gr->query_buffer(gr->egl_display, buffer->legacy_buffer,
-			        EGL_WIDTH, &buffer->width);
-	ret &= gr->query_buffer(gr->egl_display, buffer->legacy_buffer,
-				EGL_HEIGHT, &buffer->height);
-	ret &= gr->query_buffer(gr->egl_display, buffer->legacy_buffer,
-				EGL_TEXTURE_FORMAT, &format);
-	if (!ret) {
-		weston_log("eglQueryWaylandBufferWL failed\n");
-		gl_renderer_print_egl_error_state();
-		goto err_free;
-	}
-
-	/* The legacy EGL buffer interface only describes the channels we can
-	 * sample from; not their depths or order. Take a stab at something
-	 * which might be representative. Pessimise extremely hard for
-	 * TEXTURE_EXTERNAL_OES. */
-	switch (format) {
-	case EGL_TEXTURE_RGB:
-		fourcc = DRM_FORMAT_XBGR8888;
-		rgb = true;
-		break;
-	case EGL_TEXTURE_RGBA:
-	case EGL_TEXTURE_EXTERNAL_WL:
-		fourcc = DRM_FORMAT_ABGR8888;
-		rgb = true;
-		break;
-	case EGL_TEXTURE_Y_XUXV_WL:
-		fourcc = DRM_FORMAT_YUYV;
-		rgb = false;
-		break;
-	case EGL_TEXTURE_Y_UV_WL:
-		fourcc = DRM_FORMAT_NV12;
-		rgb = false;
-		break;
-	case EGL_TEXTURE_Y_U_V_WL:
-		fourcc = DRM_FORMAT_YUV420;
-		rgb = false;
-		break;
-	default:
-		assert(0 && "not reached");
-	}
-
-	buffer->pixel_format = pixel_format_get_info(fourcc);
-	assert(buffer->pixel_format);
-	buffer->format_modifier = DRM_FORMAT_MOD_INVALID;
-
-	/* Initialise buffer state. No need to fill format and type info since
-	 * textures are wrapped by EGL images. Swizzles must be set for correct
-	 * sampling though. */
-	if (rgb) {
-		ARRAY_COPY(gb->texture_format[0].swizzles.array,
-			   buffer->pixel_format->gl.swizzles.array);
-		gb->shader_variant = format == EGL_TEXTURE_EXTERNAL_WL ?
-			SHADER_VARIANT_EXTERNAL : SHADER_VARIANT_RGBA;
-		gb->num_images = 1;
-	} else {
-		const struct yuv_format_descriptor *desc = NULL;
-
-		for (i = 0; i < (int) ARRAY_LENGTH(yuv_formats); i++) {
-			if (fourcc == yuv_formats[i].format) {
-				desc = &yuv_formats[i];
-				break;
-			}
-		}
-		assert(desc);
-
-		for (i = 0; i < desc->output_planes; i++)
-			ARRAY_COPY(gb->texture_format[i].swizzles.array,
-				   desc->plane[i].swizzles.array);
-		gb->shader_variant = desc->shader_variant;
-		gb->num_images = desc->output_planes;
-	}
-
-	/* Assume scanout co-ordinate space i.e. (0,0) is top-left
-	 * if the query fails */
-	ret = gr->query_buffer(gr->egl_display, buffer->legacy_buffer,
-			       EGL_WAYLAND_Y_INVERTED_WL, &y_inverted);
-	if (!ret || y_inverted)
-		buffer->buffer_origin = ORIGIN_TOP_LEFT;
-	else
-		buffer->buffer_origin = ORIGIN_BOTTOM_LEFT;
-
-	for (i = 0; i < gb->num_images; i++) {
-		const EGLint attribs[] = {
-			EGL_WAYLAND_PLANE_WL,	 i,
-			EGL_IMAGE_PRESERVED_KHR, EGL_TRUE,
-			EGL_NONE
-		};
-
-		gb->images[i] = gr->create_image(gr->egl_display,
-						 EGL_NO_CONTEXT,
-						 EGL_WAYLAND_BUFFER_WL,
-						 buffer->legacy_buffer,
-						 attribs);
-		if (gb->images[i] == EGL_NO_IMAGE_KHR) {
-			weston_log("couldn't create EGLImage for plane %d\n", i);
-			goto err_img;
-		}
-	}
-
-	buffer->renderer_private = gb;
-	gb->destroy_listener.notify = handle_buffer_destroy;
-	wl_signal_add(&buffer->destroy_signal, &gb->destroy_listener);
-	return true;
-
-err_img:
-	while (--i >= 0)
-		gr->destroy_image(gb->gr->egl_display, gb->images[i]);
-err_free:
-	free(gb);
-	return false;
-}
-
 static void
 gl_renderer_destroy_dmabuf(struct linux_dmabuf_buffer *dmabuf)
 {
@@ -4447,7 +4309,6 @@ gl_renderer_attach(struct weston_paint_node *pnode)
 		gl_renderer_attach_shm(es, buffer);
 		break;
 	case WESTON_BUFFER_DMABUF:
-	case WESTON_BUFFER_RENDERER_OPAQUE:
 		gl_renderer_attach_buffer(es, buffer);
 		break;
 	case WESTON_BUFFER_SOLID:
@@ -4564,7 +4425,6 @@ gl_renderer_surface_copy_content(struct weston_surface *surface,
 		return 0;
 	case WESTON_BUFFER_SHM:
 	case WESTON_BUFFER_DMABUF:
-	case WESTON_BUFFER_RENDERER_OPAQUE:
 		break;
 	}
 
@@ -5260,9 +5120,6 @@ gl_renderer_destroy(struct weston_compositor *ec)
 
 	wl_signal_emit(&gr->destroy_signal, gr);
 
-	if (gr->display_bound)
-		gr->unbind_display(gr->egl_display, ec->wl_display);
-
 	wl_list_for_each_safe(gl_task, tmp, &gr->pending_capture_list, link)
 		destroy_capture_task(gl_task);
 
@@ -5369,7 +5226,6 @@ gl_renderer_display_create(struct weston_compositor *ec,
 	gr->base.attach = gl_renderer_attach;
 	gr->base.destroy = gl_renderer_destroy;
 	gr->base.surface_copy_content = gl_renderer_surface_copy_content;
-	gr->base.fill_buffer_info = gl_renderer_fill_buffer_info;
 	gr->base.buffer_init = gl_renderer_buffer_init;
 	gr->base.can_render_straight_alpha = gl_renderer_can_render_straight_alpha;
 	gr->base.output_set_border = gl_renderer_output_set_border;
@@ -5395,14 +5251,6 @@ gl_renderer_display_create(struct weston_compositor *ec,
 	    !egl_display_has(gr, EXTENSION_EXT_PROTECTED_CONTENT)) {
 		weston_log("GL can not provide a restricted context\n");
 		goto fail_terminate;
-	}
-
-	if (egl_display_has(gr, EXTENSION_WL_BIND_WAYLAND_DISPLAY)) {
-		gr->display_bound = gr->bind_display(gr->egl_display,
-						     ec->wl_display);
-		if (!gr->display_bound)
-			weston_log("warning: There is already a Wayland "
-				   "display bound to the EGL display.\n");
 	}
 
 	if (!egl_display_has(gr, EXTENSION_KHR_SURFACELESS_CONTEXT))

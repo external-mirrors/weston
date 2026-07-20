@@ -3062,9 +3062,6 @@ weston_buffer_destroy_handler(struct wl_listener *listener, void *data)
 		break;
 	case WESTON_BUFFER_SOLID:
 		break;
-	case WESTON_BUFFER_RENDERER_OPAQUE:
-		buffer->legacy_buffer = NULL;
-		break;
 	}
 
 	if (buffer->busy_count + buffer->passive_count > 0)
@@ -3152,12 +3149,7 @@ weston_buffer_from_resource(struct weston_compositor *ec,
 		}
 		buffer->format_modifier = DRM_FORMAT_MOD_LINEAR;
 	} else {
-		/* Only taken for legacy EGL buffers */
-		if (!ec->renderer->fill_buffer_info ||
-		    !ec->renderer->fill_buffer_info(ec, buffer)) {
-			goto fail;
-		}
-		buffer->type = WESTON_BUFFER_RENDERER_OPAQUE;
+		goto fail;
 	}
 
 	buffer->format_modifier_name = pixel_format_get_modifier(buffer->format_modifier);
@@ -9896,10 +9888,6 @@ debug_scene_view_print_buffer(FILE *fp, struct weston_view *view)
 		fprintf(fp, "\t\t\t[R %f, G %f, B %f, A %f]\n",
 			buffer->solid.r, buffer->solid.g, buffer->solid.b,
 			buffer->solid.a);
-		break;
-	case WESTON_BUFFER_RENDERER_OPAQUE:
-		fputs("\t\tEGL buffer:\n"
-		      "\t\t\t[format may be inaccurate]\n", fp);
 		break;
 	}
 

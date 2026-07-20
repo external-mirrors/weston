@@ -470,12 +470,6 @@ struct gl_renderer {
 	PFNEGLCREATEIMAGEKHRPROC create_image;
 	PFNEGLDESTROYIMAGEKHRPROC destroy_image;
 
-	/* EGL_WL_bind_wayland_display */
-	PFNEGLBINDWAYLANDDISPLAYWL bind_display;
-	PFNEGLUNBINDWAYLANDDISPLAYWL unbind_display;
-	PFNEGLQUERYWAYLANDBUFFERWL query_buffer;
-	bool display_bound;
-
 	/* EGL_KHR_partial_update */
 	PFNEGLSETDAMAGEREGIONKHRPROC set_damage_region;
 

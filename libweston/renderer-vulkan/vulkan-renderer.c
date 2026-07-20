@@ -3137,7 +3137,6 @@ vulkan_renderer_attach(struct weston_paint_node *pnode)
 		vulkan_renderer_attach_shm(es, buffer);
 		break;
 	case WESTON_BUFFER_DMABUF:
-	case WESTON_BUFFER_RENDERER_OPAQUE:
 		vulkan_renderer_attach_buffer(es, buffer);
 		break;
 	case WESTON_BUFFER_SOLID:
