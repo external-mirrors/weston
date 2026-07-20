@@ -48,6 +48,8 @@
 static void
 drm_fb_destroy(struct drm_fb *fb)
 {
+	weston_assert_int_eq(fb->backend->compositor, fb->refcnt, 0);
+
 	/* TODO: do not leak the fb during shutdown.
 	 * When we are shutting down, the CRTC may be scanning out our fb. If we
 	 * destroy it, the CRTC may turn off. So leak that on purpose. What we
