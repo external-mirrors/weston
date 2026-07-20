@@ -636,6 +636,9 @@ static const struct pixel_format_info pixel_format_table[] = {
 		.bpp = 64,
 		.opaque_substitute = DRM_FORMAT_XBGR16161616,
 #if __BYTE_ORDER == __LITTLE_ENDIAN
+#  if HAVE_PIXMAN_16_BPC
+		PIXMAN_FMT(a16b16g16r16),
+#  endif
 		GL_FORMAT_INFO(GL_RGBA16_EXT, GL_RGBA, GL_UNSIGNED_SHORT, RGBA),
 		GL_FORMAT(GL_RGBA),
 		GL_TYPE(GL_UNSIGNED_SHORT),

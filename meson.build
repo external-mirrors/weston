@@ -157,8 +157,12 @@ endif
 
 dep_wayland_server = dependency('wayland-server', version: '>= 1.24.0')
 dep_wayland_client = dependency('wayland-client', version: '>= 1.24.0')
+
 dep_pixman = dependency('pixman-1', version: '>= 0.25.2')
+config_h.set10('HAVE_PIXMAN_16_BPC', dep_pixman.version().version_compare('>= 0.46.0'))
+
 dep_xkbcommon = dependency('xkbcommon', version: '>= 0.5.0')
+
 dep_libinput = dependency('libinput', version: '>= 1.2.0')
 if dep_xkbcommon.version().version_compare('>= 1.8.0')
 	if dep_libinput.version().version_compare('>= 1.26.0')
