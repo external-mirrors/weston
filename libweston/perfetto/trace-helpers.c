@@ -89,6 +89,22 @@ fail:
 }
 
 void
+weston_trace_flow_start(struct weston_trace_flow *flow)
+{
+	/* We just reset the flow to 0, and it will be assigned one next
+	 * time it's touched.
+	 */
+	flow->id = 0;
+}
+
+void
+weston_trace_flow_join(struct weston_trace_flow *target,
+		       struct weston_trace_flow *flow)
+{
+	flow->id = target->id;
+}
+
+void
 weston_trace_client_init(struct weston_client *client)
 {
 	struct weston_trace_flow creation_flow = { 0 };

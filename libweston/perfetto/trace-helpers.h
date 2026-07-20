@@ -28,6 +28,13 @@
 #include "perfetto/u_perfetto.h"
 
 void
+weston_trace_flow_start(struct weston_trace_flow *flow);
+
+void
+weston_trace_flow_join(struct weston_trace_flow *target,
+		       struct weston_trace_flow *flow);
+
+void
 weston_trace_client_init(struct weston_client *client);
 
 void

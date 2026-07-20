@@ -132,8 +132,8 @@ weston_surface_state_init(struct weston_surface *surface,
 			  struct weston_surface_state *state)
 {
 	WESTON_TRACE_FUNC();
+	WESTON_TRACE_FLOW_START(&state->flow);
 
-	state->flow.id = 0;
 	state->status = WESTON_SURFACE_CLEAN;
 	state->buffer_ref.buffer = NULL;
 	state->buf_offset = weston_coord_surface(0, 0, surface);
@@ -177,7 +177,8 @@ weston_surface_state_fini(struct weston_surface_state *state)
 {
 	struct wl_resource *cb, *next;
 
-	state->flow.id = 0;
+	WESTON_TRACE_FLOW_START(&state->flow);
+
 	wl_resource_for_each_safe(cb, next, &state->frame_callback_list)
 		wl_resource_destroy(cb);
 
@@ -384,8 +385,8 @@ weston_surface_apply_state(struct weston_surface *surface,
 
 	assert(!surface->compositor->latched);
 
-	surface->trace.flow.id = state->flow.id;
-	state->flow.id = 0;
+	WESTON_TRACE_FLOW_JOIN(&surface->trace.flow, &state->flow);
+	WESTON_TRACE_FLOW_START(&state->flow);
 
 	/* wl_surface.set_buffer_transform */
 	/* wl_surface.set_buffer_scale */
@@ -644,8 +645,7 @@ weston_surface_state_merge_from(struct weston_surface_state *dst,
 				struct weston_surface *surface)
 {
 	WESTON_TRACE_FUNC(("surface state flow", &dst->flow));
-	src->flow.id = 0;
-
+	WESTON_TRACE_FLOW_START(&src->flow);
 
 	/*
 	 * If this commit would cause the surface to move by the
@@ -807,7 +807,7 @@ weston_transaction_add_content_update(struct weston_transaction *tr,
 	cu->surface = surface;
 	weston_surface_state_init(surface, &cu->state);
 
-	cu->state.flow.id = state->flow.id;
+	WESTON_TRACE_FLOW_JOIN(&cu->state.flow, &state->flow);
 	weston_surface_state_merge_from(&cu->state, state, surface);
 
 	wl_list_insert(&tr->content_update_list, &cu->link);

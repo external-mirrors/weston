@@ -3553,9 +3553,9 @@ paint_node_flush_surface_damage(struct weston_paint_node *pnode)
 
 out:
 	/* We've flushed the surface's damage for *all* of its paint
-	 * nodes, so we can reset the surface flow_id here.
+	 * nodes, so we can reset the surface flow here.
 	 */
-	surface->trace.flow.id = 0;
+	WESTON_TRACE_FLOW_START(&surface->trace.flow);
 }
 
 static void
@@ -4026,7 +4026,7 @@ weston_output_repaint(struct weston_output *output)
 		assert(pnode->output == output);
 
 		/* Reset paint node perfetto flows at start of repaint */
-		pnode->flow.id = 0;
+		WESTON_TRACE_FLOW_START(&pnode->flow);
 	}
 
 	/* Find the highest protection desired for an output */

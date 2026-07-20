@@ -238,6 +238,9 @@ _weston_trace_scope_end(uint64_t *scope)
 
 #endif /* __has_attribute(cleanup) && __has_attribute(unused) */
 
+#define _WESTON_TRACE_FLOW_START(flow) weston_trace_flow_start(flow)
+#define _WESTON_TRACE_FLOW_JOIN(target, flow) weston_trace_flow_join(target, flow)
+
 #define _WESTON_TRACE_CLIENT_INIT(client) weston_trace_client_init(client)
 #define _WESTON_TRACE_CLIENT_FINI(client) weston_trace_client_fini(client)
 
@@ -263,6 +266,10 @@ _weston_trace_scope_end(uint64_t *scope)
 
 #define _WESTON_TRACE_INIT()
 #define _WESTON_TRACE_IS_TRACING() (false)
+
+#define _WESTON_TRACE_FLOW_START(flow)
+#define _WESTON_TRACE_FLOW_JOIN(target, flow)
+
 
 #define _WESTON_TRACE_CLIENT_INIT(client)
 #define _WESTON_TRACE_CLIENT_FINI(client)
@@ -309,6 +316,9 @@ _weston_trace_scope_end(uint64_t *scope)
 
 #define WESTON_TRACE_INIT() _WESTON_TRACE_INIT()
 #define WESTON_TRACE_IS_TRACING() _WESTON_TRACE_IS_TRACING()
+
+#define WESTON_TRACE_FLOW_START(flow) _WESTON_TRACE_FLOW_START(flow)
+#define WESTON_TRACE_FLOW_JOIN(target, flow) _WESTON_TRACE_FLOW_JOIN(target, flow)
 
 #define WESTON_TRACE_CLIENT_INIT(client) _WESTON_TRACE_CLIENT_INIT(client)
 #define WESTON_TRACE_CLIENT_FINI(client) _WESTON_TRACE_CLIENT_FINI(client)
