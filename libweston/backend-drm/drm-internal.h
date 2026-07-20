@@ -712,11 +712,6 @@ struct drm_output {
 	/* how many page flips / interval */
 	float page_flips_per_timer_interval;
 
-	bool is_virtual;
-	void (*virtual_destroy)(struct weston_output *base);
-
-	submit_frame_cb virtual_submit_frame;
-
 	enum wdrm_content_type content_type;
 
 	bool reused_state;
@@ -758,17 +753,11 @@ drm_output_get_writeback_state(struct drm_output *output);
 
 void
 drm_output_destroy(struct weston_output *output_base);
-void
-drm_virtual_output_destroy(struct weston_output *output_base);
 
 static inline struct drm_output *
 to_drm_output(struct weston_output *base)
 {
-	if (
-#ifdef BUILD_DRM_VIRTUAL
-	    base->destroy != drm_virtual_output_destroy &&
-#endif
-	    base->destroy != drm_output_destroy)
+	if (base->destroy != drm_output_destroy)
 		return NULL;
 	return container_of(base, struct drm_output, base);
 }
@@ -1072,17 +1061,6 @@ drm_plane_create_handle(struct drm_plane *plane, struct drm_output *output);
 
 void
 drm_plane_destroy_handle(struct drm_plane_handle *plane);
-
-#ifdef BUILD_DRM_VIRTUAL
-extern int
-drm_backend_init_virtual_output_api(struct weston_compositor *compositor);
-#else
-inline static int
-drm_backend_init_virtual_output_api(struct weston_compositor *compositor)
-{
-	return 0;
-}
-#endif
 
 #ifdef BUILD_DRM_GBM
 int

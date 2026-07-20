@@ -354,9 +354,6 @@ drm_plane_is_available(struct drm_plane *plane, struct drm_output *output)
 {
 	assert(plane->state_cur);
 
-	if (output->is_virtual)
-		return false;
-
 	/* The plane still has a request not yet completed by the kernel. */
 	if (!plane->state_cur->complete)
 		return false;
@@ -922,7 +919,6 @@ drm_output_repaint(struct weston_output *output_base)
 	struct drm_device *device;
 
 	assert(output);
-	assert(!output->is_virtual);
 
 	device = output->device;
 	pending_state = device->repaint_data;
@@ -1758,8 +1754,6 @@ drm_output_init_backlight(struct drm_output *output)
  *
  * If we are called as part of repaint, we simply set the relevant bit in
  * state and return.
- *
- * This function is never called on a virtual output.
  */
 static void
 drm_set_dpms(struct weston_output *output_base, enum dpms_enum level)
@@ -1771,7 +1765,6 @@ drm_set_dpms(struct weston_output *output_base, enum dpms_enum level)
 	int ret;
 
 	assert(output);
-	assert(!output->is_virtual);
 
 	if (output->state_cur->dpms == level)
 		return;
@@ -2890,7 +2883,6 @@ drm_output_enable(struct weston_output *base)
 	int ret;
 
 	assert(output);
-	assert(!output->is_virtual);
 
 	/* TODO: drop this hack when we rework the output configuration API. For
 	 * now we need this because the frontend may call
@@ -3025,7 +3017,6 @@ drm_output_destroy(struct weston_output *base)
 	struct drm_device *device = output->device;
 
 	assert(output);
-	assert(!output->is_virtual);
 
 	if (output->atomic_complete_pending) {
 		if (!base->compositor->shutting_down) {
@@ -3069,7 +3060,6 @@ drm_output_disable(struct weston_output *base)
 	struct drm_output *output = to_drm_output(base);
 
 	assert(output);
-	assert(!output->is_virtual);
 
 	if (output->atomic_complete_pending) {
 		output->disable_pending = true;
@@ -4866,12 +4856,6 @@ drm_backend_create(struct weston_compositor *compositor,
 
 	if (ret < 0) {
 		weston_log("Failed to register output API.\n");
-		goto err_udev_monitor;
-	}
-
-	ret = drm_backend_init_virtual_output_api(compositor);
-	if (ret < 0) {
-		weston_log("Failed to register virtual output API.\n");
 		goto err_udev_monitor;
 	}
 

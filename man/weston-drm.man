@@ -31,12 +31,6 @@ the first DRM device returned by
 .BR udev (7).
 Combining multiple graphics devices is not supported yet.
 
-The DRM backend also supports virtual outputs that are transmitted over
-an RTP session as a series of JPEG images (RTP payload type 26) to a remote
-client. Virtual outputs are configured in the
-.BR remote-output
-section of
-.BR weston.ini.
 .
 .\" ***************************************************************
 .SH CONFIGURATION

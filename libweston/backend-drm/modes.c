@@ -1087,9 +1087,6 @@ drm_output_set_mode(struct weston_output *base,
 
 	struct drm_mode *current;
 
-	if (output->is_virtual)
-		return -1;
-
 	if (drm_output_update_modelist_from_heads(output) < 0)
 		return -1;
 
