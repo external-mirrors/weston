@@ -87,13 +87,6 @@ option(
 )
 
 option(
-	'deprecated-remoting',
-	type: 'boolean',
-	value: false,
-	description: 'DEPRECATED: Virtual remote output with GStreamer on DRM backend - migrate to backend-pipewire instead'
-)
-
-option(
 	'shell-desktop',
 	type: 'boolean',
 	value: true,

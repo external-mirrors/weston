@@ -69,14 +69,6 @@ if get_option('renderer-vulkan')
 	config_h.set('BUILD_DRM_GBM', '1')
 endif
 
-if get_option('deprecated-remoting')
-	if not get_option('renderer-gl')
-		error('DRM virtual requires renderer-gl.')
-	endif
-	srcs_drm += 'drm-virtual.c'
-	config_h.set('BUILD_DRM_VIRTUAL', '1')
-endif
-
 plugin_drm = shared_library(
 	'drm-backend',
 	srcs_drm,

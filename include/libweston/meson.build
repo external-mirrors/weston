@@ -12,7 +12,6 @@ install_headers(
 	'windowed-output-api.h',
 	'weston-log.h',
 	'zalloc.h',
-	'remoting-plugin.h',
 	'shell-utils.h',
 	subdir: dir_include_libweston_install
 )

@@ -177,7 +177,7 @@ cd ..
 rm -rf mesa
 fdo_log_section_end install_mesa
 
-# PipeWire is used for remoting support. Unlike our other dependencies its
+# PipeWire support our pipewire-backend. Unlike our other dependencies its
 # behaviour will be stable, however as a pre-1.0 project its API is not yet
 # stable, so again we lock it to a fixed version.
 #

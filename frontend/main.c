@@ -70,7 +70,6 @@
 #include <libweston/backend-wayland.h>
 #include <libweston/windowed-output-api.h>
 #include <libweston/weston-log.h>
-#include <libweston/remoting-plugin.h>
 #include <libweston/color.h>
 
 #define WINDOW_TITLE "Weston Compositor"
@@ -163,9 +162,6 @@ static FILE *weston_logfile = NULL;
 static struct weston_log_scope *log_scope;
 static struct weston_log_scope *protocol_scope;
 static int cached_tm_mday = -1;
-
-static void
-load_remoting(struct weston_compositor *c, struct weston_config *wc);
 
 static void
 custom_handler(const char *fmt, va_list arg)
@@ -1086,14 +1082,6 @@ load_modules(struct weston_compositor *ec, const char *modules,
 	}
 
 	return 0;
-}
-
-static void
-load_additional_modules(struct wet_compositor wet)
-{
-	if (wet.drm_backend_loaded) {
-		load_remoting(wet.compositor, wet.config);
-	}
 }
 
 static int
@@ -3778,172 +3766,6 @@ drm_heads_changed(struct wl_listener *listener, void *arg)
 		wet->init_failed = true;
 }
 
-static int
-drm_backend_remoted_output_configure(struct weston_output *output,
-				     struct weston_config_section *section,
-				     char *modeline,
-				     const struct weston_remoting_api *api)
-{
-	struct weston_config *wc = wet_get_config(output->compositor);
-	char *gbm_format = NULL;
-	char *seat = NULL;
-	char *host = NULL;
-	char *pipeline = NULL;
-	int port, ret;
-
-	ret = api->set_mode(output, modeline);
-	if (ret < 0) {
-		weston_log("Cannot configure an output \"%s\" using "
-			   "weston_remoting_api. Invalid mode\n",
-			   output->name);
-		return -1;
-	}
-
-	wet_output_set_scale(output, section, 1, 0);
-	if (wet_output_set_transform(output, section,
-				     WL_OUTPUT_TRANSFORM_NORMAL,
-				     UINT32_MAX) < 0) {
-		return -1;
-	};
-
-	if (wet_output_set_color_profile(output, section, wc, NULL) < 0)
-		return -1;
-
-	wet_output_set_color_effect(output, section);
-
-	weston_config_section_get_string(section, "gbm-format", &gbm_format,
-					 NULL);
-	api->set_gbm_format(output, gbm_format);
-	free(gbm_format);
-
-	weston_config_section_get_string(section, "seat", &seat, "");
-
-	api->set_seat(output, seat);
-	free(seat);
-
-	weston_config_section_get_string(section, "gst-pipeline", &pipeline,
-					 NULL);
-	if (pipeline) {
-		api->set_gst_pipeline(output, pipeline);
-		free(pipeline);
-		return 0;
-	}
-
-	weston_config_section_get_string(section, "host", &host, NULL);
-	weston_config_section_get_int(section, "port", &port, 0);
-	if (!host || port <= 0 || 65533 < port) {
-		weston_log("Cannot configure an output \"%s\". "
-			   "Need to specify gst-pipeline or "
-			   "host and port (1-65533).\n", output->name);
-	}
-	api->set_host(output, host);
-	free(host);
-	api->set_port(output, port);
-
-	return 0;
-}
-
-static void
-remoted_output_init(struct weston_compositor *c,
-		    struct weston_config_section *section,
-		    const struct weston_remoting_api *api)
-{
-	struct weston_output *output = NULL;
-	char *output_name, *modeline = NULL;
-	int ret;
-
-	weston_config_section_get_string(section, "name", &output_name,
-					 NULL);
-	if (!output_name)
-		return;
-
-	weston_config_section_get_string(section, "mode", &modeline, "off");
-	if (strcmp(modeline, "off") == 0) {
-		weston_log("Would not create a remoted output \"%s\". "
-				"mode option has not been set or it is set to off.\n", output->name);
-		goto err;
-	}
-
-	output = api->create_output(c, output_name);
-	if (!output) {
-		weston_log("Cannot create remoted output \"%s\".\n",
-			   output_name);
-		goto err;
-	}
-
-	ret = drm_backend_remoted_output_configure(output, section, modeline,
-						   api);
-	if (ret < 0) {
-		weston_log("Cannot configure remoted output \"%s\".\n",
-			   output_name);
-		goto err;
-	}
-
-	weston_output_lazy_align(output);
-
-	if (weston_output_enable(output) < 0) {
-		weston_log("Enabling remoted output \"%s\" failed.\n",
-			   output_name);
-		goto err;
-	}
-
-	free(modeline);
-	free(output_name);
-	weston_log("remoted output '%s' enabled\n", output->name);
-	return;
-
-err:
-	free(modeline);
-	free(output_name);
-	if (output)
-		weston_output_destroy(output);
-}
-
-static void
-load_remoting(struct weston_compositor *c, struct weston_config *wc)
-{
-	const struct weston_remoting_api *api = NULL;
-	int (*module_init)(struct weston_compositor *ec);
-	struct weston_config_section *section = NULL;
-	const char *section_name;
-
-	/* read remote-output section in weston.ini */
-	while (weston_config_next_section(wc, &section, &section_name)) {
-		if (strcmp(section_name, "remote-output"))
-			continue;
-
-		if (!api) {
-			char *module_name;
-			struct weston_config_section *core_section =
-				weston_config_get_section(wc, "core", NULL,
-							  NULL);
-
-			weston_config_section_get_string(core_section,
-							 "remoting",
-							 &module_name,
-							 "remoting-plugin.so");
-			module_init = weston_load_module(module_name,
-							 "weston_module_init",
-							 LIBWESTON_MODULEDIR);
-			free(module_name);
-			if (!module_init) {
-				weston_log("Can't load remoting-plugin\n");
-				return;
-			}
-			if (module_init(c) < 0) {
-				weston_log("Remoting-plugin init failed\n");
-				return;
-			}
-
-			api = weston_remoting_get_api(c);
-			if (!api)
-				return;
-		}
-
-		remoted_output_init(c, section, api);
-	}
-}
-
 static struct wet_backend *
 wet_compositor_load_backend(struct weston_compositor *compositor,
 			    enum weston_compositor_backend backend,
@@ -5430,8 +5252,6 @@ wet_main(int argc, char *argv[], const struct weston_testsuite_data *test_data)
 
 	if (load_modules(wet.compositor, option_modules, &argc, argv) < 0)
 		goto out;
-
-	load_additional_modules(wet);
 
 	if (debug_protocol)
 		weston_log_print_all_advertised_scopes(wet.compositor);

@@ -179,19 +179,6 @@ launch weston directly from a debugger. Boolean, defaults to
 .BR false .
 There is also a command line option to do the same.
 .TP 7
-.BI "remoting="remoting-plugin.so
-specifies a plugin for remote output to load (string). This can be used to load
-your own implemented remoting plugin or one with Weston as default. Available
-remoting plugins in the
-.IR "__libweston_modules_dir__"
-directory are:
-.PP
-.RS 10
-.nf
-.BR remoting-plugin.so
-.fi
-.RE
-.TP 7
 .BI "renderer=" auto
 Selects a renderer to use for internal composition when required, or
 .BI auto
@@ -593,8 +580,7 @@ denoting the scaling multiplier for the output.
 If option
 .B color-management
 is true, load the given ICC file as the output color profile. This works only
-on DRM, headless, wayland, and x11 backends, and for remoting and pipewire
-outputs.
+on DRM, headless, wayland, and x11 backends, and for pipewire outputs.
 .TP 7
 .BI "color-profile=" name
 Color profiles describe how the display is assumed to behave. Knowing the
@@ -602,7 +588,7 @@ display color behavior, Weston can adapt window contents to produce the
 presumed appearance. The option
 .B color-management
 must be set to true for this to work. This works only on DRM, headless,
-wayland, and x11 backends, and for remoting and pipewire outputs. If
+wayland, and x11 backends, and for pipewire outputs. If
 .B icc_profile
 is also set, that is used instead.
 
