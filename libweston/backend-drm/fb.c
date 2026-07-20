@@ -533,7 +533,7 @@ drm_fb_get_from_dmabuf_attributes(struct dmabuf_attributes *attributes,
 	return fb;
 
 err_free:
-	drm_fb_destroy_dmabuf(fb);
+	drm_fb_unref(fb);
 	return NULL;
 }
 
