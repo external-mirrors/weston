@@ -69,7 +69,7 @@ if get_option('renderer-vulkan')
 	config_h.set('BUILD_DRM_GBM', '1')
 endif
 
-if get_option('deprecated-remoting') or get_option('deprecated-pipewire')
+if get_option('deprecated-remoting')
 	if not get_option('renderer-gl')
 		error('DRM virtual requires renderer-gl.')
 	endif

@@ -13,7 +13,6 @@ install_headers(
 	'weston-log.h',
 	'zalloc.h',
 	'remoting-plugin.h',
-	'pipewire-plugin.h',
 	'shell-utils.h',
 	subdir: dir_include_libweston_install
 )
