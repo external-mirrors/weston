@@ -752,17 +752,7 @@ drm_output_init_vulkan(struct drm_output *output, struct drm_backend *b)
 void
 drm_output_fini_egl(struct drm_output *output)
 {
-	struct drm_backend *b = output->backend;
-	const struct weston_renderer *renderer = b->compositor->renderer;
-
-	/* Destroying the GBM surface will destroy all our GBM buffers,
-	 * regardless of refcount. */
-	if (b->compositor->shutting_down) {
-		weston_assert_ptr_null(b->compositor, output->scanout_handle);
-	} else {
-		weston_assert_ptr_null(b->compositor,
-				       output->scanout_handle->plane->state_cur->fb);
-	}
+	const struct weston_renderer *renderer = output->base.compositor->renderer;
 
 	renderer->gl->output_destroy(&output->base);
 	gbm_surface_destroy(output->gbm_surface);
@@ -773,15 +763,7 @@ drm_output_fini_egl(struct drm_output *output)
 void
 drm_output_fini_vulkan(struct drm_output *output)
 {
-	struct drm_backend *b = output->backend;
-	const struct weston_renderer *renderer = b->compositor->renderer;
-
-	if (b->compositor->shutting_down) {
-		weston_assert_ptr_null(b->compositor, output->scanout_handle);
-	} else {
-		weston_assert_ptr_null(b->compositor,
-				       output->scanout_handle->plane->state_cur->fb);
-	}
+	const struct weston_renderer *renderer = output->base.compositor->renderer;
 
 	for (unsigned int i = 0; i < ARRAY_LENGTH(output->renderbuffer); i++)
 		renderer->destroy_renderbuffer(output->renderbuffer[i]);
