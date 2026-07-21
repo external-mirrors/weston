@@ -133,7 +133,7 @@ static const struct pixel_format_info pixel_format_table[] = {
 		.bpp = 8,
 		.hide_from_clients = true,
 		GL_FORMAT_INFO(GL_R8, GL_RED, GL_UNSIGNED_BYTE, R001),
-		GL_FORMAT(GL_R8_EXT),
+		GL_FORMAT(GL_RED_EXT),
 		GL_TYPE(GL_UNSIGNED_BYTE),
 		VULKAN_FORMAT(VK_FORMAT_R8_UNORM),
 	},
@@ -155,7 +155,7 @@ static const struct pixel_format_info pixel_format_table[] = {
 		.bpp = 16,
 		.hide_from_clients = true,
 		GL_FORMAT_INFO(GL_RG8, GL_RG, GL_UNSIGNED_BYTE, RG01),
-		GL_FORMAT(GL_RG8_EXT),
+		GL_FORMAT(GL_RG_EXT),
 		GL_TYPE(GL_UNSIGNED_BYTE),
 		VULKAN_FORMAT(VK_FORMAT_R8G8_UNORM),
 	},
@@ -619,7 +619,7 @@ static const struct pixel_format_info pixel_format_table[] = {
 		.bpp = 64,
 		GL_FORMAT_INFO(GL_RGBA16_EXT, GL_RGBA, GL_UNSIGNED_SHORT, RGB1),
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-		GL_FORMAT(GL_RGBA16_EXT),
+		GL_FORMAT(GL_RGBA),
 		GL_TYPE(GL_UNSIGNED_SHORT),
 		VULKAN_FORMAT(VK_FORMAT_R16G16B16A16_UNORM),
 #endif
@@ -632,7 +632,7 @@ static const struct pixel_format_info pixel_format_table[] = {
 		.opaque_substitute = DRM_FORMAT_XBGR16161616,
 		GL_FORMAT_INFO(GL_RGBA16_EXT, GL_RGBA, GL_UNSIGNED_SHORT, RGBA),
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-		GL_FORMAT(GL_RGBA16_EXT),
+		GL_FORMAT(GL_RGBA),
 		GL_TYPE(GL_UNSIGNED_SHORT),
 		VULKAN_FORMAT(VK_FORMAT_R16G16B16A16_UNORM),
 #endif
@@ -659,7 +659,7 @@ static const struct pixel_format_info pixel_format_table[] = {
 		.bpp = 64,
 		GL_FORMAT_INFO(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT, RGB1),
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-		GL_FORMAT(GL_RGBA16F),
+		GL_FORMAT(GL_RGBA),
 		GL_TYPE(GL_HALF_FLOAT),
 		VULKAN_FORMAT(VK_FORMAT_R16G16B16A16_SFLOAT),
 #endif
@@ -672,7 +672,7 @@ static const struct pixel_format_info pixel_format_table[] = {
 		.opaque_substitute = DRM_FORMAT_XBGR16161616F,
 		GL_FORMAT_INFO(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT, RGBA),
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-		GL_FORMAT(GL_RGBA16F),
+		GL_FORMAT(GL_RGBA),
 		GL_TYPE(GL_HALF_FLOAT),
 		VULKAN_FORMAT(VK_FORMAT_R16G16B16A16_SFLOAT),
 #endif
