@@ -1114,6 +1114,9 @@ gl_renderer_do_read_pixels(struct gl_renderer *gr,
 
 	assert(fmt->gl_type != 0);
 	assert(fmt->gl_format != 0);
+	weston_assert_int_eq(gr->compositor, fmt->gl.swizzles.r, GL_RED);
+	weston_assert_int_eq(gr->compositor, fmt->gl.swizzles.g, GL_GREEN);
+	weston_assert_int_eq(gr->compositor, fmt->gl.swizzles.b, GL_BLUE);
 
 	if (!is_y_flipped(go)) {
 		glReadPixels(rect->x, rect->y, rect->width, rect->height,
@@ -1441,6 +1444,9 @@ gl_renderer_do_read_pixels_async(struct gl_renderer *gr,
 	assert(buffer->type == WESTON_BUFFER_SHM);
 	assert(fmt->gl_type != 0);
 	assert(fmt->gl_format != 0);
+	weston_assert_int_eq(gr->compositor, fmt->gl.swizzles.r, GL_RED);
+	weston_assert_int_eq(gr->compositor, fmt->gl.swizzles.g, GL_GREEN);
+	weston_assert_int_eq(gr->compositor, fmt->gl.swizzles.b, GL_BLUE);
 
 	if (gl_extensions_has(gr, EXTENSION_ANGLE_PACK_REVERSE_ROW_ORDER) &&
 	    is_y_flipped(go))
