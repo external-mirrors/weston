@@ -433,7 +433,12 @@ drm_output_pick_format_egl(struct drm_output *output)
 	}
 
 	if (output->base.from_blend_to_output_by_backend) {
-		component_type = FORMAT_COMPONENT_TYPE_FLOAT_ONLY;
+		if ((compositor->capabilities & WESTON_CAP_SHADER_BLENDING) &&
+		    (compositor->test_data.test_quirks.blending_impl !=
+		     WESTON_BLENDING_IMPL_FF))
+			component_type = FORMAT_COMPONENT_TYPE_ANY;
+		else
+			component_type = FORMAT_COMPONENT_TYPE_FLOAT_ONLY;
 		min_bpc = 16;
 	} else if (output->base.eotf_mode != WESTON_EOTF_MODE_SDR) {
 		component_type = FORMAT_COMPONENT_TYPE_ANY;
