@@ -121,9 +121,12 @@
 #include "shared/weston-egl-ext.h"
 
 /**
- * Table of DRM formats supported by Weston; RGB, ARGB and YUV formats are
- * supported. Indexed/greyscale formats, and formats not containing complete
- * colour channels, are not supported.
+ * Table of DRM formats known to Weston.
+ *
+ * Not all formats have the Pixman or GL fields.
+ *
+ * The DRM format (defined as little-endian) is the ground truth. Other fields
+ * are populated only if they match the DRM format precisely.
  */
 static const struct pixel_format_info pixel_format_table[] = {
 	{
@@ -143,8 +146,8 @@ static const struct pixel_format_info pixel_format_table[] = {
 		BITS_RGBA_FIXED(16, 0, 0, 0),
 		.bpp = 16,
 		.hide_from_clients = true,
-		GL_FORMAT_INFO(GL_R16_EXT, GL_RED, GL_UNSIGNED_SHORT, R001),
 #if __BYTE_ORDER == __LITTLE_ENDIAN
+		GL_FORMAT_INFO(GL_R16_EXT, GL_RED, GL_UNSIGNED_SHORT, R001),
 		VULKAN_FORMAT(VK_FORMAT_R16_UNORM),
 #endif
 	},
@@ -173,8 +176,8 @@ static const struct pixel_format_info pixel_format_table[] = {
 		BITS_RGBA_FIXED(16, 16, 0, 0),
 		.bpp = 32,
 		.hide_from_clients = true,
-		GL_FORMAT_INFO(GL_RG16_EXT, GL_RG, GL_UNSIGNED_SHORT, RG01),
 #if __BYTE_ORDER == __LITTLE_ENDIAN
+		GL_FORMAT_INFO(GL_RG16_EXT, GL_RG, GL_UNSIGNED_SHORT, RG01),
 		VULKAN_FORMAT(VK_FORMAT_R16G16_UNORM),
 #endif
 	},
@@ -184,7 +187,9 @@ static const struct pixel_format_info pixel_format_table[] = {
 		BITS_RGBA_FIXED(16, 16, 0, 0),
 		.bpp = 32,
 		.hide_from_clients = true,
+#if __BYTE_ORDER == __LITTLE_ENDIAN
 		GL_FORMAT_INFO(GL_RG16_EXT, GL_RG, GL_UNSIGNED_SHORT, GR01),
+#endif
 	},
 	{
 		DRM_FORMAT(XRGB4444),
@@ -617,8 +622,8 @@ static const struct pixel_format_info pixel_format_table[] = {
 		COLOR_MODEL(RGB),
 		BITS_RGBA_FIXED(16, 16, 16, 0),
 		.bpp = 64,
-		GL_FORMAT_INFO(GL_RGBA16_EXT, GL_RGBA, GL_UNSIGNED_SHORT, RGB1),
 #if __BYTE_ORDER == __LITTLE_ENDIAN
+		GL_FORMAT_INFO(GL_RGBA16_EXT, GL_RGBA, GL_UNSIGNED_SHORT, RGB1),
 		GL_FORMAT(GL_RGBA),
 		GL_TYPE(GL_UNSIGNED_SHORT),
 		VULKAN_FORMAT(VK_FORMAT_R16G16B16A16_UNORM),
@@ -630,8 +635,8 @@ static const struct pixel_format_info pixel_format_table[] = {
 		BITS_RGBA_FIXED(16, 16, 16, 16),
 		.bpp = 64,
 		.opaque_substitute = DRM_FORMAT_XBGR16161616,
-		GL_FORMAT_INFO(GL_RGBA16_EXT, GL_RGBA, GL_UNSIGNED_SHORT, RGBA),
 #if __BYTE_ORDER == __LITTLE_ENDIAN
+		GL_FORMAT_INFO(GL_RGBA16_EXT, GL_RGBA, GL_UNSIGNED_SHORT, RGBA),
 		GL_FORMAT(GL_RGBA),
 		GL_TYPE(GL_UNSIGNED_SHORT),
 		VULKAN_FORMAT(VK_FORMAT_R16G16B16A16_UNORM),
@@ -642,7 +647,9 @@ static const struct pixel_format_info pixel_format_table[] = {
 		COLOR_MODEL(RGB),
 		BITS_RGBA_FIXED(16, 16, 16, 0),
 		.bpp = 64,
+#if __BYTE_ORDER == __LITTLE_ENDIAN
 		GL_FORMAT_INFO(GL_RGBA16_EXT, GL_RGBA, GL_UNSIGNED_SHORT, BGR1),
+#endif
 	},
 	{
 		DRM_FORMAT(ARGB16161616),
@@ -650,15 +657,17 @@ static const struct pixel_format_info pixel_format_table[] = {
 		BITS_RGBA_FIXED(16, 16, 16, 16),
 		.bpp = 64,
 		.opaque_substitute = DRM_FORMAT_XRGB16161616,
+#if __BYTE_ORDER == __LITTLE_ENDIAN
 		GL_FORMAT_INFO(GL_RGBA16_EXT, GL_RGBA, GL_UNSIGNED_SHORT, BGRA),
+#endif
 	},
 	{
 		DRM_FORMAT(XBGR16161616F),
 		COLOR_MODEL(RGB),
 		BITS_RGBA_FLOAT(16, 16, 16, 0),
 		.bpp = 64,
-		GL_FORMAT_INFO(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT, RGB1),
 #if __BYTE_ORDER == __LITTLE_ENDIAN
+		GL_FORMAT_INFO(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT, RGB1),
 		GL_FORMAT(GL_RGBA),
 		GL_TYPE(GL_HALF_FLOAT),
 		VULKAN_FORMAT(VK_FORMAT_R16G16B16A16_SFLOAT),
@@ -670,8 +679,8 @@ static const struct pixel_format_info pixel_format_table[] = {
 		BITS_RGBA_FLOAT(16, 16, 16, 16),
 		.bpp = 64,
 		.opaque_substitute = DRM_FORMAT_XBGR16161616F,
-		GL_FORMAT_INFO(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT, RGBA),
 #if __BYTE_ORDER == __LITTLE_ENDIAN
+		GL_FORMAT_INFO(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT, RGBA),
 		GL_FORMAT(GL_RGBA),
 		GL_TYPE(GL_HALF_FLOAT),
 		VULKAN_FORMAT(VK_FORMAT_R16G16B16A16_SFLOAT),
@@ -682,7 +691,9 @@ static const struct pixel_format_info pixel_format_table[] = {
 		COLOR_MODEL(RGB),
 		BITS_RGBA_FLOAT(16, 16, 16, 0),
 		.bpp = 64,
+#if __BYTE_ORDER == __LITTLE_ENDIAN
 		GL_FORMAT_INFO(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT, BGR1),
+#endif
 	},
 	{
 		DRM_FORMAT(ARGB16161616F),
@@ -690,7 +701,9 @@ static const struct pixel_format_info pixel_format_table[] = {
 		BITS_RGBA_FLOAT(16, 16, 16, 16),
 		.bpp = 64,
 		.opaque_substitute = DRM_FORMAT_XRGB16161616F,
+#if __BYTE_ORDER == __LITTLE_ENDIAN
 		GL_FORMAT_INFO(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT, BGRA),
+#endif
 	},
 	{
 		DRM_FORMAT(YUYV),
