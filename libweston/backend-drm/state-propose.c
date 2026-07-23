@@ -737,8 +737,7 @@ drm_output_find_plane_for_paint_node(struct drm_output_state *state,
 				     uint64_t current_lowest_zpos_underlay,
 				     bool need_underlay)
 {
-	WESTON_TRACE_FUNC(("paint node flow", &pnode->flow),
-			  ("paint node", pnode->internal_name),
+	WESTON_TRACE_FUNC(("paint node", pnode),
 			  ("propose mode", drm_propose_state_mode_to_string(mode)),
 			  ("need underlay", need_underlay));
 	struct drm_output *output = state->output;
@@ -1500,8 +1499,7 @@ drm_output_propose_state(struct weston_output *output_base,
 		bool renderer_ok = (mode != DRM_OUTPUT_PROPOSE_STATE_PLANES_ONLY);
 
 		WESTON_TRACE_BEGIN_ANNOTATION();
-		WESTON_TRACE_ANNOTATE(("paint node flow", &pnode->flow),
-				      ("paint node", pnode->internal_name));
+		WESTON_TRACE_ANNOTATE(("paint node", pnode));
 
 		drm_debug(b, "\t\t\t[paint node] evaluating paint node %s for plane "
 		             "assignment on output %s (%lu)\n",

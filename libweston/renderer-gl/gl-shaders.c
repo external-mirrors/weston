@@ -878,8 +878,7 @@ gl_shader_load_config(struct gl_renderer *gr, struct weston_paint_node *pnode,
 
 	WESTON_TRACE_BEGIN_ANNOTATION();
 	if (pnode) {
-		WESTON_TRACE_ANNOTATE(("paint node flow", &pnode->flow),
-				      ("paint node", pnode->internal_name));
+		WESTON_TRACE_ANNOTATE(("paint node", pnode));
 	}
 
 	glUniformMatrix4fv(shader->proj_uniform,

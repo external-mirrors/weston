@@ -436,8 +436,7 @@ gl_log_paint_node_bbox_and_region(struct gl_renderer *gr, struct weston_paint_no
 
 	WESTON_TRACE_BEGIN_ANNOTATION();
 
-	WESTON_TRACE_ANNOTATE(("paint node flow", &pnode->flow),
-			      ("paint node", pnode->internal_name),
+	WESTON_TRACE_ANNOTATE(("paint node", pnode),
 			      ("type", str),
 			      ("x", box_x),
 			      ("y", box_y),
@@ -2383,8 +2382,7 @@ set_blend_state(struct gl_renderer *gr, struct weston_paint_node *pnode, bool st
 	}
 
 	if (pnode) {
-		WESTON_TRACE_ANNOTATE(("paint node flow", &pnode->flow),
-				      ("paint node", pnode->internal_name));
+		WESTON_TRACE_ANNOTATE(("paint node", pnode));
 	}
 
 	WESTON_TRACE_COMMIT_ANNOTATION("blend state");
@@ -2558,7 +2556,7 @@ apply_color_effect(struct gl_renderer *gr, struct weston_paint_node *pnode, stru
 	}
 
 	WESTON_TRACE_FUNC(("paint node flow", &pnode->flow));
-	WESTON_TRACE_ANNOTATE(("paint node", pnode->internal_name));
+	WESTON_TRACE_ANNOTATE(("paint node", pnode));
 
 	weston_assert_f32_eq(compositor, a, 1.0f);
 
@@ -2662,7 +2660,7 @@ draw_paint_node(struct weston_paint_node *pnode,
 	pixman_region32_intersect(&repaint, &pnode->visible, damage);
 
 	WESTON_TRACE_ANNOTATE(("paint node flow", &pnode->flow),
-			      ("paint node", pnode->internal_name),
+			      ("paint node", pnode),
 			      ("label", pnode->surface->label),
 			      ("surface id", pnode->surface->s_id),
 			      ("hole punching", pnode->need_hole));

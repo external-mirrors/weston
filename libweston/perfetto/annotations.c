@@ -465,3 +465,16 @@ perfetto_annotate_bitflags(struct weston_debug_annotations *annots,
 {
 	do_annotate_bitflags(annots, annots->count, key, key_size, trace_bf);
 }
+
+WL_EXPORT void
+perfetto_annotate_paint_node(struct weston_debug_annotations *annots,
+			     const char *key,
+			     unsigned char key_size,
+			     struct weston_paint_node *pnode)
+{
+	unsigned char container_id = create_container(annots, annots->count, key, key_size);
+
+	ADD(annots, container_id, "internal name", pnode->internal_name);
+	ADD(annots, container_id, "surface label", pnode->surface->label);
+	ADD(annots, container_id, "flow", &pnode->flow);
+}

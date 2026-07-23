@@ -126,3 +126,9 @@ perfetto_annotate_bitflags(struct weston_debug_annotations *annots,
 			   const char *key,
 			   unsigned char key_size,
 			   struct weston_trace_bitflags *trace_bf);
+
+void
+perfetto_annotate_paint_node(struct weston_debug_annotations *annots,
+                             const char *key,
+                             unsigned char key_size,
+                             struct weston_paint_node *pnode);
