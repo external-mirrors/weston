@@ -122,8 +122,8 @@ compile_const bool c_need_straight_alpha =
 	c_need_color_pipeline ||
 	c_color_effect == SHADER_COLOR_EFFECT_INVERSION;
 
-uniform HIGHPRECISION mat3 yuv_coefficients;
-uniform HIGHPRECISION vec3 yuv_offsets;
+uniform mat3 yuv_coefficients;
+uniform vec3 yuv_offsets;
 
 vec4
 yuva2rgba(vec4 yuva)
