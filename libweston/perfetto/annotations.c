@@ -196,6 +196,40 @@ perfetto_annotate_string(struct weston_debug_annotations *annots,
 	do_annotate_string(annots, annots->count, key, key_size, value);
 }
 
+static void
+do_annotate_flow_const(struct weston_debug_annotations *annots,
+		       unsigned char parent,
+		       const char *key,
+		       unsigned char key_size,
+		       const struct weston_trace_flow *flow)
+{
+	struct weston_debug_annotation *annot = &annots->annots[annots->count];
+
+	weston_assert_u8_gt(NULL, WESTON_MAX_DEBUG_ANNOTS, annots->count);
+	weston_assert_u64_gt(NULL, flow->id, 0);
+
+	annot->type = WESTON_DEBUG_ANNOTATION_FLOW;
+	annot->flow_value = flow->id;
+	annot->parent = parent;
+	annot->key = key;
+	annot->key_size = key_size;
+
+	annots->count++;
+}
+
+static void
+do_annotate_flow(struct weston_debug_annotations *annots,
+		 unsigned char parent,
+		 const char *key,
+		 unsigned char key_size,
+		 struct weston_trace_flow *flow)
+{
+	if (flow->id == 0)
+                flow->id = util_perfetto_next_id();
+
+	do_annotate_flow_const(annots, parent, key, key_size, flow);
+}
+
 static unsigned char
 create_container(struct weston_debug_annotations *annots,
 		 unsigned char parent,
@@ -227,7 +261,9 @@ create_container(struct weston_debug_annotations *annots,
 			struct weston_solid_buffer_values *:do_annotate_solid_buffer_values,       \
 			const struct weston_solid_buffer_values *: do_annotate_solid_buffer_values,\
 			struct weston_trace_time_since *: do_annotate_time_since,    \
-			struct weston_trace_bitflags *: do_annotate_bitflags         \
+			struct weston_trace_bitflags *: do_annotate_bitflags,        \
+			struct weston_trace_flow *: do_annotate_flow,                \
+			const struct weston_trace_flow *: do_annotate_flow           \
 		) (annots, parent, key, sizeof(key), value);                         \
 	} while (0)
 
@@ -293,18 +329,7 @@ perfetto_annotate_flow_const(struct weston_debug_annotations *annots,
 			     unsigned char key_size,
 			     const struct weston_trace_flow *flow)
 {
-	struct weston_debug_annotation *annot = &annots->annots[annots->count];
-
-	weston_assert_u8_gt(NULL, WESTON_MAX_DEBUG_ANNOTS, annots->count);
-	weston_assert_u64_gt(NULL, flow->id, 0);
-
-	annot->type = WESTON_DEBUG_ANNOTATION_FLOW;
-	annot->flow_value = flow->id;
-	annot->parent = annots->count;
-	annot->key = key;
-	annot->key_size = key_size;
-
-	annots->count++;
+	do_annotate_flow_const(annots, annots->count, key, key_size, flow);
 }
 
 WL_EXPORT void
@@ -313,10 +338,7 @@ perfetto_annotate_flow(struct weston_debug_annotations *annots,
 		       unsigned char key_size,
 		       struct weston_trace_flow *flow)
 {
-	if (flow->id == 0)
-                flow->id = util_perfetto_next_id();
-
-	perfetto_annotate_flow_const(annots, key, key_size, flow);
+	do_annotate_flow(annots, annots->count, key, key_size, flow);
 }
 
 static void
