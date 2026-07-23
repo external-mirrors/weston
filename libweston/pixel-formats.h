@@ -91,7 +91,9 @@ struct pixel_format_info {
 	/** GL format information. */
 	struct gl_format_info gl;
 
-	/** GL internal format; to be used when creating FBO renderbuffers */
+	/** GL internal format; to be used when creating FBO renderbuffers
+	 * \deprecated Use \c .gl instead.
+	 */
 	int gl_internalformat;
 
 	/** GL format, if data can be natively/directly uploaded. Note that
@@ -101,10 +103,15 @@ struct pixel_format_info {
 	 *  GL_BGRA_EXT plus GL_UNSIGNED_BYTE. To add to the confusion, the
 	 *  explicitly-sized types (e.g. GL_UNSIGNED_SHORT_5_5_5_1) read in
 	 *  machine-endian order, so for these types, the correspondence
-	 *  depends on endianness. */
+	 *  depends on endianness.
+	 *
+	 * \deprecated Use \c .gl instead.
+	 */
 	int gl_format;
 
-	/** GL data type, if data can be natively/directly uploaded. */
+	/** GL data type, if data can be natively/directly uploaded.
+	 * \deprecated Use \c .gl instead.
+	 */
 	int gl_type;
 
 	/** Vulkan format, if data can be natively/directly uploaded. */
