@@ -61,17 +61,17 @@ To make a release of Weston, follow these steps.
 
 The x.y branch is for bug fixes and conservative changes to the x.y.0 release,
 and is where we create x.y.z releases from.  Creating the x.y branch opens
-up master for new development and lets new development move on.  We've done
+up main for new development and lets new development move on.  We've done
 this both after the x.y.0 release (to focus development on bug fixing for
 the x.y.1 release for a little longer) or before the x.y.0 release
-(like we did with the 1.5.0 release, to unblock master development early).
+(like we did with the 1.5.0 release, to unblock main development early).
 
     git branch x.y [sha]
     git push origin x.y
 
-The master branch's `meson.build` version should always be (at least) x.y.90,
+The main branch's `meson.build` version should always be (at least) x.y.90,
 with x.y being the most recent stable branch.  The stable branch's `meson.build`
 version is just whatever was most recently released from that branch.
 
-For stable branches, we commit fixes to master first, then `git cherry-pick -x`
+For stable branches, we commit fixes to main first, then `git cherry-pick -x`
 them back to the stable branch.

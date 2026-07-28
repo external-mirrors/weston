@@ -48,7 +48,7 @@ Once the build directory has been successfully populated, you can inspect the
 configuration with `meson configure build/`. If you need to change an
 option, you can do e.g. `meson configure build/ -Ddemo-clients=false`.
 
-Every push to the Weston master repository and its forks is built using GitLab
+Every push to the Weston main repository and its forks is built using GitLab
 CI. [Reading the configuration](.gitlab-ci.yml) may provide a useful example of
 how to build and install Weston.
 
