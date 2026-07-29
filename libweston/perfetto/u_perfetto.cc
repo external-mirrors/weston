@@ -114,23 +114,6 @@ util_perfetto_track_clear(uint64_t uuid)
 	perfetto::TrackEvent::EraseTrackDescriptor(track);
 }
 
-void
-util_perfetto_track_refresh(const char *name,
-			    uint64_t uuid,
-			    uint64_t parent_uuid)
-{
-	auto track = perfetto::Track::Global(uuid);
-	auto desc = track.Serialize();
-
-	desc.set_name(name);
-	if (parent_uuid)
-		desc.set_parent_uuid(parent_uuid);
-	else
-		desc.set_parent_uuid(perfetto::Track(0).uuid);
-
-	perfetto::TrackEvent::SetTrackDescriptor(track, desc);
-}
-
 uint64_t
 util_perfetto_top_track(void)
 {
@@ -142,11 +125,11 @@ util_perfetto_top_track(void)
 uint64_t
 util_perfetto_new_track(const char *name)
 {
-	uint64_t track_id = util_perfetto_next_id();
-	auto track = perfetto::Track(track_id);
-	uint64_t uuid = track.uuid;
+	auto track = perfetto::NamedTrack(perfetto::DynamicString{name});
+	auto desc = track.Serialize();
 
-	util_perfetto_track_refresh(name, uuid, 0);
+	desc.set_name(name);
+	perfetto::TrackEvent::SetTrackDescriptor(track, desc);
 
 	return track.uuid;
 }
@@ -154,11 +137,12 @@ util_perfetto_new_track(const char *name)
 uint64_t
 util_perfetto_new_nested_track(const char *name, uint64_t parent_uuid)
 {
-	uint64_t track_id = util_perfetto_next_id();
-	auto track = perfetto::Track(track_id);
-	uint64_t uuid = track.uuid;
+	perfetto::Track parent_track = perfetto::Track::Global(parent_uuid);
+	auto track = perfetto::NamedTrack(perfetto::DynamicString{name}, 0, parent_track);
+	auto desc = track.Serialize();
 
-	util_perfetto_track_refresh(name, uuid, parent_uuid);
+	desc.set_name(name);
+	perfetto::TrackEvent::SetTrackDescriptor(track, desc);
 
 	return track.uuid;
 }
