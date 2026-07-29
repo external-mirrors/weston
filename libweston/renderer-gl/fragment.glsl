@@ -608,7 +608,7 @@ main()
 	} else {
 		/* SHADER_FB_ALPHA_STRAIGHT; same formula here, but
 		 * dst is not alpha pre-mult. */
-		dst.rgb = src.rgb + (1.0 - src.a) * dst.rgb * dst.a;
+		dst.rgb = src.rgb + (1.0 - src.a) * dst.a * dst.rgb;
 		dst.a = src.a + (1.0 - src.a) * dst.a;
 		/* Leave the fb as straight alpha */
 		if (dst.a > 0.0)
