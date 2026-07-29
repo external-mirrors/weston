@@ -86,7 +86,7 @@ void
 util_perfetto_trace_end(uint64_t track_id)
 {
 	TRACE_EVENT_END(UTIL_PERFETTO_CATEGORY_DEFAULT_STR,
-			track_id ? perfetto::Track::Global(track_id) : perfetto::Track(0));
+			track_id ? perfetto::Track::Global(track_id) : perfetto::ThreadTrack::Current());
 
 	util_perfetto_update_tracing_state();
 }
@@ -97,7 +97,7 @@ util_perfetto_trace_full_begin(const char *fname, uint64_t track_id, uint64_t id
 
 	TRACE_EVENT_BEGIN(UTIL_PERFETTO_CATEGORY_DEFAULT_STR,
 			  nullptr,
-			  track_id ? perfetto::Track::Global(track_id) : perfetto::Track(0),
+			  track_id ? perfetto::Track::Global(track_id) : perfetto::ThreadTrack::Current(),
 			  perfetto::TraceTimestamp{clockid_to_perfetto_clock(clock), timestamp},
 			  [&](perfetto::EventContext ctx) {
 				ctx.event()->set_name(fname);
@@ -117,7 +117,7 @@ util_perfetto_track_clear(uint64_t uuid)
 uint64_t
 util_perfetto_top_track(void)
 {
-	auto track = perfetto::Track(0);
+	auto track = perfetto::ThreadTrack::Current();
 
 	return track.uuid;
 }
@@ -151,7 +151,7 @@ void
 util_perfetto_trace_full_end(uint64_t track_id, clockid_t clock, uint64_t timestamp)
 {
 	TRACE_EVENT_END(UTIL_PERFETTO_CATEGORY_DEFAULT_STR,
-			track_id ? perfetto::Track::Global(track_id) : perfetto::Track(0),
+			track_id ? perfetto::Track::Global(track_id) : perfetto::ThreadTrack::Current(),
 			perfetto::TraceTimestamp{clockid_to_perfetto_clock(clock), timestamp});
 
 	util_perfetto_update_tracing_state();
@@ -277,7 +277,7 @@ util_perfetto_trace_commit_debug_annots(const char *name,
 
 	TRACE_EVENT_INSTANT(UTIL_PERFETTO_CATEGORY_DEFAULT_STR,
 			    nullptr,
-			    annots->track_id ? perfetto::Track::Global(annots->track_id) : perfetto::Track(0),
+			    annots->track_id ? perfetto::Track::Global(annots->track_id) : perfetto::ThreadTrack::Current(),
 			    when,
 			    [&](perfetto::EventContext ctx) {
 				ctx.event()->set_name(name);
@@ -291,7 +291,7 @@ util_perfetto_trace_commit_annotate_func(const char *name,
 {
 	TRACE_EVENT_BEGIN(UTIL_PERFETTO_CATEGORY_DEFAULT_STR,
 			  nullptr,
-			  annots->track_id ? perfetto::Track::Global(annots->track_id) : perfetto::Track(0),
+			  annots->track_id ? perfetto::Track::Global(annots->track_id) : perfetto::ThreadTrack::Current(),
 			  [&](perfetto::EventContext ctx) {
 			  ctx.event()->set_name(name);
 			  util_perfetto_flush_debug_annotation(&ctx, annots);
