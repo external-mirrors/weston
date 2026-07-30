@@ -4668,8 +4668,7 @@ weston_output_finish_frame(struct weston_output *output,
 	TL_POINT(compositor, TLP_CORE_REPAINT_FINISHED, TLP_OUTPUT(output),
 		 TLP_VBLANK(&vblank_monotonic), TLP_END);
 
-	WESTON_TRACE_ANNOTATE(("action", "update complete"),
-			      ("completion flow", &completion_flow),
+	WESTON_TRACE_ANNOTATE(("completion flow", &completion_flow),
 			      ("output track", &output->trace.track),
 			      ("time", vblank_monotonic));
 	WESTON_TRACE_COMMIT_ANNOTATION(loop_start ? "repaint loop start" : "vblank event");

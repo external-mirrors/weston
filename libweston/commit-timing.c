@@ -217,7 +217,6 @@ weston_commit_timing_surface_state_ready(struct weston_surface *surface,
 		return true;
 
 	WESTON_TRACE_ANNOTATE(("surface state flow", &state->flow),
-			      ("action", "check timing"),
 			      ("ready in(us)", (weston_trace_time_until *)&state->update_time.time));
 	WESTON_TRACE_COMMIT_ANNOTATION("commit-timing check");
 

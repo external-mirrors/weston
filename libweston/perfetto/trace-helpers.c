@@ -116,8 +116,7 @@ weston_trace_client_init(struct weston_client *client)
 
 	client->trace.track.id = util_perfetto_new_track(client->trace.track_name);
 	WESTON_TRACE_ANNOTATE(("client track", &client->trace.track),
-			      ("creation flow", &creation_flow),
-			      ("action", "create"));
+			      ("creation flow", &creation_flow));
 	WESTON_TRACE_COMMIT_ANNOTATION("connect");
 }
 
@@ -128,8 +127,7 @@ weston_trace_client_fini(struct weston_client *client)
 	WESTON_TRACE_FUNC(("destruction flow", &destruction_flow));
 
 	WESTON_TRACE_ANNOTATE(("client track", &client->trace.track),
-			      ("destruction flow", &destruction_flow),
-			      ("action", "destroy"));
+			      ("destruction flow", &destruction_flow));
 	WESTON_TRACE_COMMIT_ANNOTATION("disconnect");
 
 	weston_trace_track_clear(&client->trace.track);
@@ -144,8 +142,7 @@ weston_trace_client_action(struct wl_client *wclient,
 
 	WESTON_TRACE_BEGIN_ANNOTATION();
 	WESTON_TRACE_ANNOTATE(("client track", &client->trace.track),
-			      ("client flow", &client_flow),
-			      ("action", action));
+			      ("client flow", &client_flow));
 	WESTON_TRACE_COMMIT_ANNOTATION(action);
 
 	return client_flow;
@@ -308,8 +305,7 @@ weston_trace_feedback_create(struct weston_surface *surface,
 	trace->buffer_number = surface->trace.buffer_count;
 
 	WESTON_TRACE_BEGIN_ANNOTATION();
-	WESTON_TRACE_ANNOTATE(("action", "commit"),
-			      ("surface track", &trace->damage_track),
+	WESTON_TRACE_ANNOTATE(("surface track", &trace->damage_track),
 			      ("feedback flow", &trace->flow),
 			      ("real flow", &trace->real_flow),
 			      ("ideal flow", &trace->ideal_flow));
@@ -328,8 +324,7 @@ weston_trace_feedback_discard(struct weston_presentation_feedback *feedback)
 		return false;
 
 	WESTON_TRACE_BEGIN_ANNOTATION();
-	WESTON_TRACE_ANNOTATE(("action", "drop"),
-			      ("surface track", &trace->damage_track),
+	WESTON_TRACE_ANNOTATE(("surface track", &trace->damage_track),
 			      ("feedback flow", &trace->flow),
 			      ("ideal flow", &ideal_flow));
 
