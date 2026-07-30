@@ -102,7 +102,7 @@ util_perfetto_trace_full_begin(const char *fname, uint64_t track_id, uint64_t id
 			  [&](perfetto::EventContext ctx) {
 				ctx.event()->set_name(fname);
 				if (id)
-					perfetto::Flow::ProcessScoped(id)(ctx);
+					perfetto::Flow::ProcessScoped(id, "weston")(ctx);
 			  });
 }
 
@@ -251,7 +251,7 @@ util_perfetto_flush_debug_annotation(perfetto::EventContext *ctx,
 				ctx->AddDebugAnnotation(key, annot->svalue);
 			break;
 		case WESTON_DEBUG_ANNOTATION_FLOW:
-			perfetto::Flow::ProcessScoped(annot->flow_value)(*ctx);
+			perfetto::Flow::ProcessScoped(annot->flow_value, "weston")(*ctx);
 			break;
 		default:
 			break;
