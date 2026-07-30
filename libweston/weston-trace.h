@@ -141,8 +141,10 @@
 
 #define _WESTON_TRACE_ANNOTATE(...) \
 	do {                                                                \
+		util_perfetto_start_annotation_collection(__func__);        \
 		_WESTON_TRACE_EXPAND(_WESTON_TRACE_ITER_HELPER(             \
 			_WESTON_TRACE_ANNOTATE_PAIR, __VA_ARGS__))          \
+		util_perfetto_finish_annotation_collection();               \
 	} while (0)
 
 #define _WESTON_TRACE_INIT() util_perfetto_init()
