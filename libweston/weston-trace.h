@@ -45,12 +45,6 @@
  */
 #define _WESTON_TRACE_IS_TRACING() unlikely(util_perfetto_is_tracing_enabled())
 
-#define _WESTON_TRACE_BEGIN(name)                                             \
-	do {                                                                  \
-		if (_WESTON_TRACE_IS_TRACING())                               \
-			util_perfetto_trace_begin(name);                      \
-	} while (0)
-
 #define _WESTON_TRACE_END(track_id)                                           \
 	do {                                                                  \
 		if (_WESTON_TRACE_IS_TRACING())                               \

@@ -76,13 +76,6 @@ util_perfetto_update_tracing_state(void)
 }
 
 void
-util_perfetto_trace_begin(const char *name)
-{
-	TRACE_EVENT_BEGIN(UTIL_PERFETTO_CATEGORY_DEFAULT_STR, nullptr,
-			  [&](perfetto::EventContext ctx) { ctx.event()->set_name(name); });
-}
-
-void
 util_perfetto_trace_end(uint64_t track_id)
 {
 	TRACE_EVENT_END(UTIL_PERFETTO_CATEGORY_DEFAULT_STR,

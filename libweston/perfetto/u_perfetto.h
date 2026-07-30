@@ -86,8 +86,6 @@ util_perfetto_is_tracing_enabled(void)
 	return p_atomic_read_relaxed(&util_perfetto_tracing_state);
 }
 
-void util_perfetto_trace_begin(const char *name);
-
 void util_perfetto_trace_end(uint64_t track_id);
 
 void
