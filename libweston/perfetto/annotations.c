@@ -260,10 +260,10 @@ create_container(struct weston_debug_annotations *annots,
 			const struct weston_buffer *:do_annotate_buffer,             \
 			struct weston_solid_buffer_values *:do_annotate_solid_buffer_values,       \
 			const struct weston_solid_buffer_values *: do_annotate_solid_buffer_values,\
-			struct weston_trace_time_since *: do_annotate_time_since,    \
+			weston_trace_time_since *: do_annotate_time_since,           \
 			struct weston_trace_bitflags *: do_annotate_bitflags,        \
 			struct weston_trace_flow *: do_annotate_flow,                \
-			const struct weston_trace_flow *: do_annotate_flow           \
+			const struct weston_trace_flow *: do_annotate_flow_const     \
 		) (annots, parent, key, sizeof(key), value);                         \
 	} while (0)
 
