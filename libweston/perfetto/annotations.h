@@ -132,3 +132,9 @@ perfetto_annotate_paint_node(struct weston_debug_annotations *annots,
                              const char *key,
                              unsigned char key_size,
                              struct weston_paint_node *pnode);
+
+void
+perfetto_annotate_key_event(struct weston_debug_annotations *annots,
+			    const char *key,
+			    const char key_size,
+			    const struct weston_key_event *event);

@@ -255,6 +255,7 @@ create_container(struct weston_debug_annotations *annots,
 			char *: do_annotate_string,                                  \
 			const char *: do_annotate_string,                            \
 			int: do_annotate_int,                                        \
+			unsigned int: do_annotate_int,                               \
 			float: do_annotate_float,                                    \
 			struct weston_buffer *:do_annotate_buffer,                   \
 			const struct weston_buffer *:do_annotate_buffer,             \
@@ -477,4 +478,19 @@ perfetto_annotate_paint_node(struct weston_debug_annotations *annots,
 	ADD(annots, container_id, "internal name", pnode->internal_name);
 	ADD(annots, container_id, "surface label", pnode->surface->label);
 	ADD(annots, container_id, "flow", &pnode->flow);
+}
+
+WL_EXPORT void
+perfetto_annotate_key_event(struct weston_debug_annotations *annots,
+                            const char *key,
+                            const char key_size,
+                            const struct weston_key_event *event)
+{
+	unsigned char container_id = create_container(annots, annots->count, key, key_size);
+
+	ADD(annots, container_id, "flow", &event->base.flow);
+	ADD(annots, container_id, "key", event->key);
+	ADD(annots, container_id, "latency(us)", (weston_trace_time_since *)&event->base.ts);
+	ADD(annots, container_id, "state", event->key_state);
+	ADD(annots, container_id, "update state", event->key_update_state);
 }

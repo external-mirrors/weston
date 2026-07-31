@@ -1209,11 +1209,8 @@ weston_keyboard_send_key(struct weston_keyboard *keyboard,
 	enum wl_keyboard_key_state state = key_event->key_state;
 
 	if (!weston_keyboard_has_focus_resource(keyboard)) {
-		WESTON_TRACE_FUNC(("input event flow", &key_event->base.flow),
-				  ("discard send key", "missing touch resource"),
-				  ("key", key),
-				  ("state", state),
-				  ("update state", key_event->key_update_state));
+		WESTON_TRACE_FUNC(("discard send key", "missing touch resource"),
+				  ("event", key_event));
 		return;
 	}
 
@@ -1221,14 +1218,10 @@ weston_keyboard_send_key(struct weston_keyboard *keyboard,
 	serial = wl_display_next_serial(display);
 	msecs = timespec_to_msec(&time);
 
-	WESTON_TRACE_FUNC(("input event flow", &key_event->base.flow),
-			  ("send", "key"),
-			  ("latency(us)", (weston_trace_time_since *)&key_event->base.ts),
-			  ("internal_name", keyboard->focus->internal_name),
-			  ("label", keyboard->focus->label),
-			  ("key", key),
-			  ("state", state),
-			  ("update state", key_event->key_update_state));
+	WESTON_TRACE_FUNC(("send", "key"),
+			  ("surface internal name", keyboard->focus->internal_name),
+			  ("surface label", keyboard->focus->label),
+			  ("event", key_event));
 
 	wl_resource_for_each(resource, resource_list) {
 		send_timestamps_for_input_resource(resource,
