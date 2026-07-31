@@ -133,6 +133,7 @@ if get_option('perfetto')
 	]
 	dep_perfetto = dependency('perfetto', fallback: ['perfetto', 'dep_perfetto'])
 	deps_libweston += dep_perfetto
+	deps_libweston += dep_libevdev
 	config_h.set('HAVE_PERFETTO', '1')
 endif
 

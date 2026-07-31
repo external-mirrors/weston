@@ -26,6 +26,7 @@
 #include "config.h"
 #include <libweston/libweston.h>
 
+#include <libevdev/libevdev.h>
 #include "libweston/pixel-formats.h"
 #include "perfetto/annotations.h"
 #include "shared/string-helpers.h"
@@ -487,10 +488,16 @@ perfetto_annotate_key_event(struct weston_debug_annotations *annots,
                             const struct weston_key_event *event)
 {
 	unsigned char container_id = create_container(annots, annots->count, key, key_size);
+	const char *key_name;
+
+	key_name = libevdev_event_code_get_name(EV_KEY, event->key);
+	if (!key_name)
+		key_name = "UNKNOWN";
 
 	ADD(annots, container_id, "flow", &event->base.flow);
 	ADD(annots, container_id, "key", event->key);
 	ADD(annots, container_id, "latency(us)", (weston_trace_time_since *)&event->base.ts);
 	ADD(annots, container_id, "state", event->key_state);
 	ADD(annots, container_id, "update state", event->key_update_state);
+	ADD(annots, container_id, "key_name", key_name);
 }
