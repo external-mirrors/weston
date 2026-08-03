@@ -297,6 +297,7 @@ aarch64-debian-container_prep:
   script:
     - "${CI_PROJECT_DIR}/.gitlab-ci/build.sh"
     - "${CI_PROJECT_DIR}/.gitlab-ci/test.sh"
+    - "${CI_PROJECT_DIR}/.gitlab-ci/coverage.sh"
 
   artifacts:
     name: weston-$CI_COMMIT_SHA
@@ -430,6 +431,7 @@ aarch64-debian-container_prep:
 .build-options-full:
   stage: "Full build and test"
   variables:
+    BUILD_COVERAGE: y
     MESON_OPTIONS: >
       -Doptimization=0
       -Db_coverage=true
@@ -438,9 +440,6 @@ aarch64-debian-container_prep:
       -Dperfetto:werror=false
       -Dwerror=true
       -Dtest-skip-is-failure=true
-  after_script:
-  - ninja -C "$BUILDDIR" coverage-html > "$BUILDDIR/meson-logs/ninja-coverage-html.txt"
-  - ninja -C "$BUILDDIR" coverage-xml
 
 # Full build, (without gcov and perfetto)
 .build-options-full-v2:
