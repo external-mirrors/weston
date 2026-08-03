@@ -74,6 +74,9 @@
 
 static const char default_seat[] = "seat0";
 
+static char *
+weston_presentation_mask_to_str(uint32_t flags);
+
 void
 drm_device_recovery_schedule(struct drm_device *device)
 {
@@ -460,8 +463,10 @@ drm_output_update_complete(struct drm_output *output, uint32_t flags,
 	if (output->pageflip_timer)
 		wl_event_source_timer_update(output->pageflip_timer, 0);
 
-	drm_debug(device->backend, "output %s update complete at %u.%06u s, flags %#x\n",
-		  output->base.name, sec, usec, flags);
+	char *flags_str = weston_presentation_mask_to_str(flags);
+	drm_debug(device->backend, "output %s update complete at %u.%06u s, flags %#x, %s\n",
+		  output->base.name, sec, usec, flags, flags_str);
+	free(flags_str);
 
 	wl_list_for_each(ps, &output->state_cur->plane_list, link)
 		ps->complete = true;
@@ -3227,6 +3232,22 @@ vrr_mode_to_str(enum weston_vrr_mode vrr_mode)
 	return "???";
 }
 
+static const char *
+presentation_feedback_mode_to_str(enum wp_presentation_feedback_kind flags)
+{
+	switch (flags) {
+	case WP_PRESENTATION_FEEDBACK_KIND_VSYNC:
+		return "vsync presentation";
+	case WP_PRESENTATION_FEEDBACK_KIND_HW_CLOCK:
+		return "hw presented timestamp";
+	case WP_PRESENTATION_FEEDBACK_KIND_HW_COMPLETION:
+		return "hw start presentation";
+	case WP_PRESENTATION_FEEDBACK_KIND_ZERO_COPY:
+		return "zero-copy presentation";
+	}
+	return "???";
+}
+
 static void
 drm_connector_fini(struct drm_connector *connector)
 {
@@ -3239,6 +3260,12 @@ static char *
 weston_vrr_mask_to_str(uint32_t mask)
 {
 	return bits_to_str(mask, vrr_mode_to_str);
+}
+
+static char *
+weston_presentation_mask_to_str(uint32_t mask)
+{
+	return bits_to_str(mask, presentation_feedback_mode_to_str);
 }
 
 static void
