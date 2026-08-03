@@ -288,6 +288,9 @@ weston_trace_feedback_create(struct weston_surface *surface,
 	struct weston_presentation_feedback *feedback;
 	struct weston_trace_presentation_feedback *trace;
 
+	if (!WESTON_TRACE_IS_TRACING())
+		return;
+
 	surface->trace.buffer_count++;
 	surface->trace.buffer_count %= 10000;
 
