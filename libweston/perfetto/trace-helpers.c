@@ -103,7 +103,7 @@ void
 weston_trace_flow_join(struct weston_trace_flow *target,
 		       struct weston_trace_flow *flow)
 {
-	flow->id = target->id;
+	target->id = flow->id;
 }
 
 void

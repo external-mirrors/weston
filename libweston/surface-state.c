@@ -209,6 +209,8 @@ weston_surface_attach(struct weston_surface *surface,
 	struct weston_buffer *old_buffer = surface->buffer_ref.buffer;
 	enum weston_paint_node_status pnode_changes = WESTON_PAINT_NODE_CLEAN;
 
+	/* The surface already owns the state, since weston_surface_apply_state,
+	 * so we use the surface flow here. */
 	WESTON_TRACE_FUNC(("surface flow", &surface->trace.flow),
 			  ("surface", surface->internal_name),
 			  ("new buffer", buffer));
@@ -646,7 +648,13 @@ weston_surface_state_merge_from(struct weston_surface_state *dst,
 				struct weston_surface_state *src,
 				struct weston_surface *surface)
 {
-	WESTON_TRACE_FUNC(("surface state flow", &dst->flow));
+	/* Use both flows. The destination might be a new container for a
+	 * transaction, but it could also be subsurface cache where we'd
+	 * like to flow back through other as yet unprocessed commits.
+	 */
+	WESTON_TRACE_FUNC(("dst surface state flow", &dst->flow),
+			  ("src surface state flow", &src->flow));
+	WESTON_TRACE_FLOW_JOIN(&dst->flow, &src->flow);
 	WESTON_TRACE_FLOW_START(&src->flow);
 
 	/*
@@ -816,7 +824,6 @@ weston_transaction_add_content_update(struct weston_transaction *tr,
 	cu->surface = surface;
 	weston_surface_state_init(surface, &cu->state);
 
-	WESTON_TRACE_FLOW_JOIN(&cu->state.flow, &state->flow);
 	weston_surface_state_merge_from(&cu->state, state, surface);
 
 	wl_list_insert(&tr->content_update_list, &cu->link);
