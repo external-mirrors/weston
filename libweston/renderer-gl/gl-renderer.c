@@ -2663,7 +2663,6 @@ draw_paint_node(struct weston_paint_node *pnode,
 	pixman_region32_intersect(&repaint, &pnode->visible, damage);
 
 	WESTON_TRACE_ANNOTATE(("paint node", pnode),
-			      ("surface id", pnode->surface->s_id),
 			      ("hole punching", pnode->need_hole));
 
 	gl_log_paint_node_start(gr, pnode);
