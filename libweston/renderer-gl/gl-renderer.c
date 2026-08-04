@@ -1678,7 +1678,7 @@ ensure_surface_buffer_is_ready(struct gl_renderer *gr,
 			       struct gl_surface_state *gs,
 			       struct weston_paint_node *pnode)
 {
-	WESTON_TRACE_FUNC(("paint node flow", &pnode->flow));
+	WESTON_TRACE_FUNC(("paint node", pnode));
 	EGLint attribs[] = {
 		EGL_SYNC_NATIVE_FENCE_FD_ANDROID,
 		-1,
@@ -2215,7 +2215,7 @@ transform_damage(const struct weston_paint_node *pnode,
 		 struct clipper_quad **quads,
 		 int *nquads)
 {
-	WESTON_TRACE_FUNC(("paint node flow", &pnode->flow));
+	WESTON_TRACE_FUNC(("paint node", pnode));
 	pixman_box32_t *rects;
 	int nrects, i;
 	bool compress, axis_aligned;
@@ -2406,7 +2406,7 @@ draw_mesh(struct gl_renderer *gr,
 	  int nidx,
 	  bool opaque)
 {
-	WESTON_TRACE_FUNC(("paint node flow", &pnode->flow));
+	WESTON_TRACE_FUNC(("paint node", pnode));
 	struct gl_surface_state *gs = get_surface_state(pnode->surface);
 	struct gl_output_state *go = get_output_state(pnode->output);
 	struct gl_buffer_state *gb = gs->buffer;
@@ -2450,7 +2450,7 @@ repaint_region(struct gl_renderer *gr,
 	       struct gl_shader_config *sconf,
 	       bool opaque)
 {
-	WESTON_TRACE_FUNC(("paint node flow", &pnode->flow));
+	WESTON_TRACE_FUNC(("paint node", pnode));
 	pixman_box32_t *rects;
 	struct clipper_vertex *positions;
 	uint32_t *barycentrics = NULL;
@@ -2561,7 +2561,7 @@ apply_color_effect(struct gl_renderer *gr, struct weston_paint_node *pnode, stru
 		return;
 	}
 
-	WESTON_TRACE_FUNC(("paint node flow", &pnode->flow));
+	WESTON_TRACE_FUNC(("paint node", pnode));
 	WESTON_TRACE_ANNOTATE(("paint node", pnode));
 
 	weston_assert_f32_eq(compositor, a, 1.0f);
@@ -2572,8 +2572,7 @@ apply_color_effect(struct gl_renderer *gr, struct weston_paint_node *pnode, stru
 		*g = 1.0f - *g;
 		*b = 1.0f - *b;
 		gl_log_paint_node(gr, "\t\tcolor effect: inversion\n");
-		WESTON_TRACE_ANNOTATE(("paint node flow", &pnode->flow),
-				      ("color effect", "inversion"));
+		WESTON_TRACE_ANNOTATE(("color effect", "inversion"));
 		WESTON_TRACE_COMMIT_ANNOTATION("color effect");
 		return;
 	case WESTON_OUTPUT_COLOR_EFFECT_TYPE_GRAYSCALE:
@@ -2581,8 +2580,7 @@ apply_color_effect(struct gl_renderer *gr, struct weston_paint_node *pnode, stru
 		*g = *r;
 		*b = *r;
 		gl_log_paint_node(gr, "\t\tcolor effect: grayscale\n");
-		WESTON_TRACE_ANNOTATE(("paint node flow", &pnode->flow),
-				      ("color effect", "greyscale"));
+		WESTON_TRACE_ANNOTATE(("color effect", "greyscale"));
 		WESTON_TRACE_COMMIT_ANNOTATION("color effect");
 		return;
 	case WESTON_OUTPUT_COLOR_EFFECT_TYPE_CVD_CORRECTION:
@@ -2597,8 +2595,7 @@ apply_color_effect(struct gl_renderer *gr, struct weston_paint_node *pnode, stru
 		weston_log_scope_printf(gr->paint_node_scope,
 					"\t\tcolor effect: cvd - %s\n",
 					 weston_output_cvd_type_to_str(effect->u.cvd));
-		WESTON_TRACE_ANNOTATE(("paint node flow", &pnode->flow),
-				      ("color effect",
+		WESTON_TRACE_ANNOTATE(("color effect",
 				weston_output_cvd_type_to_str(effect->u.cvd)));
 		WESTON_TRACE_COMMIT_ANNOTATION("color effect");
 		return;
@@ -2611,7 +2608,7 @@ static void
 clear_region(struct gl_renderer *gr, struct weston_paint_node *pnode,
 	     pixman_region32_t *repaint)
 {
-	WESTON_TRACE_FUNC(("paint node flow", &pnode->flow));
+	WESTON_TRACE_FUNC(("paint node", pnode));
 	struct weston_output *output = pnode->output;
 	struct gl_output_state *go = get_output_state(pnode->output);
 	EGLint *rects;
@@ -2649,7 +2646,7 @@ static void
 draw_paint_node(struct weston_paint_node *pnode,
 		pixman_region32_t *damage /* in global coordinates */)
 {
-	WESTON_TRACE_FUNC(("paint node flow", &pnode->flow));
+	WESTON_TRACE_FUNC(("paint node", pnode));
 	struct gl_renderer *gr = get_renderer(pnode->surface->compositor);
 	struct gl_surface_state *gs = get_surface_state(pnode->surface);
 	/* repaint bounding region in global coordinates: */
@@ -2665,8 +2662,7 @@ draw_paint_node(struct weston_paint_node *pnode,
 	pixman_region32_init(&repaint);
 	pixman_region32_intersect(&repaint, &pnode->visible, damage);
 
-	WESTON_TRACE_ANNOTATE(("paint node flow", &pnode->flow),
-			      ("paint node", pnode),
+	WESTON_TRACE_ANNOTATE(("paint node", pnode),
 			      ("surface id", pnode->surface->s_id),
 			      ("hole punching", pnode->need_hole));
 

@@ -370,7 +370,7 @@ paint_node_update_desired_protection(struct weston_paint_node *pnode)
 static void
 paint_node_update_early(struct weston_paint_node *pnode)
 {
-	WESTON_TRACE_FUNC(("paint node flow", &pnode->flow));
+	WESTON_TRACE_FUNC(("paint node", pnode));
 	struct weston_matrix *mat = &pnode->buffer_to_output_matrix;
 	struct weston_output *output = pnode->output;
 	struct weston_surface *surface = pnode->surface;
@@ -513,7 +513,7 @@ paint_node_update_view_visibility_mask(struct weston_paint_node *pnode)
 static void
 paint_node_update_late(struct weston_paint_node *pnode)
 {
-	WESTON_TRACE_FUNC(("paint node flow", &pnode->flow),
+	WESTON_TRACE_FUNC(("paint node", pnode),
 			  ("need_hole", pnode->need_hole));
 	struct weston_surface *surf = pnode->surface;
 	struct weston_buffer *buffer = surf->buffer_ref.buffer;
@@ -3491,7 +3491,7 @@ weston_output_damage(struct weston_output *output)
 static void
 paint_node_add_damage(struct weston_paint_node *node)
 {
-	WESTON_TRACE_FUNC(("paint node flow", &node->flow));
+	WESTON_TRACE_FUNC(("paint node", node));
 	struct weston_view *view = node->view;
 	pixman_region32_t damage;
 
@@ -3520,7 +3520,7 @@ paint_node_add_damage(struct weston_paint_node *node)
 static void
 paint_node_flush_surface_damage(struct weston_paint_node *pnode)
 {
-	WESTON_TRACE_FUNC(("paint node flow", &pnode->flow));
+	WESTON_TRACE_FUNC(("paint node", pnode));
 	struct weston_output *output = pnode->output;
 	struct weston_surface *surface = pnode->surface;
 	struct weston_buffer *buffer = surface->buffer_ref.buffer;

@@ -475,7 +475,7 @@ dma_feedback_update(struct drm_device *device,
 	const char *action_str;
 
 	WESTON_TRACE_FUNC(("feedback flow", &feedback_flow),
-			  ("pnode flow", &pnode->flow));
+			  ("paint node", pnode));
 
 	/* If we got here it means that the timer has triggered, so we have
 	 * pending actions with the dma-buf feedback. So we update and resend
@@ -517,7 +517,7 @@ dmabuf_feedback_maybe_update(struct drm_device *device,
 	const time_t MAX_TIME_SECONDS = 2;
 	uint32_t try_view_on_plane_failure_reasons = pnode->try_view_on_plane_failure_reasons;
 
-	WESTON_TRACE_FUNC(("pnode flow", &pnode->flow));
+	WESTON_TRACE_FUNC(("paint node", pnode));
 
 	/* Look for scanout tranche. If not found, add it but in disabled mode
 	 * (we still don't know if we'll have to send it to clients). This
