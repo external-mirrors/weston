@@ -93,10 +93,7 @@ fail:
 void
 weston_trace_flow_start(struct weston_trace_flow *flow)
 {
-	/* We just reset the flow to 0, and it will be assigned one next
-	 * time it's touched.
-	 */
-	flow->id = 0;
+	flow->id = util_perfetto_next_id();
 }
 
 void

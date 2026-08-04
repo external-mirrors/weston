@@ -226,7 +226,7 @@ do_annotate_flow(struct weston_debug_annotations *annots,
 		 struct weston_trace_flow *flow)
 {
 	if (flow->id == 0)
-                flow->id = util_perfetto_next_id();
+		weston_trace_flow_start(flow);
 
 	do_annotate_flow_const(annots, parent, key, key_size, flow);
 }
