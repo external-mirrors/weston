@@ -102,6 +102,7 @@
 			struct itimerspec: perfetto_annotate_timer,                       \
 			struct weston_trace_bitflags *: perfetto_annotate_bitflags,       \
 			const struct weston_key_event *: perfetto_annotate_key_event,     \
+			const struct weston_paint_node *: perfetto_annotate_paint_node,   \
 			struct weston_paint_node *: perfetto_annotate_paint_node          \
 		) (&__pd_annots, k, sizeof(k), v);
 

@@ -472,7 +472,7 @@ WL_EXPORT void
 perfetto_annotate_paint_node(struct weston_debug_annotations *annots,
 			     const char *key,
 			     unsigned char key_size,
-			     struct weston_paint_node *pnode)
+			     const struct weston_paint_node *pnode)
 {
 	unsigned char container_id = create_container(annots, annots->count, key, key_size);
 
