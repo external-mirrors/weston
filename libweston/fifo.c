@@ -212,7 +212,8 @@ weston_fifo_surface_clear_barrier(struct weston_surface *surface)
 void
 weston_fifo_surface_set_barrier(struct weston_surface *surface)
 {
-	WESTON_TRACE_FUNC(("fifo flow", &surface->trace.fifo_flow));
+	WESTON_TRACE_FLOW_TEMP(setting_flow);
+	WESTON_TRACE_FUNC(("setting flow", &setting_flow));
 	/* If nothing is waiting on barriers, we could set multiple times
 	 * before a repaint occurs.
 	 *
@@ -230,7 +231,8 @@ weston_fifo_surface_set_barrier(struct weston_surface *surface)
 		return;
 
 	WESTON_TRACE_ANNOTATE(("fifo track", &surface->trace.fifo_track),
-			      ("fifo flow", &surface->trace.fifo_flow));
+			      ("fifo flow", &surface->trace.fifo_flow),
+			      ("setting flow", &setting_flow));
 	WESTON_TRACE_COMMIT_ANNOTATION("set");
 
 	surface->fifo_barrier = true;
