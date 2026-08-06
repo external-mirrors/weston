@@ -373,12 +373,46 @@ gl_log_paint_node(struct gl_renderer *gr, const char *feat_str)
 	weston_log_scope_printf(gr->paint_node_scope, "%s", feat_str);
 }
 
+static const char *
+paint_node_mask_to_str(enum weston_paint_node_status pnode_status)
+{
+	switch (pnode_status) {
+	case WESTON_PAINT_NODE_OUTPUT_DIRTY:
+		return "output";
+	case WESTON_PAINT_NODE_BUFFER_DIRTY:
+		return "buffer";
+	case WESTON_PAINT_NODE_BUFFER_PARAMS_DIRTY:
+		return "buffer params";
+	case WESTON_PAINT_NODE_VIEW_DIRTY:
+		return "view";
+	case WESTON_PAINT_NODE_VISIBILITY_DIRTY:
+		return "visibility";
+	case WESTON_PAINT_NODE_PLANE_DIRTY:
+		return "plane";
+	case WESTON_PAINT_NODE_ALL_DIRTY:
+		return "all";
+	default: /* we don't handle 0x0 bits in bits_to_stream + please
+		    compiler with default */
+		return "clean";
+	}
+	return "???";
+}
+
+static char *
+weston_paint_node_status_mask_to_str(struct weston_paint_node *pnode)
+{
+	return bits_to_str(pnode->shadow_status, paint_node_mask_to_str);
+}
+
 static void
 gl_log_paint_node_start(struct gl_renderer *gr, struct weston_paint_node *pnode)
 {
 	struct weston_surface *surface;
 	struct weston_buffer *buffer;
 	pid_t pid = 0;
+	char *pnode_status_str = NULL;
+	pixman_box32_t *visible_region;
+	pixman_box32_t *prev_visible_region;
 
 	if (!weston_log_scope_is_enabled(gr->paint_node_scope))
 		return;
@@ -410,6 +444,38 @@ gl_log_paint_node_start(struct gl_renderer *gr, struct weston_paint_node *pnode)
 
 	weston_log_scope_printf(gr->paint_node_scope, "\t\tbuffer modifier: %s\n",
 				buffer->format_modifier_name);
+
+	if (pnode->shadow_status == WESTON_PAINT_NODE_CLEAN) {
+		weston_log_scope_printf(gr->paint_node_scope,
+					"\t\tpaint node status: clean\n");
+	} else {
+		pnode_status_str =
+			weston_paint_node_status_mask_to_str(pnode);
+		weston_log_scope_printf(gr->paint_node_scope,
+					"\t\tpaint node status: %s dirty\n",
+					pnode_status_str);
+		free(pnode_status_str);
+	}
+
+	visible_region =
+		pixman_region32_extents(&pnode->visible);
+	weston_log_scope_printf(gr->paint_node_scope,
+				"\t\tvisible region bounding box: x: %5d, y: %5d, "
+				"width: %d, height: %d\n",
+				visible_region->x1, visible_region->y1,
+				visible_region->x2 - visible_region->x1,
+				visible_region->y2 - visible_region->y1);
+
+	if (pnode->shadow_status & WESTON_PAINT_NODE_VIEW_DIRTY) {
+		prev_visible_region =
+			pixman_region32_extents(&pnode->visible_previous);
+		weston_log_scope_printf(gr->paint_node_scope,
+					"\t\tprev visible region bounding box: x: %5d, y: %5d, "
+					"width: %d, height: %d\n",
+					prev_visible_region->x1, prev_visible_region->y1,
+					prev_visible_region->x2 - prev_visible_region->x1,
+					prev_visible_region->y2 - prev_visible_region->y1);
+	}
 }
 
 static void
