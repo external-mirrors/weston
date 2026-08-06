@@ -2327,15 +2327,13 @@ wet_output_set_color_format(struct weston_output *output,
 	}
 	color_format = entry->value;
 
-	if ((weston_output_get_supported_color_formats(output) & color_format) == 0) {
-		weston_log("Error: output '%s' does not support color format %s\n",
-			   output->name, str);
-		free(str);
-		return -1;
+	if ((weston_output_get_supported_color_formats(output) & color_format)) {
+		weston_log("Setting output '%s' to color %s format\n",
+			   output->name, weston_color_format_to_str(color_format));
+	} else {
+		weston_log("Warning: output '%s' does not support color format %s, "
+			   "falling back to auto\n", output->name, str);
 	}
-
-	weston_log("Setting output '%s' to color %s format\n",
-		   output->name, weston_color_format_to_str(color_format));
 	weston_output_set_preferred_color_format(output, color_format);
 
 	free(str);
