@@ -1,4 +1,5 @@
 /*
+ * Copyright © 2026 NXP
  * Copyright © 2025 Erico Nunes
  *
  * based on gl-renderer:
@@ -1237,7 +1238,11 @@ copy_sub_image_to_buffer(VkCommandBuffer cmd_buffer,
 	const VkExtent3D image_extent = { xcopy, ycopy, 1 };
 
 	const VkBufferImageCopy region = {
-		.bufferOffset = ((buffer_width * yoff) + xoff) * (bpp/8),
+		/* bufferOffset must be consistent with bufferRowLength.
+		 * The staging buffer uses 'pitch' texels per row, so the
+		 * byte offset of pixel (xoff, yoff) is (pitch * yoff + xoff)
+		 * multiplied by bytes-per-pixel. */
+		.bufferOffset = ((pitch * yoff) + xoff) * (bpp/8),
 		.bufferRowLength = pitch,
 		.bufferImageHeight = buffer_height,
 		.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
@@ -2699,7 +2704,7 @@ copy_buffer_to_sub_image(VkCommandBuffer cmd_buffer,
 	const VkExtent3D image_extent = { xcopy, ycopy, 1 };
 
 	const VkBufferImageCopy region = {
-		.bufferOffset = ((buffer_width * yoff) + xoff) * (bpp/8),
+		.bufferOffset = ((pitch * yoff) + xoff) * (bpp/8),
 		.bufferRowLength = pitch,
 		.bufferImageHeight = buffer_height,
 		.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
