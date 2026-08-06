@@ -965,7 +965,7 @@ find_memory_type(struct vulkan_renderer *vr, uint32_t allowed, VkMemoryPropertyF
 	VkPhysicalDeviceMemoryProperties mem_properties;
 	vkGetPhysicalDeviceMemoryProperties(vr->phys_dev, &mem_properties);
 
-	for (unsigned i = 0; (1u << i) <= allowed && i <= mem_properties.memoryTypeCount; ++i) {
+	for (unsigned i = 0; (1u << i) <= allowed && i < mem_properties.memoryTypeCount; ++i) {
 		if ((allowed & (1u << i)) && (mem_properties.memoryTypes[i].propertyFlags & properties))
 			return i;
 	}
