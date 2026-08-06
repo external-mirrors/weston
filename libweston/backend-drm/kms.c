@@ -2160,8 +2160,11 @@ drm_pending_state_apply_atomic(struct drm_pending_state *pending_state,
 			continue;
 
 		if (output_state->output->connector_color_format !=
-		    wdrm_color_format_from_output(&output_state->output->base))
+		    wdrm_color_format_from_output(&output_state->output->base)) {
 			weston_assert_true(b->compositor, output_state->output->base.enabled);
+			output_state->output->connector_color_format =
+				wdrm_color_format_from_output(&output_state->output->base);
+		}
 
 		if (mode == DRM_STATE_APPLY_SYNC)
 			assert(output_state->dpms == WESTON_DPMS_OFF);
