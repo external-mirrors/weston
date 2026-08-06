@@ -6958,6 +6958,7 @@ weston_output_attach_head(struct weston_output *output,
 	wl_list_insert(output->head_list.prev, &head->output_link);
 
 	weston_output_compute_protection(output);
+	weston_output_update_color_format(output);
 
 	if (output->enabled) {
 		weston_head_add_global(head);
@@ -7000,6 +7001,8 @@ weston_head_detach(struct weston_head *head)
 
 	if (output->detach_head)
 		output->detach_head(output, head);
+
+	weston_output_update_color_format(output);
 
 	if (output->enabled) {
 		weston_head_remove_global(head);
@@ -7349,6 +7352,8 @@ weston_head_set_supported_color_format_mask(struct weston_head *head,
 		return;
 
 	head->supported_color_format_mask = color_format_mask;
+	if (head->output)
+		weston_output_update_color_format(head->output);
 
 	weston_head_set_device_changed(head);
 }
@@ -8646,6 +8651,7 @@ weston_output_init(struct weston_output *output,
 	output->enabled = false;
 	output->eotf_mode = WESTON_EOTF_MODE_SDR;
 	output->colorimetry_mode = WESTON_COLORIMETRY_MODE_DEFAULT;
+	output->preferred_color_format = WESTON_COLOR_FORMAT_AUTO;
 	output->color_format = WESTON_COLOR_FORMAT_AUTO;
 	output->desired_protection = WESTON_HDCP_DISABLE;
 	output->allow_protection = true;
@@ -9315,11 +9321,40 @@ weston_output_set_vrr_mode(struct weston_output *output,
 	return 0;
 }
 
+/** Update active color_format for output
+ *
+ * If the preferred format is supported by the current heads, use it.
+ * Otherwise fallback to WESTON_COLOR_FORMAT_AUTO.
+ *
+ * \ingroup output
+ * \sa weston_output_set_preferred_color_format
+ */
 WL_EXPORT void
-weston_output_set_color_format(struct weston_output *output,
-			       enum weston_color_format color_format)
+weston_output_update_color_format(struct weston_output *output)
 {
-	output->color_format = color_format;
+	uint32_t supported = weston_output_get_supported_color_formats(output);
+
+	if (supported & output->preferred_color_format)
+		output->color_format = output->preferred_color_format;
+	else
+		output->color_format = WESTON_COLOR_FORMAT_AUTO;
+}
+
+/** Update preferred color_format for output
+ *
+ * It may also update the current active output color_format, and the final
+ * value depends wether the newest preferred format is supported by current
+ * heads.
+ *
+ * \ingroup output
+ * \sa weston_output_update_color_format
+ */
+WL_EXPORT void
+weston_output_set_preferred_color_format(struct weston_output *output,
+					 enum weston_color_format color_format)
+{
+	output->preferred_color_format = color_format;
+	weston_output_update_color_format(output);
 }
 
 WL_EXPORT uint32_t

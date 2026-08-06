@@ -632,6 +632,10 @@ struct weston_output {
 
 	enum weston_vrr_mode vrr_mode;
 
+	/** Preferred color_format, should be used if supported by heads. */
+	enum weston_color_format preferred_color_format;
+
+	/** Active color_format; AUTO when no heads or preferred unsupported. */
 	enum weston_color_format color_format;
 
 	enum weston_output_fb_alpha_encoding fb_alpha_encoding;
@@ -3011,8 +3015,11 @@ void
 weston_compositor_disarm_surface_counter_fps(struct weston_compositor *ec);
 
 void
-weston_output_set_color_format(struct weston_output *output,
-			       enum weston_color_format color_format);
+weston_output_set_preferred_color_format(struct weston_output *output,
+					 enum weston_color_format color_format);
+
+void
+weston_output_update_color_format(struct weston_output *output);
 
 uint32_t
 weston_output_get_supported_color_formats(struct weston_output *output);

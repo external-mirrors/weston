@@ -2336,7 +2336,7 @@ wet_output_set_color_format(struct weston_output *output,
 
 	weston_log("Setting output '%s' to color %s format\n",
 		   output->name, weston_color_format_to_str(color_format));
-	weston_output_set_color_format(output, color_format);
+	weston_output_set_preferred_color_format(output, color_format);
 
 	free(str);
 	return 0;
