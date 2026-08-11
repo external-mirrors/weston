@@ -4,7 +4,7 @@ endif
 
 config_h.set('BUILD_LUA_SHELL', '1')
 
-dep_lua = dependency('lua', version: '>= 5.4', required: false)
+dep_lua = dependency('lua-5.4', 'lua5.4', 'lua', version: '>= 5.4', required: false)
 if not dep_lua.found()
 	error('lua-shell requires Lua >= 5.4 which was not found. Or, you can use \'-Dshell-lua=false\'.')
 endif
