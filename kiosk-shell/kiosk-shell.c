@@ -632,8 +632,13 @@ kiosk_shell_output_set_active_surface_tree(struct kiosk_shell_output *shoutput,
 					   struct kiosk_shell_surface *shroot)
 
 {
-	struct kiosk_shell *shell = shoutput->shell;
+	struct kiosk_shell *shell;
 	struct kiosk_shell_surface *s;
+
+	if (!shoutput)
+		return;
+
+	shell = shoutput->shell;
 
 	/* Remove the previous active surface tree (i.e., move the tree to
 	 * WESTON_LAYER_POSITION_HIDDEN) */
@@ -665,6 +670,9 @@ kiosk_shell_output_raise_surface_subtree(struct kiosk_shell_output *shoutput,
 	struct kiosk_shell *shell = shroot->shell;
 	struct wl_list tmp_list;
 	struct kiosk_shell_surface *s, *tmp_s;
+
+	if (!shoutput)
+		return;
 
 	wl_list_init(&tmp_list);
 
@@ -1012,9 +1020,10 @@ desktop_surface_committed(struct weston_desktop_surface *desktop_surface,
 		shoutput = kiosk_shell_surface_find_best_output(shsurf);
 
 		kiosk_shell_surface_set_output(shsurf, shoutput);
-		weston_desktop_surface_set_size(shsurf->desktop_surface,
-						shoutput->output->width,
-						shoutput->output->height);
+		if (shoutput)
+			weston_desktop_surface_set_size(shsurf->desktop_surface,
+							shoutput->output->width,
+							shoutput->output->height);
 		/* even if we couldn't find an appid set for a particular
 		 * output still flag the shsurf as to a avoid changing the
 		 * output every time */
@@ -1033,8 +1042,10 @@ desktop_surface_committed(struct weston_desktop_surface *desktop_surface,
 
 	if (!weston_surface_is_mapped(surface) || (is_resized && is_fullscreen)) {
 		if (is_fullscreen || !shsurf->xwayland.is_set) {
-			weston_shell_utils_center_on_output(shsurf->view,
-							    shsurf->output->output);
+			struct kiosk_shell_output *shoutput = shsurf->output;
+			if (shoutput)
+				weston_shell_utils_center_on_output(shsurf->view,
+								    shoutput->output);
 		} else {
 			struct weston_coord_surface offset;
 			struct weston_geometry geometry =
