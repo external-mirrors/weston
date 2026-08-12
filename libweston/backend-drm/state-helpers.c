@@ -331,6 +331,7 @@ drm_output_state_alloc(struct drm_output *output)
 	state->output = output;
 	state->dpms = WESTON_DPMS_OFF;
 	state->protection = WESTON_HDCP_DISABLE;
+	state->background_color = DRM_BACKGROUND_COLOR_OPAQUE_BLACK;
 	wl_list_init(&state->link);
 
 	wl_list_init(&state->plane_list);

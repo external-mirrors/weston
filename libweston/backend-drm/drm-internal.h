@@ -396,6 +396,13 @@ enum drm_output_propose_state_mode {
 	DRM_OUTPUT_PROPOSE_STATE_REUSE = 128, /**< bit indicates reuse prior state with new buffers */
 };
 
+/* Value for drm_output_state::background_color meaning opaque black, which is
+ * the default CRTC background. Note that the BACKGROUND_COLOR property is
+ * ARGB16161616, so a value of zero is fully *transparent* black instead, which
+ * drivers may reject: i915/xe fail the atomic check with "New background not
+ * completely opaque". */
+#define DRM_BACKGROUND_COLOR_OPAQUE_BLACK ((uint64_t) 0xffff << 48)
+
 /*
  * Output state holds the dynamic state for one Weston output, i.e. a KMS CRTC,
  * plus >= 1 each of encoder/connector/plane. Since everything but the planes
@@ -416,6 +423,11 @@ struct drm_output_state {
 	struct wl_list plane_list;
 	bool tear;
 	bool planes_enabled;
+
+	/* CRTC prop WDRM_CRTC_BACKGROUND_COLOR, only applied when the CRTC
+	 * supports it. DRM_BACKGROUND_COLOR_OPAQUE_BLACK unless a solid view
+	 * has been lowered into the background region. */
+	uint64_t background_color;
 };
 
 enum drm_colorop_3x1d_lut_blob_quantization {
@@ -638,9 +650,6 @@ struct drm_crtc {
 
 	/* CRTC prop WDRM_CRTC_GAMMA_LUT_SIZE */
 	uint32_t lut_size;
-
-	/* CRTC prop WDRM_CRTC_BACKGROUND_COLOR */
-	uint64_t background_color;
 
 	/* Union of formats of all compatible writeback connectors */
 	struct weston_drm_format_array writeback_formats;

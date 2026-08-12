@@ -1031,11 +1031,12 @@ is_paint_node_solid_opaque_untransformed(struct weston_paint_node *pnode)
 }
 
 static bool
-lower_solid_views_to_background_region(struct drm_output *output,
+lower_solid_views_to_background_region(struct drm_output_state *state,
 				       struct wl_array *visible_pnodes,
 				       struct weston_paint_node **last_visible_pnode,
 				       pixman_region32_t *background_region)
 {
+	struct drm_output *output = state->output;
 	struct drm_device *device = output->device;
 	struct drm_backend *b = device->backend;
 	struct weston_paint_node **visible_pnode;
@@ -1133,7 +1134,7 @@ lower_solid_views_to_background_region(struct drm_output *output,
 			g16 = 0xffff * background_region_color.g;
 			b16 = 0xffff * background_region_color.b;
 
-			output->crtc->background_color =
+			state->background_color =
 				a16 << 48 | r16 << 32 | g16 << 16 | b16;
 		}
 	}
@@ -1144,7 +1145,6 @@ lower_solid_views_to_background_region(struct drm_output *output,
 
 error:
 	wl_array_release(&visible_pnodes_new);
-	output->crtc->background_color = 0;
 	return false;
 }
 
@@ -1361,6 +1361,11 @@ drm_output_propose_state(struct weston_output *output_base,
 	state->dpms = WESTON_DPMS_ON;
 	state->planes_enabled = !output_base->disable_planes;
 
+	/* Start from the default background. Only PLANES_ONLY lowers solid
+	 * views into it, so without this the colour picked for a previous
+	 * frame would leak into a state that does not paint it. */
+	state->background_color = DRM_BACKGROUND_COLOR_OPAQUE_BLACK;
+
 	/* Start with the assumption that we're going to do a tearing commit,
 	 * if the hardware supports it and we're not compositing with the
 	 * renderer.
@@ -1484,7 +1489,7 @@ drm_output_propose_state(struct weston_output *output_base,
 	pixman_region32_init(&background_region);
 
 	if (mode == DRM_OUTPUT_PROPOSE_STATE_PLANES_ONLY &&
-	    !lower_solid_views_to_background_region(output,
+	    !lower_solid_views_to_background_region(state,
 						    &visible_pnodes,
 						    &last_visible_pnode,
 						    &background_region))
