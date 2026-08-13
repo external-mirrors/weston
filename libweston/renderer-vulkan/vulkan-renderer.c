@@ -1985,16 +1985,14 @@ update_buffer_release_fences(struct weston_compositor *compositor,
 
 		fence_fd = vulkan_renderer_create_fence_fd(output);
 
-		/* If we have a buffer_release then it means we support fences,
-		 * and we should be able to create the release fence. If we
-		 * can't, something has gone horribly wrong, so disconnect the
-		 * client.
-		 */
 		if (fence_fd == -1) {
-			linux_explicit_synchronization_send_server_error(
-				buffer_release->resource,
-				"Failed to create release fence");
+			/* We don't have a fence so obviously can't do a fenced
+			 * release, but we can do an immediate release from
+			 * weston_output_finish_frame()
+			 */
 			fd_clear(&buffer_release->fence_fd);
+			weston_buffer_release_reference(&pnode->buffer_release_ref,
+							buffer_release);
 			continue;
 		}
 

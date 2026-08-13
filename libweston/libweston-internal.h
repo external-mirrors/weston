@@ -750,6 +750,12 @@ struct weston_paint_node {
 	struct weston_matrix output_to_buffer_matrix;
 	bool needs_filtering;
 
+	/* The renderer will set this reference if a buffer release can't
+	 * be handled with a fence, and weston_output_finish_frame will
+	 * clear it, or it will be cleared if the paint node gets destroyed.
+	 */
+	struct weston_buffer_release_reference buffer_release_ref;
+
 	/* We consider a transform to be simple if it can be
 	 * represented by one of wayland's named transforms,
 	 * plus translation and scale.

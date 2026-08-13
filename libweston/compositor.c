@@ -679,6 +679,7 @@ weston_paint_node_destroy(struct weston_paint_node *pnode)
 	wl_list_remove(&pnode->output_link);
 	assert(pnode->surf_xform_valid || !pnode->surf_xform.transform);
 	weston_surface_color_transform_fini(&pnode->surf_xform);
+	weston_buffer_release_reference(&pnode->buffer_release_ref, NULL);
 	pixman_region32_fini(&pnode->damage);
 	pixman_region32_fini(&pnode->visible);
 	pixman_region32_fini(&pnode->visible_previous);
@@ -4616,6 +4617,7 @@ weston_output_finish_frame(struct weston_output *output,
 	WESTON_TRACE_FLOW_TEMP(completion_flow);
 	WESTON_TRACE_FUNC(("completion flow", &completion_flow));
 	struct weston_compositor *compositor = output->compositor;
+	struct weston_paint_node *pnode;
 	int32_t refresh_nsec;
 	struct timespec now;
 	struct timespec vblank_monotonic;
@@ -4623,6 +4625,10 @@ weston_output_finish_frame(struct weston_output *output,
 	int64_t msec_rel;
 
 	assert(output->repaint_status == REPAINT_AWAITING_COMPLETION);
+
+	/* Fire off any buffer releases we couldn't handle with a fence */
+	wl_list_for_each(pnode, &output->paint_node_list, output_link)
+		weston_buffer_release_reference(&pnode->buffer_release_ref, NULL);
 
 	/*
 	 * If timestamp of latest vblank is given, it must always go forwards.
