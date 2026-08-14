@@ -106,7 +106,7 @@ fdo_log_section_end install_kernel
 # Build and install Wayland; keep this version in sync with our dependency
 # in meson.build.
 fdo_log_section_start_collapsed install_wayland "install_wayland"
-git clone --branch 1.24.0 --depth=1 https://gitlab.freedesktop.org/wayland/wayland
+git clone --branch 1.25.0 --depth=1 https://gitlab.freedesktop.org/wayland/wayland
 cd wayland
 git show -s HEAD
 meson setup build --wrap-mode=nofallback -Ddocumentation=false
