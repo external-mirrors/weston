@@ -480,9 +480,31 @@ surface_leave(void *data,
 		wl_output_get_user_data(output));
 }
 
+static void
+surface_preferred_buffer_scale(void *data,
+			       struct wl_surface *wl_surface,
+			       int32_t scale)
+{
+	struct surface *surface = data;
+
+	surface->preferred_buffer_scale = scale;
+}
+
+static void
+surface_preferred_buffer_transform(void *data,
+				   struct wl_surface *wl_surface,
+				   uint32_t transform)
+{
+	struct surface *surface = data;
+
+	surface->preferred_buffer_transform = transform;
+}
+
 static const struct wl_surface_listener surface_listener = {
 	surface_enter,
-	surface_leave
+	surface_leave,
+	surface_preferred_buffer_scale,
+	surface_preferred_buffer_transform,
 };
 
 bool
@@ -1219,6 +1241,8 @@ create_test_surface(struct client *client)
 	surface = xzalloc(sizeof *surface);
 
 	surface->client = client;
+	surface->preferred_buffer_transform = WL_OUTPUT_TRANSFORM_NORMAL;
+	surface->preferred_buffer_scale = 1;
 	surface->wl_surface =
 		wl_compositor_create_surface(client->wl_compositor);
 	test_assert_ptr_not_null(surface->wl_surface);

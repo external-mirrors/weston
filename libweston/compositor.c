@@ -1241,6 +1241,12 @@ weston_surface_create(struct weston_compositor *compositor,
 
 	wl_list_init(&surface->fifo_barrier_link);
 
+	/* wl_surface v6. Clients assume these default values, so they only
+	 * need to be sent if they change.
+	 */
+	surface->preferred_buffer_transform = WL_OUTPUT_TRANSFORM_NORMAL;
+	surface->preferred_buffer_scale = 1;
+
 	/* This must be set up before setting the label */
 	WESTON_TRACE_SURFACE_INIT(surface, client);
 
@@ -1759,6 +1765,29 @@ get_view_layer(struct weston_view *view)
 	return view->layer_link.layer;
 }
 
+static void
+weston_surface_update_preferences(struct weston_surface *surface)
+{
+	struct weston_output *output = surface->output;
+
+	weston_surface_update_preferred_color_profile(surface);
+
+	if (!output || !surface->resource)
+		return;
+
+	if (surface->preferred_buffer_transform != output->transform) {
+		surface->preferred_buffer_transform = output->transform;
+		wl_surface_send_preferred_buffer_transform(surface->resource,
+							   surface->preferred_buffer_transform);
+	}
+
+	if (surface->preferred_buffer_scale != output->current_scale) {
+		surface->preferred_buffer_scale = output->current_scale;
+		wl_surface_send_preferred_buffer_scale(surface->resource,
+						       surface->preferred_buffer_scale);
+	}
+}
+
 /** Recalculate which output(s) the surface has views displayed on
  *
  * \param es  The surface to remap to outputs
@@ -1845,10 +1874,10 @@ weston_surface_assign_output(struct weston_surface *es)
 	es->output = new_output;
 	weston_surface_update_output_mask(es, mask);
 
-	/* Surface primary output may have changed, and that may change the
-	 * surface preferred color profile. Part of the CM&HDR protocol
-	 * extension implementation. */
-	weston_surface_update_preferred_color_profile(es);
+	/* Surface primary output may have changed, so any protocol
+	 * that needs to update preferences should be triggered.
+	 */
+	weston_surface_update_preferences(es);
 }
 
 static void
@@ -10600,7 +10629,7 @@ weston_compositor_create(struct wl_display *display,
 
 	ec->wake_up_on_input = true;
 
-	if (!wl_global_create(ec->wl_display, &wl_compositor_interface, 5,
+	if (!wl_global_create(ec->wl_display, &wl_compositor_interface, 6,
 			      ec, compositor_bind))
 		goto fail;
 

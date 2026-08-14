@@ -2247,6 +2247,10 @@ struct weston_surface {
 	/** wp_alpha_modifier_v1 */
 	float alpha_modifier;
 	struct weston_alpha_modifier_surface *ams;
+
+	/** wl_surface v6 preferences */
+	int32_t preferred_buffer_scale;
+	uint32_t preferred_buffer_transform;
 };
 
 struct weston_subsurface {

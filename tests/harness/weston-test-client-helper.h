@@ -210,6 +210,9 @@ struct surface {
 	int width;
 	int height;
 	struct buffer *buffer;
+
+	uint32_t preferred_buffer_transform;
+	int32_t preferred_buffer_scale;
 };
 
 struct rectangle {
