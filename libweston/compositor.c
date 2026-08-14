@@ -3264,6 +3264,57 @@ weston_buffer_reference(struct weston_buffer_reference *ref,
 }
 
 static void
+weston_buffer_release_callback_list_now(struct wl_list *list)
+{
+	struct wl_resource *cb, *cnext;
+
+	wl_resource_for_each_safe(cb, cnext, list) {
+		wl_callback_send_done(cb, 0);
+		wl_resource_destroy(cb);
+	}
+}
+
+static int
+weston_buffer_release_fence_callback(int fd, uint32_t mask,
+				     void *data)
+{
+	struct weston_buffer_release_callback_data *cbdata = data;
+
+	weston_buffer_release_callback_list_now(&cbdata->callback_list);
+
+	wl_event_source_remove(cbdata->source);
+	fd_clear(&cbdata->fd);
+	free(cbdata);
+
+	return 0;
+}
+
+static void
+weston_buffer_release_callback_list_after_fence(struct weston_buffer_release *buffer_release)
+{
+	struct weston_compositor *compositor = buffer_release->compositor;
+	struct wl_event_loop *loop;
+	struct weston_buffer_release_callback_data *cbdata;
+
+	if (wl_list_empty(&buffer_release->get_release.callback_list))
+		return;
+
+	loop = wl_display_get_event_loop(compositor->wl_display);
+
+	cbdata = xzalloc(sizeof *cbdata);
+	cbdata->fd = -1;
+	wl_list_init(&cbdata->callback_list);
+	wl_list_insert_list(&cbdata->callback_list,
+			    &buffer_release->get_release.callback_list);
+	wl_list_init(&buffer_release->get_release.callback_list);
+	fd_move(&cbdata->fd, &buffer_release->fence_fd);
+
+	cbdata->source = wl_event_loop_add_fd(loop, cbdata->fd, WL_EVENT_READABLE,
+					      weston_buffer_release_fence_callback,
+					      cbdata);
+}
+
+static void
 weston_buffer_release_destroy(struct weston_buffer_release *buffer_release)
 {
 	int release_fence_fd = buffer_release->fence_fd;
@@ -3279,6 +3330,17 @@ weston_buffer_release_destroy(struct weston_buffer_release *buffer_release)
 				resource);
 		}
 		wl_resource_destroy(resource);
+	}
+
+	if (!wl_list_empty(&buffer_release->get_release.callback_list)) {
+		if (release_fence_fd >= 0) {
+			weston_buffer_release_callback_list_after_fence(buffer_release);
+			/* avoid fd_clear closing the same fd as
+			 * weston_buffer_release_callback_data::cbdata::fd */
+			release_fence_fd = -1;
+		} else {
+			weston_buffer_release_callback_list_now(&buffer_release->get_release.callback_list);
+		}
 	}
 
 	fd_clear(&release_fence_fd);
@@ -5362,6 +5424,7 @@ surface_commit(struct wl_client *client, struct wl_resource *resource)
 	struct weston_surface *surface = wl_resource_get_user_data(resource);
 	WESTON_TRACE_FUNC(("client flow", &client_flow),
 			  ("surface state flow", &surface->pending.flow));
+	struct weston_buffer_release *buffer_release;
 	struct weston_buffer *buffer;
 	int32_t tmp_w, tmp_h;
 
@@ -5447,14 +5510,24 @@ surface_commit(struct wl_client *client, struct wl_resource *resource)
 		}
 	}
 
-	if (surface->pending.buffer_release_ref.buffer_release &&
-	    surface->pending.buffer_release_ref.buffer_release->explicit_release &&
+	buffer_release = surface->pending.buffer_release_ref.buffer_release;
+	if (buffer_release && buffer_release->explicit_release &&
 	    !surface->pending.buffer_ref.buffer) {
 		assert(surface->synchronization_resource);
 
 		wl_resource_post_error(surface->synchronization_resource,
 			ZWP_LINUX_SURFACE_SYNCHRONIZATION_V1_ERROR_NO_BUFFER,
 			"wl_surface@%"PRIu32" no buffer for synchronization",
+			wl_resource_get_id(resource));
+		return;
+	}
+
+	if (buffer_release &&
+	    !wl_list_empty(&buffer_release->get_release.callback_list) &&
+	    !surface->pending.buffer_ref.buffer) {
+		wl_resource_post_error(resource,
+			WL_SURFACE_ERROR_NO_BUFFER,
+			"wl_surface@%"PRIu32" no buffer for get_release",
 			wl_resource_get_id(resource));
 		return;
 	}
@@ -5526,6 +5599,36 @@ surface_offset(struct wl_client *client,
 	surface->pending.buf_offset = weston_coord_surface(sx, sy, surface);
 }
 
+static void
+destroy_release_callback(struct wl_resource *resource)
+{
+	wl_list_remove(wl_resource_get_link(resource));
+}
+
+static void
+surface_get_release(struct wl_client *client,
+		    struct wl_resource *resource, uint32_t callback)
+{
+	struct wl_resource *cb;
+	struct weston_surface *surface = wl_resource_get_user_data(resource);
+	struct weston_buffer_release *buffer_release;
+
+	cb = wl_resource_create(client, &wl_callback_interface, 1, callback);
+	if (cb == NULL) {
+		wl_resource_post_no_memory(resource);
+		return;
+	}
+
+	buffer_release = weston_surface_state_ensure_buffer_release(surface->compositor,
+								    &surface->pending);
+
+	wl_resource_set_implementation(cb, NULL, NULL,
+				       destroy_release_callback);
+
+	wl_list_insert(buffer_release->get_release.callback_list.prev,
+		       wl_resource_get_link(cb));
+}
+
 static const struct wl_surface_interface surface_interface = {
 	surface_destroy,
 	surface_attach,
@@ -5538,6 +5641,7 @@ static const struct wl_surface_interface surface_interface = {
 	surface_set_buffer_scale,
 	surface_damage_buffer,
 	surface_offset,
+	surface_get_release,
 };
 
 static void
@@ -5638,9 +5742,17 @@ compositor_create_region(struct wl_client *client,
 				       region, destroy_region);
 }
 
+static void
+compositor_release(struct wl_client *client,
+		   struct wl_resource *resource)
+{
+	wl_resource_destroy(resource);
+}
+
 static const struct wl_compositor_interface compositor_interface = {
 	compositor_create_surface,
-	compositor_create_region
+	compositor_create_region,
+	compositor_release,
 };
 
 static void
@@ -10629,7 +10741,7 @@ weston_compositor_create(struct wl_display *display,
 
 	ec->wake_up_on_input = true;
 
-	if (!wl_global_create(ec->wl_display, &wl_compositor_interface, 6,
+	if (!wl_global_create(ec->wl_display, &wl_compositor_interface, 7,
 			      ec, compositor_bind))
 		goto fail;
 

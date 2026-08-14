@@ -1109,6 +1109,7 @@ weston_surface_state_ensure_buffer_release(struct weston_compositor *compositor,
 	buffer_release = xzalloc(sizeof *buffer_release);
 	buffer_release->compositor = compositor;
 	buffer_release->fence_fd = -1;
+	wl_list_init(&buffer_release->get_release.callback_list);
 
 	weston_buffer_release_reference(&state->buffer_release_ref, buffer_release);
 

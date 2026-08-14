@@ -1805,6 +1805,11 @@ struct weston_buffer_release {
 	/* zwp_linux_buffer_release_v1 */
 	struct weston_buffer_release_explicit_sync *explicit_release;
 
+	/* wl_surface.get_release */
+	struct {
+		struct wl_list callback_list;
+	} get_release;
+
 	/* The fence fd, if any, associated with this release. If the fence fd
 	 * is -1 then this is considered an immediate release. */
 	int fence_fd;

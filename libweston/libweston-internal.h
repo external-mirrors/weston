@@ -338,6 +338,13 @@ void
 weston_buffer_release_move(struct weston_buffer_release_reference *dest,
 			   struct weston_buffer_release_reference *src);
 
+/** Used for wl_surface::get_release */
+struct weston_buffer_release_callback_data {
+	struct wl_event_source *source;
+	struct wl_list callback_list;
+	int fd;
+};
+
 /** Used for zwp_linux_surface_synchronization_v1 */
 struct weston_buffer_release_explicit_sync {
 	struct wl_resource *resource;
