@@ -1983,6 +1983,9 @@ update_buffer_release_fences(struct weston_compositor *compositor,
 		if (!vs->used_in_output_repaint || !buffer_release)
 			continue;
 
+		if (!buffer_release->explicit_release)
+			continue;
+
 		fence_fd = vulkan_renderer_create_fence_fd(output);
 
 		if (fence_fd == -1) {

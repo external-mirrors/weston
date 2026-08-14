@@ -1096,3 +1096,21 @@ weston_commit_timing_update_output_targets(struct weston_compositor *compositor)
 		}
 	}
 }
+
+struct weston_buffer_release *
+weston_surface_state_ensure_buffer_release(struct weston_compositor *compositor,
+					   struct weston_surface_state *state)
+{
+	struct weston_buffer_release *buffer_release = state->buffer_release_ref.buffer_release;
+
+	if (buffer_release)
+		return buffer_release;
+
+	buffer_release = xzalloc(sizeof *buffer_release);
+	buffer_release->compositor = compositor;
+	buffer_release->fence_fd = -1;
+
+	weston_buffer_release_reference(&state->buffer_release_ref, buffer_release);
+
+	return buffer_release;
+}

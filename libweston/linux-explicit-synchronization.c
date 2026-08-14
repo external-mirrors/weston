@@ -33,16 +33,20 @@
 #include "linux-explicit-synchronization-unstable-v1-server-protocol.h"
 #include "linux-sync-file.h"
 #include "shared/fd-util.h"
+#include "shared/xalloc.h"
 #include "libweston-internal.h"
 
 static void
 destroy_linux_buffer_release(struct wl_resource *resource)
 {
-	struct weston_buffer_release *buffer_release =
+	struct weston_buffer_release_explicit_sync *br_explicit =
 		wl_resource_get_user_data(resource);
 
-	fd_clear(&buffer_release->fence_fd);
-	free(buffer_release);
+	if (br_explicit->release) {
+		br_explicit->release->explicit_release = NULL;
+		br_explicit->release = NULL;
+	}
+	free(br_explicit);
 }
 
 static void
@@ -110,6 +114,7 @@ linux_surface_synchronization_get_release(struct wl_client *client,
 {
 	struct weston_surface *surface =
 		wl_resource_get_user_data(resource);
+	struct weston_buffer_release_explicit_sync *explicit_release;
 	struct weston_buffer_release *buffer_release;
 
 	if (!surface) {
@@ -120,7 +125,10 @@ linux_surface_synchronization_get_release(struct wl_client *client,
 		return;
 	}
 
-	if (surface->pending.buffer_release_ref.buffer_release) {
+	buffer_release = weston_surface_state_ensure_buffer_release(surface->compositor,
+								    &surface->pending);
+
+	if (buffer_release->explicit_release) {
 		wl_resource_post_error(
 			resource,
 			ZWP_LINUX_SURFACE_SYNCHRONIZATION_V1_ERROR_DUPLICATE_RELEASE,
@@ -128,33 +136,23 @@ linux_surface_synchronization_get_release(struct wl_client *client,
 		return;
 	}
 
-	buffer_release = zalloc(sizeof *buffer_release);
-	if (buffer_release == NULL)
-		goto err_alloc;
-
-	buffer_release->fence_fd = -1;
-	buffer_release->resource =
+	resource =
 		wl_resource_create(client,
 				   &zwp_linux_buffer_release_v1_interface,
 				   wl_resource_get_version(resource), id);
-	if (!buffer_release->resource)
-		goto err_create;
+	if (!resource)
+		return;
 
-	wl_resource_set_implementation(buffer_release->resource, NULL,
-				       buffer_release,
+	explicit_release = xzalloc(sizeof *explicit_release);
+	explicit_release->resource = resource;
+	explicit_release->release = buffer_release;
+	buffer_release->explicit_release = explicit_release;
+
+	wl_resource_set_implementation(resource, NULL,
+				       explicit_release,
 				       destroy_linux_buffer_release);
 
-	weston_buffer_release_reference(&surface->pending.buffer_release_ref,
-					buffer_release);
-
 	return;
-
-err_create:
-	free(buffer_release);
-
-err_alloc:
-	wl_client_post_no_memory(client);
-
 }
 
 const struct zwp_linux_surface_synchronization_v1_interface

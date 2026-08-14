@@ -1797,11 +1797,14 @@ struct weston_buffer_viewport {
 };
 
 struct weston_buffer_release {
-	/* The associated zwp_linux_buffer_release_v1 resource. */
-	struct wl_resource *resource;
+	struct weston_compositor *compositor;
 	/* How many weston_buffer_release_reference objects point to this
 	 * object. */
 	uint32_t ref_count;
+
+	/* zwp_linux_buffer_release_v1 */
+	struct weston_buffer_release_explicit_sync *explicit_release;
+
 	/* The fence fd, if any, associated with this release. If the fence fd
 	 * is -1 then this is considered an immediate release. */
 	int fence_fd;
@@ -1809,9 +1812,6 @@ struct weston_buffer_release {
 
 struct weston_buffer_release_reference {
 	struct weston_buffer_release *buffer_release;
-	/* Listener for the destruction of the wl_resource associated with the
-	 * referenced buffer_release object. */
-	struct wl_listener destroy_listener;
 };
 
 struct weston_region {
@@ -2005,7 +2005,6 @@ struct weston_surface_state {
 	/* zwp_surface_synchronization_v1.set_acquire_fence */
 	int acquire_fence_fd;
 
-	/* zwp_surface_synchronization_v1.get_release */
 	struct weston_buffer_release_reference buffer_release_ref;
 
 	/* weston_protected_surface.set_type */

@@ -338,6 +338,12 @@ void
 weston_buffer_release_move(struct weston_buffer_release_reference *dest,
 			   struct weston_buffer_release_reference *src);
 
+/** Used for zwp_linux_surface_synchronization_v1 */
+struct weston_buffer_release_explicit_sync {
+	struct wl_resource *resource;
+	struct weston_buffer_release *release;
+};
+
 void
 weston_buffer_release_reference(struct weston_buffer_release_reference *ref,
 				struct weston_buffer_release *buf_release);
@@ -977,5 +983,9 @@ weston_backend_clear_deferred(struct weston_backend *backend,
 struct weston_coord_surface __attribute__ ((warn_unused_result))
 weston_coord_global_to_surface_for_paint_node(const struct weston_paint_node *pnode,
 					      struct weston_coord_global coord);
+
+struct weston_buffer_release *
+weston_surface_state_ensure_buffer_release(struct weston_compositor *compositor,
+					   struct weston_surface_state *state);
 
 #endif

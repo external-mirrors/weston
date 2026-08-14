@@ -3235,32 +3235,25 @@ weston_buffer_reference(struct weston_buffer_reference *ref,
 }
 
 static void
-weston_buffer_release_reference_handle_destroy(struct wl_listener *listener,
-					       void *data)
-{
-	struct weston_buffer_release_reference *ref =
-		container_of(listener, struct weston_buffer_release_reference,
-			     destroy_listener);
-
-	assert((struct wl_resource *)data == ref->buffer_release->resource);
-	ref->buffer_release = NULL;
-}
-
-static void
 weston_buffer_release_destroy(struct weston_buffer_release *buffer_release)
 {
-	struct wl_resource *resource = buffer_release->resource;
 	int release_fence_fd = buffer_release->fence_fd;
 
-	if (release_fence_fd >= 0) {
-		zwp_linux_buffer_release_v1_send_fenced_release(
-			resource, release_fence_fd);
-	} else {
-		zwp_linux_buffer_release_v1_send_immediate_release(
-			resource);
+	if (buffer_release->explicit_release) {
+		struct wl_resource *resource = buffer_release->explicit_release->resource;
+
+		if (release_fence_fd >= 0) {
+			zwp_linux_buffer_release_v1_send_fenced_release(
+				resource, release_fence_fd);
+		} else {
+			zwp_linux_buffer_release_v1_send_immediate_release(
+				resource);
+		}
+		wl_resource_destroy(resource);
 	}
 
-	wl_resource_destroy(resource);
+	fd_clear(&release_fence_fd);
+	free(buffer_release);
 }
 
 WL_EXPORT void
@@ -3272,20 +3265,15 @@ weston_buffer_release_reference(struct weston_buffer_release_reference *ref,
 
 	if (ref->buffer_release) {
 		ref->buffer_release->ref_count--;
-		wl_list_remove(&ref->destroy_listener.link);
+
 		if (ref->buffer_release->ref_count == 0)
 			weston_buffer_release_destroy(ref->buffer_release);
 	}
 
-	if (buffer_release) {
+	if (buffer_release)
 		buffer_release->ref_count++;
-		wl_resource_add_destroy_listener(buffer_release->resource,
-						 &ref->destroy_listener);
-	}
 
 	ref->buffer_release = buffer_release;
-	ref->destroy_listener.notify =
-		weston_buffer_release_reference_handle_destroy;
 }
 
 WL_EXPORT void
@@ -5431,6 +5419,7 @@ surface_commit(struct wl_client *client, struct wl_resource *resource)
 	}
 
 	if (surface->pending.buffer_release_ref.buffer_release &&
+	    surface->pending.buffer_release_ref.buffer_release->explicit_release &&
 	    !surface->pending.buffer_ref.buffer) {
 		assert(surface->synchronization_resource);
 

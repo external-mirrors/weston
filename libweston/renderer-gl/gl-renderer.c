@@ -2795,6 +2795,9 @@ update_buffer_release_fences(struct weston_compositor *compositor,
 		if (!gs->used_in_output_repaint || !buffer_release)
 			continue;
 
+		if (!buffer_release->explicit_release)
+			continue;
+
 		fence_fd = gl_renderer_create_fence_fd(output);
 		if (fence_fd == -1) {
 			/* We don't have a fence so obviously can't do a fenced
