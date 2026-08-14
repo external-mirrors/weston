@@ -136,6 +136,7 @@ tests = [
 	{	'name': 'subsurface-shot', },
 	{	'name': 'surface', },
 	{	'name': 'surface-global', },
+	{	'name': 'surface-release', },
 	{	'name': 'timespec', },
 	{
 		'name': 'touch',
