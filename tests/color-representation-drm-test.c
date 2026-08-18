@@ -41,6 +41,11 @@ static const struct setup_args my_setup_args[] = {
 		.renderer = WESTON_RENDERER_GL,
 		.buffer_type = CLIENT_BUFFER_TYPE_DMABUF,
 	},
+	{
+		.meta.name = "Vulkan - dmabuf renderer",
+		.renderer = WESTON_RENDERER_VULKAN,
+		.buffer_type = CLIENT_BUFFER_TYPE_DMABUF,
+	},
 };
 
 static enum test_result_code
