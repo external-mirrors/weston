@@ -382,6 +382,9 @@ paint_node_update_early(struct weston_paint_node *pnode)
 	bool was_solid = pnode->draw_solid;
 	struct weston_buffer *buffer;
 
+	weston_assert_enum_eq(compositor, pnode->shadow_status, WESTON_PAINT_NODE_CLEAN);
+	pnode->shadow_status = pnode->status;
+
 	if (view_dirty || output_dirty) {
 		weston_view_buffer_to_output_matrix(pnode->view,
 						    pnode->output, mat);
@@ -4170,6 +4173,9 @@ weston_output_repaint(struct weston_output *output)
 	wl_list_init(&frame_callback_list);
 	wl_list_for_each(pnode, &output->paint_node_z_order_list,
 			 z_order_link) {
+		/* clear shadow status */
+		pnode->shadow_status = WESTON_PAINT_NODE_CLEAN;
+
 		/* Note: This operation is safe to do multiple times on the
 		 * same surface.
 		 */

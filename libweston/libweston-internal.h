@@ -757,8 +757,9 @@ struct weston_paint_node {
 	char *internal_name;
 
 	/* Mutable members: */
-
 	enum weston_paint_node_status status;
+	/* keep status even after update early and late */
+	enum weston_paint_node_status shadow_status;
 	struct weston_matrix buffer_to_output_matrix;
 	struct weston_matrix output_to_buffer_matrix;
 	bool needs_filtering;
