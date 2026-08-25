@@ -208,8 +208,6 @@ struct vulkan_output_state {
 struct vulkan_buffer_state {
 	struct vulkan_renderer *vr;
 
-	float color[4];
-
 	bool needs_full_upload;
 	pixman_region32_t texture_damage;
 
@@ -1561,8 +1559,10 @@ vulkan_pipeline_config_init_for_paint_node(struct vulkan_pipeline_config *pconf,
 	pconf->req.input_is_premult =
 		vulkan_pipeline_texture_variant_can_be_premult(vb->pipeline_variant);
 
-	for (int i = 0; i < 4; i++)
-		pconf->unicolor[i] = vb->color[i];
+	pconf->unicolor[0] = pnode->solid.r;
+	pconf->unicolor[1] = pnode->solid.g;
+	pconf->unicolor[2] = pnode->solid.b;
+	pconf->unicolor[3] = pnode->solid.a;
 
 	return true;
 }
@@ -3515,12 +3515,6 @@ attach_direct_display_placeholder(struct weston_paint_node *pnode)
 
 	vb = ensure_renderer_vulkan_buffer_state(surface, buffer);
 
-	/* uses the same color as the content-protection placeholder */
-	vb->color[0] = pnode->solid.r;
-	vb->color[1] = pnode->solid.g;
-	vb->color[2] = pnode->solid.b;
-	vb->color[3] = pnode->solid.a;
-
 	vb->pipeline_variant = PIPELINE_VARIANT_SOLID;
 }
 
@@ -3549,11 +3543,6 @@ vulkan_renderer_attach_solid(struct weston_surface *surface,
 	struct vulkan_buffer_state *vb;
 
 	vb = ensure_renderer_vulkan_buffer_state(surface, buffer);
-
-	vb->color[0] = buffer->solid.r;
-	vb->color[1] = buffer->solid.g;
-	vb->color[2] = buffer->solid.b;
-	vb->color[3] = buffer->solid.a;
 
 	vb->pipeline_variant = PIPELINE_VARIANT_SOLID;
 }
