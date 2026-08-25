@@ -148,7 +148,6 @@ struct vulkan_pipeline {
 struct vulkan_renderer_texture_image {
 	VkImage image;
 	VkDeviceMemory memory;
-	VkImageView image_view;
 
 	VkBuffer staging_buffer;
 	VkDeviceMemory staging_memory;
@@ -212,6 +211,7 @@ struct vulkan_renderer {
 	 * for solids */
 	struct {
 		struct vulkan_renderer_texture_image image;
+		VkImageView image_view;
 		VkSampler sampler;
 	} dummy;
 };

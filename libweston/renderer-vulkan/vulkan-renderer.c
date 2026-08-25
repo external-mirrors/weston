@@ -90,6 +90,7 @@ struct vulkan_border_image {
 	void *data;
 
 	struct vulkan_renderer_texture_image texture;
+	VkImageView image_view;
 	VkSampler sampler;
 };
 
@@ -204,15 +205,17 @@ struct vulkan_buffer_state {
 	struct wl_listener destroy_listener;
 
 	struct vulkan_renderer_texture_image texture;
-	VkSampler sampler_linear;
-	VkSampler sampler_nearest;
-	VkSamplerYcbcrConversion ycbcr_conv;
 };
 
 struct vulkan_surface_state {
 	struct weston_surface *surface;
 
 	struct vulkan_buffer_state *buffer;
+
+	VkImageView image_view;
+	VkSampler sampler_linear;
+	VkSampler sampler_nearest;
+	VkSamplerYcbcrConversion ycbcr_conv;
 
 	/* These buffer references should really be attached to paint nodes
 	 * rather than either buffer or surface state */
@@ -423,10 +426,8 @@ destroy_sampler(VkDevice device, VkSampler sampler)
 }
 
 static void
-destroy_image(VkDevice device, VkImage image, VkImageView image_view, VkDeviceMemory memory)
+destroy_image(VkDevice device, VkImage image, VkDeviceMemory memory)
 {
-	if (image_view)
-		vkDestroyImageView(device, image_view, NULL);
 	vkDestroyImage(device, image, NULL);
 	vkFreeMemory(device, memory, NULL);
 }
@@ -439,7 +440,7 @@ destroy_texture_image(struct vulkan_renderer *vr, struct vulkan_renderer_texture
 
 	vulkan_destroy_buffer(vr->dev, texture->staging_buffer, texture->staging_memory);
 
-	destroy_image(vr->dev, texture->image, texture->image_view, texture->memory);
+	destroy_image(vr->dev, texture->image, texture->memory);
 }
 
 static void
@@ -453,10 +454,6 @@ destroy_buffer_state(struct vulkan_buffer_state *vb)
 	result = vkQueueWaitIdle(vr->queue);
 	check_vk_success(result, "vkQueueWaitIdle");
 
-	destroy_sampler(vr->dev, vb->sampler_linear);
-	destroy_sampler(vr->dev, vb->sampler_nearest);
-	if (vb->ycbcr_conv)
-		vr->destroy_sampler_ycbcr_conversion(vr->dev, vb->ycbcr_conv, NULL);
 	destroy_texture_image(vr, &vb->texture);
 
 	pixman_region32_fini(&vb->texture_damage);
@@ -469,10 +466,22 @@ destroy_buffer_state(struct vulkan_buffer_state *vb)
 static void
 surface_state_destroy(struct vulkan_surface_state *vs, struct vulkan_renderer *vr)
 {
+	// TODO: intermediate state, remove this when there is a deferred destroy
+	VkResult result;
+	result = vkQueueWaitIdle(vr->queue);
+	check_vk_success(result, "vkQueueWaitIdle");
+
 	wl_list_remove(&vs->surface_destroy_listener.link);
 	wl_list_remove(&vs->renderer_destroy_listener.link);
 
 	vs->surface->renderer_state = NULL;
+
+	if (vs->image_view)
+		vkDestroyImageView(vr->dev, vs->image_view, NULL);
+	destroy_sampler(vr->dev, vs->sampler_linear);
+	destroy_sampler(vr->dev, vs->sampler_nearest);
+	if (vs->ycbcr_conv)
+		vr->destroy_sampler_ycbcr_conversion(vr->dev, vs->ycbcr_conv, NULL);
 
 	if (vs->buffer && vs->buffer_ref.buffer->type == WESTON_BUFFER_SHM)
 		destroy_buffer_state(vs->buffer);
@@ -1445,10 +1454,10 @@ vulkan_pipeline_config_init_for_paint_node(struct vulkan_pipeline_config *pconf,
 		.paint_node_alpha = pnode->alpha,
 	};
 
-	if (vb->ycbcr_conv) {
+	if (vs->ycbcr_conv) {
 		pconf->req.has_immutable_sampler = true;
 		pconf->req.ycbcr_format = buffer->pixel_format->vulkan_format;
-		pconf->req.immutable_sampler = pnode->needs_filtering ? vb->sampler_linear : vb->sampler_nearest;
+		pconf->req.immutable_sampler = pnode->needs_filtering ? vs->sampler_linear : vs->sampler_nearest;
 	}
 
 	weston_matrix_multiply(&pconf->projection, &vo->output_matrix);
@@ -1691,11 +1700,11 @@ draw_paint_node(struct weston_paint_node *pnode,
 
 	VkSampler sampler;
 	VkImageView image_view;
-	if (vb->texture.image_view) {
-		image_view = vb->texture.image_view;
-		sampler = pnode->needs_filtering ? vb->sampler_linear : vb->sampler_nearest;
+	if (vs->image_view) {
+		image_view = vs->image_view;
+		sampler = pnode->needs_filtering ? vs->sampler_linear : vs->sampler_nearest;
 	} else {
-		image_view = vr->dummy.image.image_view;
+		image_view = vr->dummy.image_view;
 		sampler = vr->dummy.sampler;
 	}
 
@@ -2019,7 +2028,7 @@ draw_output_border_texture(struct vulkan_renderer *vr,
 	create_descriptor_set(vr, fr, &pipeline->descriptor_set_layout,
 			      vs_ubo_buffer, vs_ubo_offset,
 			      fs_ubo_buffer, fs_ubo_offset,
-			      border->texture.image_view, border->sampler,
+			      border->image_view, border->sampler,
 			      &descriptor_set);
 
 	vkCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->pipeline);
@@ -3331,6 +3340,22 @@ vulkan_renderer_attach_shm(struct weston_surface *surface, struct weston_buffer 
 		destroy_buffer_state(vs->buffer);
 	vs->buffer = NULL;
 
+	// TODO: intermediate state, remove this when there is a deferred destroy
+	VkResult result;
+	result = vkQueueWaitIdle(vr->queue);
+	check_vk_success(result, "vkQueueWaitIdle");
+
+	if (vs->image_view)
+		vkDestroyImageView(vr->dev, vs->image_view, NULL);
+	destroy_sampler(vr->dev, vs->sampler_linear);
+	destroy_sampler(vr->dev, vs->sampler_nearest);
+	if (vs->ycbcr_conv)
+		vr->destroy_sampler_ycbcr_conversion(vr->dev, vs->ycbcr_conv, NULL);
+	vs->image_view = VK_NULL_HANDLE;
+	vs->sampler_linear = VK_NULL_HANDLE;
+	vs->sampler_nearest = VK_NULL_HANDLE;
+	vs->ycbcr_conv = VK_NULL_HANDLE;
+
 	vb = xzalloc(sizeof(*vb));
 	vb->vr = vr;
 
@@ -3361,7 +3386,7 @@ vulkan_renderer_attach_shm(struct weston_surface *surface, struct weston_buffer 
 		color_rep = weston_fill_color_representation(&surface->color_representation,
 							     buffer->pixel_format);
 		create_texture_ycbcr_conv(vr, buffer->pixel_format, &color_rep,
-					  &vb->ycbcr_conv,
+					  &vs->ycbcr_conv,
 					  format_props);
 	}
 
@@ -3376,10 +3401,10 @@ vulkan_renderer_attach_shm(struct weston_surface *surface, struct weston_buffer 
 	if (is_ycbcr && !separate_filter)
 		weston_log("warning: format %s does not support separate reconstruction filter\n", buffer->pixel_format->drm_format_name);
 
-	create_texture_sampler_ycbcr(vr, &vb->sampler_nearest, vb->ycbcr_conv, VK_FILTER_NEAREST);
-	create_texture_sampler_ycbcr(vr, &vb->sampler_linear, vb->ycbcr_conv, VK_FILTER_LINEAR);
+	create_texture_sampler_ycbcr(vr, &vs->sampler_nearest, vs->ycbcr_conv, VK_FILTER_NEAREST);
+	create_texture_sampler_ycbcr(vr, &vs->sampler_linear, vs->ycbcr_conv, VK_FILTER_LINEAR);
 	create_image_view_ycbcr(vr->dev, vb->texture.image, buffer->pixel_format->vulkan_format,
-				vb->ycbcr_conv, &vb->texture.image_view);
+				vs->ycbcr_conv, &vs->image_view);
 }
 
 static void
@@ -3388,7 +3413,7 @@ create_texture_image_dummy(struct vulkan_renderer *vr)
 	const struct pixel_format_info *dummy_pixel_format = pixel_format_get_info(DRM_FORMAT_ARGB8888);
 	const uint32_t dummy_pixels[1] = { 0 };
 	create_texture_image(vr, &vr->dummy.image, dummy_pixel_format, 1, 1, 1);
-	create_image_view(vr->dev, vr->dummy.image.image, dummy_pixel_format->vulkan_format, &vr->dummy.image.image_view);
+	create_image_view(vr->dev, vr->dummy.image.image, dummy_pixel_format->vulkan_format, &vr->dummy.image_view);
 	create_texture_sampler(vr, &vr->dummy.sampler, VK_FILTER_NEAREST);
 	update_texture_image_all(vr, &vr->dummy.image, VK_IMAGE_LAYOUT_UNDEFINED,
 				 dummy_pixel_format, 1, 1, 1, dummy_pixels);
@@ -3435,6 +3460,7 @@ static void
 vulkan_renderer_attach_buffer(struct weston_surface *surface,
 			      struct weston_buffer *buffer)
 {
+	struct vulkan_renderer *vr = get_renderer(surface->compositor);
 	struct vulkan_surface_state *vs = get_surface_state(surface);
 	struct vulkan_buffer_state *vb;
 
@@ -3447,6 +3473,51 @@ vulkan_renderer_attach_buffer(struct weston_surface *surface,
 		vb->pipeline_variant = PIPELINE_VARIANT_RGBA;
 
 	vs->buffer = vb;
+
+	// TODO: intermediate state, remove this when there is a deferred destroy
+	VkResult result;
+	result = vkQueueWaitIdle(vr->queue);
+	check_vk_success(result, "vkQueueWaitIdle");
+
+	if (vs->image_view)
+		vkDestroyImageView(vr->dev, vs->image_view, NULL);
+	destroy_sampler(vr->dev, vs->sampler_linear);
+	destroy_sampler(vr->dev, vs->sampler_nearest);
+	if (vs->ycbcr_conv)
+		vr->destroy_sampler_ycbcr_conversion(vr->dev, vs->ycbcr_conv, NULL);
+	vs->image_view = VK_NULL_HANDLE;
+	vs->sampler_linear = VK_NULL_HANDLE;
+	vs->sampler_nearest = VK_NULL_HANDLE;
+	vs->ycbcr_conv = VK_NULL_HANDLE;
+
+	const struct pixel_format_info *pixel_format = buffer->pixel_format;
+	bool separate_filter = true;
+
+	if (pixel_format->color_model == COLOR_MODEL_YUV &&
+	    vulkan_device_has(vr, EXTENSION_KHR_SAMPLER_YCBCR_CONVERSION)) {
+		struct weston_color_representation color_rep;
+		weston_reset_color_representation(&color_rep);
+		color_rep = weston_fill_color_representation(&color_rep,
+							     pixel_format);
+
+		VkFormatProperties format_props;
+		vkGetPhysicalDeviceFormatProperties(vr->phys_dev, pixel_format->vulkan_format, &format_props);
+		VkFormatFeatureFlags features = format_props.optimalTilingFeatures;
+
+		separate_filter = !!(features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_SEPARATE_RECONSTRUCTION_FILTER_BIT);
+
+		create_texture_ycbcr_conv(vr, pixel_format, &color_rep,
+					  &vs->ycbcr_conv,
+					  format_props);
+	}
+
+	if (!separate_filter && vs->ycbcr_conv != VK_NULL_HANDLE)
+		weston_log("warning: format %s does not support separate reconstruction filter\n", pixel_format->drm_format_name);
+
+	create_texture_sampler_ycbcr(vr, &vs->sampler_nearest, vs->ycbcr_conv, VK_FILTER_NEAREST);
+	create_texture_sampler_ycbcr(vr, &vs->sampler_linear, vs->ycbcr_conv, VK_FILTER_LINEAR);
+	create_image_view_ycbcr(vr->dev, vb->texture.image, pixel_format->vulkan_format,
+				vs->ycbcr_conv, &vs->image_view);
 }
 
 static void
@@ -3567,6 +3638,7 @@ vulkan_renderer_output_destroy_border(struct weston_output *output,
 
 	struct vulkan_border_image *border = &vo->borders[side];
 
+	vkDestroyImageView(vr->dev, border->image_view, NULL);
 	destroy_sampler(vr->dev, border->sampler);
 	destroy_texture_image(vr, &border->texture);
 }
@@ -3610,7 +3682,7 @@ vulkan_renderer_output_set_border(struct weston_output *output,
 	uint32_t pitch = tex_width;
 
 	create_texture_image(vr, &border->texture, pixel_format, tex_width, height, pitch);
-	create_image_view(vr->dev, border->texture.image, pixel_format->vulkan_format, &border->texture.image_view);
+	create_image_view(vr->dev, border->texture.image, pixel_format->vulkan_format, &border->image_view);
 	create_texture_sampler(vr, &border->sampler, VK_FILTER_NEAREST);
 	update_texture_image_all(vr, &border->texture, VK_IMAGE_LAYOUT_UNDEFINED,
 				 pixel_format, tex_width, height, pitch, data);
@@ -4105,6 +4177,7 @@ vulkan_renderer_destroy(struct weston_compositor *ec)
 
 	vulkan_renderer_pipeline_list_destroy(vr);
 
+	vkDestroyImageView(vr->dev, vr->dummy.image_view, NULL);
 	destroy_sampler(vr->dev, vr->dummy.sampler);
 	destroy_texture_image(vr, &vr->dummy.image);
 
@@ -4354,42 +4427,11 @@ vulkan_renderer_import_dmabuf(struct weston_compositor *ec,
 	pixman_region32_init(&vb->texture_damage);
 	wl_list_init(&vb->destroy_listener.link);
 
-	VkFormat format = pixel_format->vulkan_format;
-
 	create_dmabuf_image(vr, &dmabuf->attributes,
 			    VK_IMAGE_USAGE_SAMPLED_BIT,
 			    &vb->texture.image);
 
 	import_dmabuf(vr, vb->texture.image, &vb->texture.memory, &dmabuf->attributes);
-
-	bool separate_filter = true;
-
-	vb->ycbcr_conv = VK_NULL_HANDLE;
-	if (pixel_format->color_model == COLOR_MODEL_YUV &&
-	    vulkan_device_has(vr, EXTENSION_KHR_SAMPLER_YCBCR_CONVERSION)) {
-		struct weston_color_representation color_rep;
-		weston_reset_color_representation(&color_rep);
-		color_rep = weston_fill_color_representation(&color_rep,
-							     pixel_format);
-
-		VkFormatProperties format_props;
-		vkGetPhysicalDeviceFormatProperties(vr->phys_dev, pixel_format->vulkan_format, &format_props);
-		VkFormatFeatureFlags features = format_props.optimalTilingFeatures;
-
-		separate_filter = !!(features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_SEPARATE_RECONSTRUCTION_FILTER_BIT);
-
-		create_texture_ycbcr_conv(vr, pixel_format, &color_rep,
-					  &vb->ycbcr_conv,
-					  format_props);
-	}
-
-	if (!separate_filter && vb->ycbcr_conv != VK_NULL_HANDLE)
-		weston_log("warning: format %s does not support separate reconstruction filter\n", pixel_format->drm_format_name);
-
-	create_texture_sampler_ycbcr(vr, &vb->sampler_nearest, vb->ycbcr_conv, VK_FILTER_NEAREST);
-	create_texture_sampler_ycbcr(vr, &vb->sampler_linear, vb->ycbcr_conv, VK_FILTER_LINEAR);
-	create_image_view_ycbcr(vr->dev, vb->texture.image, format, vb->ycbcr_conv,
-				&vb->texture.image_view);
 
 	assert(vb->num_planes == 0);
 	vb->num_planes = 1;
