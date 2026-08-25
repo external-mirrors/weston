@@ -92,8 +92,6 @@ struct vulkan_border_image {
 	struct vulkan_renderer_texture_image texture;
 	VkSampler sampler;
 
-	VkDescriptorSet descriptor_set;
-
 	VkBuffer vs_ubo_buffer;
 	VkDeviceMemory vs_ubo_memory;
 	void *vs_ubo_map;
@@ -231,8 +229,6 @@ struct vulkan_buffer_state {
 	VkSampler sampler_linear;
 	VkSampler sampler_nearest;
 	VkSamplerYcbcrConversion ycbcr_conv;
-
-	VkDescriptorSet descriptor_set;
 
 	VkBuffer vs_ubo_buffer;
 	VkDeviceMemory vs_ubo_memory;
@@ -1630,7 +1626,8 @@ repaint_region(struct vulkan_renderer *vr,
 	       pixman_region32_t *region,
 	       pixman_region32_t *surf_region,
 	       const struct vulkan_pipeline_config *pconf,
-	       struct vulkan_renderer_frame *fr)
+	       struct vulkan_renderer_frame *fr,
+	       VkDescriptorSet *descriptor_set)
 {
 	struct vulkan_surface_state *vs = get_surface_state(pnode->surface);
 	struct vulkan_buffer_state *vb = vs->buffer;
@@ -1673,7 +1670,7 @@ repaint_region(struct vulkan_renderer *vr,
 	       &pconf->paint_node_alpha, sizeof(pconf->paint_node_alpha));
 
 	vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-				pipeline->pipeline_layout, 0, 1, &vb->descriptor_set, 0, NULL);
+				pipeline->pipeline_layout, 0, 1, descriptor_set, 0, NULL);
 
 	for (uint32_t i = 0, first = 0; i < nfans; i++) {
 		const uint32_t *vtxcntp = vtxcnt.data;
@@ -1803,10 +1800,12 @@ draw_paint_node(struct weston_paint_node *pnode,
 		image_view = vr->dummy.image.image_view;
 		sampler = vr->dummy.sampler;
 	}
+
+	VkDescriptorSet descriptor_set;
 	create_descriptor_set(vr, fr, &pipeline->descriptor_set_layout,
 			      vb->vs_ubo_buffer, vb->fs_ubo_buffer,
 			      image_view, sampler,
-			      &vb->descriptor_set);
+			      &descriptor_set);
 
 	if (pnode->is_fully_opaque) {
 		pixman_region32_init_rect(&surface_opaque, 0, 0,
@@ -1839,13 +1838,13 @@ draw_paint_node(struct weston_paint_node *pnode,
 
 		alt.req.blend = (pnode->alpha < 1.0);
 
-		repaint_region(vr, pnode, &repaint, &surface_opaque, &alt, fr);
+		repaint_region(vr, pnode, &repaint, &surface_opaque, &alt, fr, &descriptor_set);
 		vs->used_in_output_repaint = true;
 	}
 
 	pconf.req.blend = true;
 	if (pixman_region32_not_empty(&surface_blend)) {
-		repaint_region(vr, pnode, &repaint, &surface_blend, &pconf, fr);
+		repaint_region(vr, pnode, &repaint, &surface_blend, &pconf, fr, &descriptor_set);
 		vs->used_in_output_repaint = true;
 	}
 
@@ -2085,10 +2084,11 @@ draw_output_border_texture(struct vulkan_renderer *vr,
 	pipeline = vulkan_renderer_get_pipeline(vr, &pconf->req);
 	assert(pipeline);
 
+	VkDescriptorSet descriptor_set;
 	create_descriptor_set(vr, fr, &pipeline->descriptor_set_layout,
 			      border->vs_ubo_buffer, border->fs_ubo_buffer,
 			      border->texture.image_view, border->sampler,
-			      &border->descriptor_set);
+			      &descriptor_set);
 
 	vkCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->pipeline);
 	memcpy(vbuf->map + vbuf->offset, position, sizeof(position));
@@ -2105,7 +2105,7 @@ draw_output_border_texture(struct vulkan_renderer *vr,
 	       &pconf->paint_node_alpha, sizeof(pconf->paint_node_alpha));
 
 	vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-				pipeline->pipeline_layout, 0, 1, &border->descriptor_set, 0, NULL);
+				pipeline->pipeline_layout, 0, 1, &descriptor_set, 0, NULL);
 
 	vkCmdDraw(cmd_buffer, 4, 1, 0, 0);
 
