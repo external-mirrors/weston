@@ -212,14 +212,12 @@ struct vulkan_buffer_state {
 	pixman_region32_t texture_damage;
 
 	/* Only needed between attach() and flush_damage() */
-	uint32_t vulkan_format[3];
 	uint32_t pitch; /* plane 0 pitch in pixels */
 	uint32_t offset[3]; /* per-plane pitch in bytes */
 
 	enum vulkan_pipeline_texture_variant pipeline_variant;
 
-	unsigned int textures[3];
-	int num_textures;
+	int num_planes;
 
 	struct wl_listener destroy_listener;
 
@@ -3110,7 +3108,7 @@ vulkan_renderer_flush_damage(struct weston_paint_node *pnode)
 
 	data = wl_shm_buffer_get_data(buffer->shm_buffer);
 
-	if (vb->num_textures > 1)
+	if (vb->num_planes > 1)
 		vb->needs_full_upload = true;
 
 	if (vb->needs_full_upload || quirks->force_full_upload) {
@@ -3130,7 +3128,7 @@ vulkan_renderer_flush_damage(struct weston_paint_node *pnode)
 
 		r = weston_surface_to_buffer_rect(surface, rectangles[i]);
 
-		for (int j = 0; j < vb->num_textures; j++) {
+		for (int j = 0; j < vb->num_planes; j++) {
 			int hsub = pixel_format_hsub(buffer->pixel_format, j);
 			int vsub = pixel_format_vsub(buffer->pixel_format, j);
 			uint32_t xoff = r.x1 / hsub;
@@ -3366,7 +3364,6 @@ vulkan_renderer_attach_shm(struct weston_surface *surface, struct weston_buffer 
 	struct vulkan_surface_state *vs = get_surface_state(surface);
 	struct vulkan_buffer_state *vb;
 	struct weston_buffer *old_buffer = vs->buffer_ref.buffer;
-	unsigned int vulkan_format[3] = { 0, 0, 0 };
 	enum vulkan_pipeline_texture_variant pipeline_variant;
 	uint32_t pitch;
 	int offset[3] = { 0, 0, 0 };
@@ -3390,9 +3387,6 @@ vulkan_renderer_attach_shm(struct weston_surface *surface, struct weston_buffer 
 		pitch = buffer->stride / (bpp / 8);
 	}
 
-	vulkan_format[0] = buffer->pixel_format->vulkan_format;
-	vulkan_format[1] = buffer->pixel_format->vulkan_format;
-	vulkan_format[2] = buffer->pixel_format->vulkan_format;
 	/* If this surface previously had a SHM buffer, its vulkan_buffer_state will
 	 * be speculatively retained. Check to see if we can reuse it rather
 	 * than allocating a new one. */
@@ -3420,9 +3414,8 @@ vulkan_renderer_attach_shm(struct weston_surface *surface, struct weston_buffer 
 	vb->pitch = pitch;
 	vb->pipeline_variant = pipeline_variant;
 	ARRAY_COPY(vb->offset, offset);
-	ARRAY_COPY(vb->vulkan_format, vulkan_format);
 	vb->needs_full_upload = true;
-	vb->num_textures = num_planes;
+	vb->num_planes = num_planes;
 
 	vs->buffer = vb;
 	vs->surface = surface;
@@ -4481,8 +4474,8 @@ vulkan_renderer_import_dmabuf(struct weston_compositor *ec,
 	create_image_view_ycbcr(vr->dev, vb->texture.image, format, vb->ycbcr_conv,
 				&vb->texture.image_view);
 
-	assert(vb->num_textures == 0);
-	vb->num_textures = 1;
+	assert(vb->num_planes == 0);
+	vb->num_planes = 1;
 
 	create_vs_ubo_buffer(vr, &vb->vs_ubo_buffer, &vb->vs_ubo_memory, &vb->vs_ubo_map);
 	create_fs_ubo_buffer(vr, &vb->fs_ubo_buffer, &vb->fs_ubo_memory, &vb->fs_ubo_map);
