@@ -3496,8 +3496,7 @@ vulkan_renderer_attach_buffer(struct weston_surface *surface,
 	if (pixel_format->color_model == COLOR_MODEL_YUV &&
 	    vulkan_device_has(vr, EXTENSION_KHR_SAMPLER_YCBCR_CONVERSION)) {
 		struct weston_color_representation color_rep;
-		weston_reset_color_representation(&color_rep);
-		color_rep = weston_fill_color_representation(&color_rep,
+		color_rep = weston_fill_color_representation(&surface->color_representation,
 							     pixel_format);
 
 		VkFormatProperties format_props;
