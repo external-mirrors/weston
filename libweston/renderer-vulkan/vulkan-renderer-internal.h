@@ -216,6 +216,21 @@ struct vulkan_renderer {
 	} dummy;
 };
 
+struct vulkan_buffer_pool_entry {
+	VkBuffer buffer;
+	VkDeviceMemory memory;
+	void *map;
+	uint64_t offset;
+	uint64_t size;
+
+	struct wl_list link;
+};
+
+struct vulkan_buffer_pool {
+	struct wl_list entry_list;
+	VkBufferUsageFlags usage;
+};
+
 static inline struct vulkan_renderer *
 get_renderer(struct weston_compositor *ec)
 {
@@ -255,6 +270,27 @@ vulkan_device_has(struct vulkan_renderer *vr,
 {
 	return (vr->device_extensions & ((uint64_t) flag)) == ((uint64_t) flag);
 }
+
+void
+vulkan_create_buffer(struct vulkan_renderer *vr, VkDeviceSize size,
+		     VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
+		     VkBuffer *buffer, VkDeviceMemory *memory);
+
+void
+vulkan_destroy_buffer(VkDevice device, VkBuffer buffer, VkDeviceMemory memory);
+
+struct vulkan_buffer_pool_entry *
+vulkan_buffer_pool_alloc(struct vulkan_renderer *vr,
+			 struct vulkan_buffer_pool *pool,
+			 uint64_t size);
+
+void
+vulkan_buffer_pool_reset(struct vulkan_renderer *vr,
+			 struct vulkan_buffer_pool *pool);
+
+void
+vulkan_buffer_pool_destroy(struct vulkan_renderer *vr,
+			   struct vulkan_buffer_pool *pool);
 
 void
 vulkan_pipeline_destroy(struct vulkan_renderer *vr, struct vulkan_pipeline *pipeline);

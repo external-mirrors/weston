@@ -20,6 +20,7 @@ foreach s : srcs_shaders_renderer_vulkan
 endforeach
 
 srcs_renderer_vulkan = [
+	'vulkan-buffer-pool.c',
 	'vulkan-pipeline.c',
 	'vulkan-pixel-format.c',
 	'vulkan-renderer.c',

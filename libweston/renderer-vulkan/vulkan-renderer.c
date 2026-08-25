@@ -138,16 +138,6 @@ struct vulkan_renderer_frame_acquire_fence {
 	struct wl_list link;
 };
 
-struct vulkan_renderer_frame_vbuf {
-	VkBuffer buffer;
-	VkDeviceMemory memory;
-	void *map;
-	uint64_t offset;
-	uint64_t size;
-
-	struct wl_list link;
-};
-
 struct vulkan_renderer_frame_dspool {
 	VkDescriptorPool pool;
 	uint32_t count;
@@ -164,7 +154,7 @@ struct vulkan_renderer_frame {
 
 	struct wl_list acquire_fence_list;
 
-	struct wl_list vbuf_list;
+	struct vulkan_buffer_pool vertex_pool;
 	struct wl_list dspool_list;
 };
 
@@ -433,8 +423,8 @@ transition_image_layout(VkCommandBuffer cmd_buffer, VkImage image,
 	vkCmdPipelineBarrier(cmd_buffer, srcs, dsts, 0, 0, NULL, 0, NULL, 1, &barrier);
 }
 
-static void
-destroy_buffer(VkDevice device, VkBuffer buffer, VkDeviceMemory memory)
+void
+vulkan_destroy_buffer(VkDevice device, VkBuffer buffer, VkDeviceMemory memory)
 {
 	if (memory)
 		vkUnmapMemory(device, memory);
@@ -463,7 +453,7 @@ destroy_texture_image(struct vulkan_renderer *vr, struct vulkan_renderer_texture
 	vkDestroyFence(vr->dev, texture->upload_fence, NULL);
 	vkFreeCommandBuffers(vr->dev, vr->cmd_pool, 1, &texture->upload_cmd);
 
-	destroy_buffer(vr->dev, texture->staging_buffer, texture->staging_memory);
+	vulkan_destroy_buffer(vr->dev, texture->staging_buffer, texture->staging_memory);
 
 	destroy_image(vr->dev, texture->image, texture->image_view, texture->memory);
 }
@@ -485,8 +475,8 @@ destroy_buffer_state(struct vulkan_buffer_state *vb)
 		vr->destroy_sampler_ycbcr_conversion(vr->dev, vb->ycbcr_conv, NULL);
 	destroy_texture_image(vr, &vb->texture);
 
-	destroy_buffer(vr->dev, vb->fs_ubo_buffer, vb->fs_ubo_memory);
-	destroy_buffer(vr->dev, vb->vs_ubo_buffer, vb->vs_ubo_memory);
+	vulkan_destroy_buffer(vr->dev, vb->fs_ubo_buffer, vb->fs_ubo_memory);
+	vulkan_destroy_buffer(vr->dev, vb->vs_ubo_buffer, vb->vs_ubo_memory);
 
 	pixman_region32_fini(&vb->texture_damage);
 
@@ -691,19 +681,14 @@ vulkan_renderer_output_destroy(struct weston_output *output)
 			free(acquire_fence);
 		}
 
-		struct vulkan_renderer_frame_vbuf *vbuf, *vtmp;
-		wl_list_for_each_safe(vbuf, vtmp, &fr->vbuf_list, link) {
-			destroy_buffer(vr->dev, vbuf->buffer, vbuf->memory);
-			wl_list_remove(&vbuf->link);
-			free(vbuf);
-		}
-
 		struct vulkan_renderer_frame_dspool *dspool, *dtmp;
 		wl_list_for_each_safe(dspool, dtmp, &fr->dspool_list, link) {
 			vkDestroyDescriptorPool(vr->dev, dspool->pool, NULL);
 			wl_list_remove(&dspool->link),
 			free(dspool);
 		}
+
+		vulkan_buffer_pool_destroy(vr, &fr->vertex_pool);
 	}
 
 	if (vo->output_type == VULKAN_OUTPUT_SWAPCHAIN) {
@@ -977,10 +962,10 @@ find_memory_type(struct vulkan_renderer *vr, uint32_t allowed, VkMemoryPropertyF
 	return -1;
 }
 
-static void
-create_buffer(struct vulkan_renderer *vr, VkDeviceSize size,
-	      VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
-	      VkBuffer *buffer, VkDeviceMemory *memory)
+void
+vulkan_create_buffer(struct vulkan_renderer *vr, VkDeviceSize size,
+		     VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
+		     VkBuffer *buffer, VkDeviceMemory *memory)
 {
 	VkResult result;
 
@@ -1019,10 +1004,10 @@ create_vs_ubo_buffer(struct vulkan_renderer *vr, VkBuffer *vs_ubo_buffer,
 	VkResult result;
 	VkDeviceSize buffer_size = sizeof(struct vs_ubo);
 
-	create_buffer(vr, buffer_size,
-		      VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-		      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		      vs_ubo_buffer, vs_ubo_memory);
+	vulkan_create_buffer(vr, buffer_size,
+			     VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			     vs_ubo_buffer, vs_ubo_memory);
 
 	result = vkMapMemory(vr->dev, *vs_ubo_memory, 0, VK_WHOLE_SIZE, 0, vs_ubo_map);
 	check_vk_success(result, "vkMapMemory");
@@ -1035,10 +1020,10 @@ create_fs_ubo_buffer(struct vulkan_renderer *vr, VkBuffer *fs_ubo_buffer,
 	VkResult result;
 	VkDeviceSize buffer_size = sizeof(struct fs_ubo);
 
-	create_buffer(vr, buffer_size,
-		      VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-		      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		      fs_ubo_buffer, fs_ubo_memory);
+	vulkan_create_buffer(vr, buffer_size,
+			     VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			     fs_ubo_buffer, fs_ubo_memory);
 
 	result = vkMapMemory(vr->dev, *fs_ubo_memory, 0, VK_WHOLE_SIZE, 0, fs_ubo_map);
 	check_vk_success(result, "vkMapMemory");
@@ -1048,65 +1033,10 @@ create_fs_ubo_buffer(struct vulkan_renderer *vr, VkBuffer *fs_ubo_buffer,
  * Allocates new vertex buffers on demand or reuse current buffers if there
  * is still space available
  */
-static struct vulkan_renderer_frame_vbuf *
-get_vertex_buffer(struct vulkan_renderer *vr, struct vulkan_renderer_frame *fr, uint64_t size)
+static struct vulkan_buffer_pool_entry *
+get_vertex_buffer(struct vulkan_renderer *vr, struct vulkan_buffer_pool *pool, uint64_t size)
 {
-	const uint32_t base_size = 4096;
-	VkResult result;
-
-	if (!wl_list_empty(&fr->vbuf_list)) {
-		struct vulkan_renderer_frame_vbuf *first = wl_container_of(fr->vbuf_list.next, first, link);
-		if (first->size >= first->offset + size)
-			return first;
-	}
-
-	struct vulkan_renderer_frame_vbuf *new_vbuf = xzalloc(sizeof(*new_vbuf));
-
-	VkDeviceSize buffer_size = MAX(base_size, round_up_pow2_32(size));
-	new_vbuf->size = buffer_size;
-
-	create_buffer(vr, new_vbuf->size,
-		      VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-		      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		      &new_vbuf->buffer, &new_vbuf->memory);
-
-	result = vkMapMemory(vr->dev, new_vbuf->memory, 0, VK_WHOLE_SIZE, 0, &new_vbuf->map);
-	check_vk_success(result, "vkMapMemory");
-
-	wl_list_insert(&fr->vbuf_list, &new_vbuf->link);
-
-	return new_vbuf;
-}
-
-/*
- * Resets vertex buffer offset so it can be reused; or coalesces multiple
- * vertex buffers into a single larger new one if multiple were dynamically
- * allocated in the previous use of this frame
- */
-static void
-reset_vertex_buffers(struct vulkan_renderer *vr, struct vulkan_renderer_frame *fr)
-{
-	if (wl_list_empty(&fr->vbuf_list))
-		return;
-
-	if (wl_list_length(&fr->vbuf_list) == 1) {
-		struct vulkan_renderer_frame_vbuf *first = wl_container_of(fr->vbuf_list.next, first, link);
-		first->offset = 0;
-		return;
-	}
-
-	struct vulkan_renderer_frame_vbuf *vbuf, *tmp;
-	uint64_t total_size = 0;
-	wl_list_for_each_safe(vbuf, tmp, &fr->vbuf_list, link) {
-		total_size += vbuf->size;
-		wl_list_remove(&vbuf->link);
-		destroy_buffer(vr->dev, vbuf->buffer, vbuf->memory);
-		free(vbuf);
-	}
-
-	total_size = round_up_pow2_32(total_size);
-
-	get_vertex_buffer(vr, fr, total_size);
+	return vulkan_buffer_pool_alloc(vr, pool, size);
 }
 
 static int
@@ -1341,10 +1271,10 @@ vulkan_renderer_do_read_pixels(struct vulkan_renderer *vr,
 	VkDeviceSize buffer_size = src_stride * vo->fb_size.height;
 	VkResult result;
 
-	create_buffer(vr, buffer_size,
-		      VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-		      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		      &dst_buffer, &dst_memory);
+	vulkan_create_buffer(vr, buffer_size,
+			     VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+			     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			     &dst_buffer, &dst_memory);
 
 	// TODO: async implementation of this
 	VkCommandBuffer cmd_buffer;
@@ -1403,7 +1333,7 @@ vulkan_renderer_do_read_pixels(struct vulkan_renderer *vr,
 	pixman_image_unref(image_src);
 	pixman_image_unref(image_dst);
 
-	destroy_buffer(vr->dev, dst_buffer, dst_memory);
+	vulkan_destroy_buffer(vr->dev, dst_buffer, dst_memory);
 
 	return true;
 }
@@ -1648,7 +1578,7 @@ repaint_region(struct vulkan_renderer *vr,
 	 */
 	nfans = generate_fans(pnode, region, surf_region, &vertices, &vtxcnt);
 
-	struct vulkan_renderer_frame_vbuf *vbuf = get_vertex_buffer(vr, fr, vertices.size);
+	struct vulkan_buffer_pool_entry *vbuf = get_vertex_buffer(vr, &fr->vertex_pool, vertices.size);
 
 	pipeline = vulkan_renderer_get_pipeline(vr, &pconf->req);
 	assert(pipeline);
@@ -2077,7 +2007,7 @@ draw_output_border_texture(struct vulkan_renderer *vr,
 		x, y + height, 0.0f, 1.0f,
 	};
 
-	struct vulkan_renderer_frame_vbuf *vbuf = get_vertex_buffer(vr, fr, sizeof(position));
+	struct vulkan_buffer_pool_entry *vbuf = get_vertex_buffer(vr, &fr->vertex_pool, sizeof(position));
 
 	pipeline = vulkan_renderer_get_pipeline(vr, &pconf->req);
 	assert(pipeline);
@@ -2427,7 +2357,7 @@ vulkan_renderer_repaint_output(struct weston_output *output,
 		free(acquire_fence);
 	}
 
-	reset_vertex_buffers(vr, fr);
+	vulkan_buffer_pool_reset(vr, &fr->vertex_pool);
 
 	reset_descriptor_pool(vr, fr);
 
@@ -3055,10 +2985,10 @@ create_texture_image(struct vulkan_renderer *vr,
 	result = vkAllocateCommandBuffers(vr->dev, &cmd_alloc_info, &texture->upload_cmd);
 	check_vk_success(result, "vkAllocateCommandBuffers");
 
-	create_buffer(vr, image_size,
-		      VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		      &texture->staging_buffer, &texture->staging_memory);
+	vulkan_create_buffer(vr, image_size,
+			     VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			     &texture->staging_buffer, &texture->staging_memory);
 
 	result = vkMapMemory(vr->dev, texture->staging_memory, 0, image_size, 0, &texture->staging_map);
 	check_vk_success(result, "vkMapMemory");
@@ -3315,10 +3245,10 @@ create_image_multiplanar(struct vulkan_renderer *vr,
 	check_vk_success(result, "vkBindImageMemory2");
 
 	VkDeviceSize image_size = total_size;
-	create_buffer(vr, image_size,
-		      VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		      &texture->staging_buffer, &texture->staging_memory);
+	vulkan_create_buffer(vr, image_size,
+			     VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			     &texture->staging_buffer, &texture->staging_memory);
 
 	result = vkMapMemory(vr->dev, texture->staging_memory, 0, image_size, 0, &texture->staging_map);
 	check_vk_success(result, "vkMapMemory");
@@ -3647,8 +3577,8 @@ vulkan_renderer_output_destroy_border(struct weston_output *output,
 
 	struct vulkan_border_image *border = &vo->borders[side];
 
-	destroy_buffer(vr->dev, border->fs_ubo_buffer, border->fs_ubo_memory);
-	destroy_buffer(vr->dev, border->vs_ubo_buffer, border->vs_ubo_memory);
+	vulkan_destroy_buffer(vr->dev, border->fs_ubo_buffer, border->fs_ubo_memory);
+	vulkan_destroy_buffer(vr->dev, border->vs_ubo_buffer, border->vs_ubo_memory);
 
 	destroy_sampler(vr->dev, border->sampler);
 	destroy_texture_image(vr, &border->texture);
@@ -4038,7 +3968,8 @@ vulkan_renderer_create_output_frames(struct weston_output *output,
 		check_vk_success(result, "vkCreateFence");
 
 		wl_list_init(&fr->dspool_list);
-		wl_list_init(&fr->vbuf_list);
+		wl_list_init(&fr->vertex_pool.entry_list);
+		fr->vertex_pool.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
 		wl_list_init(&fr->acquire_fence_list);
 	}
 
