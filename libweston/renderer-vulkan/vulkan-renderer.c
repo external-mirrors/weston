@@ -4227,11 +4227,9 @@ vulkan_renderer_destroy(struct weston_compositor *ec)
 }
 
 static void
-log_vulkan_phys_dev(VkPhysicalDevice phys_dev)
+log_vulkan_phys_dev(struct vulkan_renderer *vr)
 {
-	VkPhysicalDeviceProperties props;
-
-	vkGetPhysicalDeviceProperties(phys_dev, &props);
+	VkPhysicalDeviceProperties props = vr->phys_dev_props;
 
 	uint32_t api_major = VK_VERSION_MAJOR(props.apiVersion);
 	uint32_t api_minor = VK_VERSION_MINOR(props.apiVersion);
@@ -4270,6 +4268,7 @@ vulkan_renderer_choose_physical_device(struct vulkan_renderer *vr)
 {
 	uint32_t n_phys_devs;
 	VkPhysicalDevice *phys_devs = NULL;
+	VkPhysicalDeviceProperties props;
 	VkResult result;
 
 	result = vkEnumeratePhysicalDevices(vr->inst, &n_phys_devs, NULL);
@@ -4282,8 +4281,6 @@ vulkan_renderer_choose_physical_device(struct vulkan_renderer *vr)
 	VkPhysicalDevice physical_device = VK_NULL_HANDLE;
 	/* Pick the first one */
 	for (uint32_t i = 0; i < n_phys_devs; ++i) {
-		VkPhysicalDeviceProperties props;
-
 		vkGetPhysicalDeviceProperties(phys_devs[i], &props);
 
 		if (physical_device == VK_NULL_HANDLE) {
@@ -4298,10 +4295,11 @@ vulkan_renderer_choose_physical_device(struct vulkan_renderer *vr)
 	}
 
 	vr->phys_dev = physical_device;
+	vr->phys_dev_props = props;
 
 	free(phys_devs);
 
-	log_vulkan_phys_dev(physical_device);
+	log_vulkan_phys_dev(vr);
 }
 
 static void

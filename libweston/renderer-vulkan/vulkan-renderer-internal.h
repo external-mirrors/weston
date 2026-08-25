@@ -166,6 +166,7 @@ struct vulkan_renderer {
 	VkInstance inst;
 
 	VkPhysicalDevice phys_dev;
+	VkPhysicalDeviceProperties phys_dev_props;
 	VkQueue queue;
 	uint32_t queue_family;
 
