@@ -91,15 +91,6 @@ struct vulkan_border_image {
 
 	struct vulkan_renderer_texture_image texture;
 	VkSampler sampler;
-
-	VkBuffer vs_ubo_buffer;
-	VkDeviceMemory vs_ubo_memory;
-	void *vs_ubo_map;
-
-	/* these are not really used as of now */
-	VkBuffer fs_ubo_buffer;
-	VkDeviceMemory fs_ubo_memory;
-	void *fs_ubo_map;
 };
 
 struct vulkan_renderbuffer {
@@ -155,6 +146,7 @@ struct vulkan_renderer_frame {
 	struct wl_list acquire_fence_list;
 
 	struct vulkan_buffer_pool vertex_pool;
+	struct vulkan_buffer_pool ubo_pool;
 	struct wl_list dspool_list;
 };
 
@@ -215,14 +207,6 @@ struct vulkan_buffer_state {
 	VkSampler sampler_linear;
 	VkSampler sampler_nearest;
 	VkSamplerYcbcrConversion ycbcr_conv;
-
-	VkBuffer vs_ubo_buffer;
-	VkDeviceMemory vs_ubo_memory;
-	void *vs_ubo_map;
-
-	VkBuffer fs_ubo_buffer;
-	VkDeviceMemory fs_ubo_memory;
-	void *fs_ubo_map;
 };
 
 struct vulkan_surface_state {
@@ -475,9 +459,6 @@ destroy_buffer_state(struct vulkan_buffer_state *vb)
 		vr->destroy_sampler_ycbcr_conversion(vr->dev, vb->ycbcr_conv, NULL);
 	destroy_texture_image(vr, &vb->texture);
 
-	vulkan_destroy_buffer(vr->dev, vb->fs_ubo_buffer, vb->fs_ubo_memory);
-	vulkan_destroy_buffer(vr->dev, vb->vs_ubo_buffer, vb->vs_ubo_memory);
-
 	pixman_region32_fini(&vb->texture_damage);
 
 	wl_list_remove(&vb->destroy_listener.link);
@@ -689,6 +670,7 @@ vulkan_renderer_output_destroy(struct weston_output *output)
 		}
 
 		vulkan_buffer_pool_destroy(vr, &fr->vertex_pool);
+		vulkan_buffer_pool_destroy(vr, &fr->ubo_pool);
 	}
 
 	if (vo->output_type == VULKAN_OUTPUT_SWAPCHAIN) {
@@ -857,20 +839,22 @@ create_descriptor_set(struct vulkan_renderer *vr,
 		      struct vulkan_renderer_frame *fr,
 		      VkDescriptorSetLayout *descriptor_set_layout,
 		      VkBuffer vs_ubo_buffer,
+		      VkDeviceSize vs_ubo_offset,
 		      VkBuffer fs_ubo_buffer,
+		      VkDeviceSize fs_ubo_offset,
 		      VkImageView image_view,
 		      VkSampler sampler,
 		      VkDescriptorSet *descriptor_set)
 {
 	const VkDescriptorBufferInfo vs_ubo_info = {
 		.buffer = vs_ubo_buffer,
-		.offset = 0,
+		.offset = vs_ubo_offset,
 		.range = sizeof(struct vs_ubo),
 	};
 
 	const VkDescriptorBufferInfo fs_ubo_info = {
 		.buffer = fs_ubo_buffer,
-		.offset = 0,
+		.offset = fs_ubo_offset,
 		.range = sizeof(struct fs_ubo),
 	};
 
@@ -997,38 +981,6 @@ vulkan_create_buffer(struct vulkan_renderer *vr, VkDeviceSize size,
 	check_vk_success(result, "vkBindBufferMemory");
 }
 
-static void
-create_vs_ubo_buffer(struct vulkan_renderer *vr, VkBuffer *vs_ubo_buffer,
-		     VkDeviceMemory *vs_ubo_memory, void **vs_ubo_map)
-{
-	VkResult result;
-	VkDeviceSize buffer_size = sizeof(struct vs_ubo);
-
-	vulkan_create_buffer(vr, buffer_size,
-			     VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-			     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-			     vs_ubo_buffer, vs_ubo_memory);
-
-	result = vkMapMemory(vr->dev, *vs_ubo_memory, 0, VK_WHOLE_SIZE, 0, vs_ubo_map);
-	check_vk_success(result, "vkMapMemory");
-}
-
-static void
-create_fs_ubo_buffer(struct vulkan_renderer *vr, VkBuffer *fs_ubo_buffer,
-		     VkDeviceMemory *fs_ubo_memory, void **fs_ubo_map)
-{
-	VkResult result;
-	VkDeviceSize buffer_size = sizeof(struct fs_ubo);
-
-	vulkan_create_buffer(vr, buffer_size,
-			     VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-			     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-			     fs_ubo_buffer, fs_ubo_memory);
-
-	result = vkMapMemory(vr->dev, *fs_ubo_memory, 0, VK_WHOLE_SIZE, 0, fs_ubo_map);
-	check_vk_success(result, "vkMapMemory");
-}
-
 /*
  * Allocates new vertex buffers on demand or reuse current buffers if there
  * is still space available
@@ -1037,6 +989,35 @@ static struct vulkan_buffer_pool_entry *
 get_vertex_buffer(struct vulkan_renderer *vr, struct vulkan_buffer_pool *pool, uint64_t size)
 {
 	return vulkan_buffer_pool_alloc(vr, pool, size);
+}
+
+/*
+ * Allocates new buffers for UBO on demand or reuse current buffers if there
+ * is still space available
+ */
+static void
+get_uniform_buffer(struct vulkan_renderer *vr, struct vulkan_buffer_pool *pool,
+		   VkBuffer *vs_ubo_buffer, VkDeviceSize *vs_ubo_offset,
+		   void **vs_ubo_map,
+		   VkBuffer *fs_ubo_buffer, VkDeviceSize *fs_ubo_offset,
+		   void **fs_ubo_map)
+{
+	VkDeviceSize align = vr->phys_dev_props.limits.minUniformBufferOffsetAlignment;
+	VkDeviceSize vs_stride = ALIGN(sizeof(struct vs_ubo), align);
+	VkDeviceSize fs_stride = ALIGN(sizeof(struct fs_ubo), align);
+	VkDeviceSize entry_size = vs_stride + fs_stride;
+
+	struct vulkan_buffer_pool_entry *entry = vulkan_buffer_pool_alloc(vr, pool, entry_size);
+
+	*vs_ubo_buffer = entry->buffer;
+	*vs_ubo_offset = entry->offset;
+	*vs_ubo_map = entry->map + entry->offset;
+
+	*fs_ubo_buffer = entry->buffer;
+	*fs_ubo_offset = entry->offset + vs_stride;
+	*fs_ubo_map = entry->map + entry->offset + vs_stride;
+
+	entry->offset += entry_size;
 }
 
 static int
@@ -1557,8 +1538,6 @@ repaint_region(struct vulkan_renderer *vr,
 	       struct vulkan_renderer_frame *fr,
 	       VkDescriptorSet *descriptor_set)
 {
-	struct vulkan_surface_state *vs = get_surface_state(pnode->surface);
-	struct vulkan_buffer_state *vb = vs->buffer;
 	struct vulkan_pipeline *pipeline;
 	VkCommandBuffer cmd_buffer = fr->cmd_buffer;
 	uint32_t nfans;
@@ -1587,15 +1566,6 @@ repaint_region(struct vulkan_renderer *vr,
 	memcpy(vbuf->map + vbuf->offset, vertices.data, vertices.size);
 
 	vkCmdBindVertexBuffers(cmd_buffer, 0, 1, &vbuf->buffer, &vbuf->offset);
-
-	memcpy(vb->vs_ubo_map + offsetof(struct vs_ubo, proj),
-	       pconf->projection.M.colmaj, sizeof(pconf->projection.M.colmaj));
-	memcpy(vb->vs_ubo_map + offsetof(struct vs_ubo, surface_to_buffer),
-	       pconf->surface_to_buffer.M.colmaj, sizeof(pconf->surface_to_buffer.M.colmaj));
-	memcpy(vb->fs_ubo_map + offsetof(struct fs_ubo, unicolor),
-	       pconf->unicolor, sizeof(pconf->unicolor));
-	memcpy(vb->fs_ubo_map + offsetof(struct fs_ubo, paint_node_alpha),
-	       &pconf->paint_node_alpha, sizeof(pconf->paint_node_alpha));
 
 	vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
 				pipeline->pipeline_layout, 0, 1, descriptor_set, 0, NULL);
@@ -1729,9 +1699,26 @@ draw_paint_node(struct weston_paint_node *pnode,
 		sampler = vr->dummy.sampler;
 	}
 
+	VkBuffer vs_ubo_buffer, fs_ubo_buffer;
+	VkDeviceSize vs_ubo_offset, fs_ubo_offset;
+	void *vs_ubo_map, *fs_ubo_map;
+	get_uniform_buffer(vr, &fr->ubo_pool,
+			   &vs_ubo_buffer, &vs_ubo_offset, &vs_ubo_map,
+			   &fs_ubo_buffer, &fs_ubo_offset, &fs_ubo_map);
+
+	memcpy(vs_ubo_map + offsetof(struct vs_ubo, proj),
+	       pconf.projection.M.colmaj, sizeof(pconf.projection.M.colmaj));
+	memcpy(vs_ubo_map + offsetof(struct vs_ubo, surface_to_buffer),
+	       pconf.surface_to_buffer.M.colmaj, sizeof(pconf.surface_to_buffer.M.colmaj));
+	memcpy(fs_ubo_map + offsetof(struct fs_ubo, unicolor),
+	       pconf.unicolor, sizeof(pconf.unicolor));
+	memcpy(fs_ubo_map + offsetof(struct fs_ubo, paint_node_alpha),
+	       &pconf.paint_node_alpha, sizeof(pconf.paint_node_alpha));
+
 	VkDescriptorSet descriptor_set;
 	create_descriptor_set(vr, fr, &pipeline->descriptor_set_layout,
-			      vb->vs_ubo_buffer, vb->fs_ubo_buffer,
+			      vs_ubo_buffer, vs_ubo_offset,
+			      fs_ubo_buffer, fs_ubo_offset,
 			      image_view, sampler,
 			      &descriptor_set);
 
@@ -2012,9 +1999,26 @@ draw_output_border_texture(struct vulkan_renderer *vr,
 	pipeline = vulkan_renderer_get_pipeline(vr, &pconf->req);
 	assert(pipeline);
 
+	VkBuffer vs_ubo_buffer, fs_ubo_buffer;
+	VkDeviceSize vs_ubo_offset, fs_ubo_offset;
+	void *vs_ubo_map, *fs_ubo_map;
+	get_uniform_buffer(vr, &fr->ubo_pool,
+			   &vs_ubo_buffer, &vs_ubo_offset, &vs_ubo_map,
+			   &fs_ubo_buffer, &fs_ubo_offset, &fs_ubo_map);
+
+	memcpy(vs_ubo_map + offsetof(struct vs_ubo, proj),
+	       pconf->projection.M.colmaj, sizeof(pconf->projection.M.colmaj));
+	memset(vs_ubo_map + offsetof(struct vs_ubo, surface_to_buffer),
+	       0, sizeof(pconf->surface_to_buffer.M.colmaj));
+	memcpy(fs_ubo_map + offsetof(struct fs_ubo, unicolor),
+	       pconf->unicolor, sizeof(pconf->unicolor));
+	memcpy(fs_ubo_map + offsetof(struct fs_ubo, paint_node_alpha),
+	       &pconf->paint_node_alpha, sizeof(pconf->paint_node_alpha));
+
 	VkDescriptorSet descriptor_set;
 	create_descriptor_set(vr, fr, &pipeline->descriptor_set_layout,
-			      border->vs_ubo_buffer, border->fs_ubo_buffer,
+			      vs_ubo_buffer, vs_ubo_offset,
+			      fs_ubo_buffer, fs_ubo_offset,
 			      border->texture.image_view, border->sampler,
 			      &descriptor_set);
 
@@ -2022,15 +2026,6 @@ draw_output_border_texture(struct vulkan_renderer *vr,
 	memcpy(vbuf->map + vbuf->offset, position, sizeof(position));
 
 	vkCmdBindVertexBuffers(cmd_buffer, 0, 1, &vbuf->buffer, &vbuf->offset);
-
-	memcpy(border->vs_ubo_map + offsetof(struct vs_ubo, proj),
-	       pconf->projection.M.colmaj, sizeof(pconf->projection.M.colmaj));
-	memset(border->vs_ubo_map + offsetof(struct vs_ubo, surface_to_buffer),
-	       0, sizeof(pconf->surface_to_buffer.M.colmaj));
-	memcpy(border->fs_ubo_map + offsetof(struct fs_ubo, unicolor),
-	       pconf->unicolor, sizeof(pconf->unicolor));
-	memcpy(border->fs_ubo_map + offsetof(struct fs_ubo, paint_node_alpha),
-	       &pconf->paint_node_alpha, sizeof(pconf->paint_node_alpha));
 
 	vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
 				pipeline->pipeline_layout, 0, 1, &descriptor_set, 0, NULL);
@@ -2358,6 +2353,7 @@ vulkan_renderer_repaint_output(struct weston_output *output,
 	}
 
 	vulkan_buffer_pool_reset(vr, &fr->vertex_pool);
+	vulkan_buffer_pool_reset(vr, &fr->ubo_pool);
 
 	reset_descriptor_pool(vr, fr);
 
@@ -3384,9 +3380,6 @@ vulkan_renderer_attach_shm(struct weston_surface *surface, struct weston_buffer 
 	create_texture_sampler_ycbcr(vr, &vb->sampler_linear, vb->ycbcr_conv, VK_FILTER_LINEAR);
 	create_image_view_ycbcr(vr->dev, vb->texture.image, buffer->pixel_format->vulkan_format,
 				vb->ycbcr_conv, &vb->texture.image_view);
-
-	create_vs_ubo_buffer(vr, &vb->vs_ubo_buffer, &vb->vs_ubo_memory, &vb->vs_ubo_map);
-	create_fs_ubo_buffer(vr, &vb->fs_ubo_buffer, &vb->fs_ubo_memory, &vb->fs_ubo_map);
 }
 
 static void
@@ -3422,9 +3415,6 @@ ensure_renderer_vulkan_buffer_state(struct weston_surface *surface,
 	wl_signal_add(&buffer->destroy_signal, &vb->destroy_listener);
 
 	vs->buffer = vb;
-
-	create_vs_ubo_buffer(vr, &vb->vs_ubo_buffer, &vb->vs_ubo_memory, &vb->vs_ubo_map);
-	create_fs_ubo_buffer(vr, &vb->fs_ubo_buffer, &vb->fs_ubo_memory, &vb->fs_ubo_map);
 
 	return vb;
 }
@@ -3577,9 +3567,6 @@ vulkan_renderer_output_destroy_border(struct weston_output *output,
 
 	struct vulkan_border_image *border = &vo->borders[side];
 
-	vulkan_destroy_buffer(vr->dev, border->fs_ubo_buffer, border->fs_ubo_memory);
-	vulkan_destroy_buffer(vr->dev, border->vs_ubo_buffer, border->vs_ubo_memory);
-
 	destroy_sampler(vr->dev, border->sampler);
 	destroy_texture_image(vr, &border->texture);
 }
@@ -3627,9 +3614,6 @@ vulkan_renderer_output_set_border(struct weston_output *output,
 	create_texture_sampler(vr, &border->sampler, VK_FILTER_NEAREST);
 	update_texture_image_all(vr, &border->texture, VK_IMAGE_LAYOUT_UNDEFINED,
 				 pixel_format, tex_width, height, pitch, data);
-
-	create_vs_ubo_buffer(vr, &border->vs_ubo_buffer, &border->vs_ubo_memory, &border->vs_ubo_map);
-	create_fs_ubo_buffer(vr, &border->fs_ubo_buffer, &border->fs_ubo_memory, &border->fs_ubo_map);
 }
 
 static bool
@@ -3970,6 +3954,8 @@ vulkan_renderer_create_output_frames(struct weston_output *output,
 		wl_list_init(&fr->dspool_list);
 		wl_list_init(&fr->vertex_pool.entry_list);
 		fr->vertex_pool.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+		wl_list_init(&fr->ubo_pool.entry_list);
+		fr->ubo_pool.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 		wl_list_init(&fr->acquire_fence_list);
 	}
 
@@ -4407,9 +4393,6 @@ vulkan_renderer_import_dmabuf(struct weston_compositor *ec,
 
 	assert(vb->num_planes == 0);
 	vb->num_planes = 1;
-
-	create_vs_ubo_buffer(vr, &vb->vs_ubo_buffer, &vb->vs_ubo_memory, &vb->vs_ubo_map);
-	create_fs_ubo_buffer(vr, &vb->fs_ubo_buffer, &vb->fs_ubo_memory, &vb->fs_ubo_map);
 
 	linux_dmabuf_buffer_set_user_data(dmabuf, vb,
 		vulkan_renderer_destroy_dmabuf);
