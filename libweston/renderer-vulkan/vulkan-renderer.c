@@ -139,6 +139,8 @@ struct vulkan_renderer_frame_dspool {
 };
 
 struct vulkan_renderer_frame {
+	uint64_t frame_id;
+
 	VkCommandBuffer cmd_buffer;
 
 	VkSemaphore image_acquired;
@@ -181,15 +183,27 @@ struct vulkan_output_state {
 	uint32_t image_count;
 	struct vulkan_renderer_image images[MAX_NUM_IMAGES];
 
-	uint32_t frame_index;
+	uint32_t frame_index; /* index to frames array */
 	uint32_t num_frames;
 	struct vulkan_renderer_frame frames[MAX_CONCURRENT_FRAMES];
 
 	int render_fence_fd; /* exported render_done from last submitted image */
 };
 
+struct vulkan_buffer_draw_state {
+	/* State managed per-buffer which may be asynchronously accessed
+	 * by submitted renderer frames (in-flight), so has a different
+	 * lifecycle than the buffer state */
+	struct vulkan_renderer_texture_image texture;
+
+	uint64_t last_used_frame;
+	struct wl_list link;
+};
+
 struct vulkan_buffer_state {
 	struct vulkan_renderer *vr;
+
+	struct vulkan_buffer_draw_state *draw_state;
 
 	bool needs_full_upload;
 	pixman_region32_t texture_damage;
@@ -204,7 +218,19 @@ struct vulkan_buffer_state {
 
 	struct wl_listener destroy_listener;
 
-	struct vulkan_renderer_texture_image texture;
+};
+
+struct vulkan_surface_draw_state {
+	/* State managed per-surface which may be asynchronously accessed
+	 * by submitted renderer frames (in-flight), so has a different
+	 * lifecycle than the surface state */
+	VkImageView image_view;
+	VkSampler sampler_linear;
+	VkSampler sampler_nearest;
+	VkSamplerYcbcrConversion ycbcr_conv;
+
+	uint64_t last_used_frame;
+	struct wl_list link;
 };
 
 struct vulkan_surface_state {
@@ -212,10 +238,7 @@ struct vulkan_surface_state {
 
 	struct vulkan_buffer_state *buffer;
 
-	VkImageView image_view;
-	VkSampler sampler_linear;
-	VkSampler sampler_nearest;
-	VkSamplerYcbcrConversion ycbcr_conv;
+	struct vulkan_surface_draw_state *draw_state;
 
 	/* These buffer references should really be attached to paint nodes
 	 * rather than either buffer or surface state */
@@ -444,17 +467,58 @@ destroy_texture_image(struct vulkan_renderer *vr, struct vulkan_renderer_texture
 }
 
 static void
+destroy_surface_draw_state(struct vulkan_renderer *vr,
+			   struct vulkan_surface_draw_state *ds)
+{
+	if (ds->image_view)
+		vkDestroyImageView(vr->dev, ds->image_view, NULL);
+	destroy_sampler(vr->dev, ds->sampler_linear);
+	destroy_sampler(vr->dev, ds->sampler_nearest);
+	if (ds->ycbcr_conv)
+		vr->destroy_sampler_ycbcr_conversion(vr->dev, ds->ycbcr_conv, NULL);
+}
+
+static void
+destroy_buffer_draw_state(struct vulkan_renderer *vr,
+			  struct vulkan_buffer_draw_state *ds)
+{
+	destroy_texture_image(vr, &ds->texture);
+}
+
+static void
+flush_deferred_destroys(struct vulkan_renderer *vr, uint64_t completed_id)
+{
+	struct vulkan_surface_draw_state *vsds, *vsds_tmp;
+	wl_list_for_each_safe(vsds, vsds_tmp, &vr->deferred_surface_destroy_list, link) {
+		if (completed_id < vsds->last_used_frame)
+			continue;
+
+		destroy_surface_draw_state(vr, vsds);
+		wl_list_remove(&vsds->link);
+		free(vsds);
+	}
+
+	struct vulkan_buffer_draw_state *vbds, *vbds_tmp;
+	wl_list_for_each_safe(vbds, vbds_tmp, &vr->deferred_buffer_destroy_list, link) {
+		if (completed_id < vbds->last_used_frame)
+			continue;
+
+		destroy_buffer_draw_state(vr, vbds);
+		wl_list_remove(&vbds->link);
+		free(vbds);
+	}
+}
+
+static void
 destroy_buffer_state(struct vulkan_buffer_state *vb)
 {
 	struct vulkan_renderer *vr = vb->vr;
 
-	// TODO: how to refcount this buffer properly so that it is not
-	// destroyed in the middle of a frame?
-	VkResult result;
-	result = vkQueueWaitIdle(vr->queue);
-	check_vk_success(result, "vkQueueWaitIdle");
-
-	destroy_texture_image(vr, &vb->texture);
+	if (vb->draw_state) {
+		wl_list_insert(&vr->deferred_buffer_destroy_list,
+			       &vb->draw_state->link);
+		vb->draw_state = NULL;
+	}
 
 	pixman_region32_fini(&vb->texture_damage);
 
@@ -466,22 +530,16 @@ destroy_buffer_state(struct vulkan_buffer_state *vb)
 static void
 surface_state_destroy(struct vulkan_surface_state *vs, struct vulkan_renderer *vr)
 {
-	// TODO: intermediate state, remove this when there is a deferred destroy
-	VkResult result;
-	result = vkQueueWaitIdle(vr->queue);
-	check_vk_success(result, "vkQueueWaitIdle");
-
 	wl_list_remove(&vs->surface_destroy_listener.link);
 	wl_list_remove(&vs->renderer_destroy_listener.link);
 
 	vs->surface->renderer_state = NULL;
 
-	if (vs->image_view)
-		vkDestroyImageView(vr->dev, vs->image_view, NULL);
-	destroy_sampler(vr->dev, vs->sampler_linear);
-	destroy_sampler(vr->dev, vs->sampler_nearest);
-	if (vs->ycbcr_conv)
-		vr->destroy_sampler_ycbcr_conversion(vr->dev, vs->ycbcr_conv, NULL);
+	if (vs->draw_state) {
+		wl_list_insert(&vr->deferred_surface_destroy_list,
+			       &vs->draw_state->link);
+		vs->draw_state = NULL;
+	}
 
 	if (vs->buffer && vs->buffer_ref.buffer->type == WESTON_BUFFER_SHM)
 		destroy_buffer_state(vs->buffer);
@@ -654,6 +712,8 @@ vulkan_renderer_output_destroy(struct weston_output *output)
 	VkResult result;
 	result = vkQueueWaitIdle(vr->queue);
 	check_vk_success(result, "vkQueueWaitIdle");
+
+	flush_deferred_destroys(vr, UINT64_MAX);
 
 	vkDestroyRenderPass(vr->dev, vo->renderpass, NULL);
 
@@ -1454,10 +1514,10 @@ vulkan_pipeline_config_init_for_paint_node(struct vulkan_pipeline_config *pconf,
 		.paint_node_alpha = pnode->alpha,
 	};
 
-	if (vs->ycbcr_conv) {
+	if (vs->draw_state && vs->draw_state->ycbcr_conv) {
 		pconf->req.has_immutable_sampler = true;
 		pconf->req.ycbcr_format = buffer->pixel_format->vulkan_format;
-		pconf->req.immutable_sampler = pnode->needs_filtering ? vs->sampler_linear : vs->sampler_nearest;
+		pconf->req.immutable_sampler = pnode->needs_filtering ? vs->draw_state->sampler_linear : vs->draw_state->sampler_nearest;
 	}
 
 	weston_matrix_multiply(&pconf->projection, &vo->output_matrix);
@@ -1691,6 +1751,11 @@ draw_paint_node(struct weston_paint_node *pnode,
 	if (!pnode->draw_solid && ensure_surface_buffer_is_ready(vr, vs, fr) < 0)
 		goto out;
 
+	if (vs->draw_state)
+		vs->draw_state->last_used_frame = vr->frame_seq;
+	if (vb->draw_state)
+		vb->draw_state->last_used_frame = vr->frame_seq;
+
 	if (!vulkan_pipeline_config_init_for_paint_node(&pconf, pnode)) {
 		goto out;
 	}
@@ -1700,9 +1765,9 @@ draw_paint_node(struct weston_paint_node *pnode,
 
 	VkSampler sampler;
 	VkImageView image_view;
-	if (vs->image_view) {
-		image_view = vs->image_view;
-		sampler = pnode->needs_filtering ? vs->sampler_linear : vs->sampler_nearest;
+	if (vs->draw_state && vs->draw_state->image_view) {
+		image_view = vs->draw_state->image_view;
+		sampler = pnode->needs_filtering ? vs->draw_state->sampler_linear : vs->draw_state->sampler_nearest;
 	} else {
 		image_view = vr->dummy.image_view;
 		sampler = vr->dummy.sampler;
@@ -2354,6 +2419,11 @@ vulkan_renderer_repaint_output(struct weston_output *output,
 	vkWaitForFences(vr->dev, 1, &vo->frames[vo->frame_index].fence, VK_TRUE, UINT64_MAX);
 	vkResetFences(vr->dev, 1, &vo->frames[vo->frame_index].fence);
 
+	/* Destroy objects that were deferred while previously
+	 * submitted frames might still have been in-flight.
+	 * frame_id holds the completed frame id (fence signalled). */
+	flush_deferred_destroys(vr, fr->frame_id);
+
 	struct vulkan_renderer_frame_acquire_fence *acquire_fence, *ftmp;
 	wl_list_for_each_safe(acquire_fence, ftmp, &fr->acquire_fence_list, link) {
 		vkDestroySemaphore(vr->dev, acquire_fence->semaphore, NULL);
@@ -2609,6 +2679,8 @@ vulkan_renderer_repaint_output(struct weston_output *output,
 	pixman_region32_clear(&rb->damage);
 
 	vo->frame_index = (vo->frame_index + 1) % vo->num_frames;
+
+	fr->frame_id = vr->frame_seq++;
 }
 
 static VkSamplerYcbcrModelConversion
@@ -3048,7 +3120,7 @@ vulkan_renderer_flush_damage(struct weston_paint_node *pnode)
 
 	if (vb->needs_full_upload || quirks->force_full_upload) {
 		wl_shm_buffer_begin_access(buffer->shm_buffer);
-		update_texture_image(vr, &vb->texture, VK_IMAGE_LAYOUT_UNDEFINED,
+		update_texture_image(vr, &vb->draw_state->texture, VK_IMAGE_LAYOUT_UNDEFINED,
 				     buffer->pixel_format, buffer->width, buffer->height,
 				     vb->pitch, data,
 				     0, 0, buffer->width, buffer->height);
@@ -3072,7 +3144,7 @@ vulkan_renderer_flush_damage(struct weston_paint_node *pnode)
 			uint32_t ycopy = (r.y2 - r.y1) / vsub;
 			void *pixels = data + vb->offset[j];
 
-			update_texture_image(vr, &vb->texture, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+			update_texture_image(vr, &vb->draw_state->texture, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 					     buffer->pixel_format, buffer->width / hsub, buffer->height / vsub,
 					     vb->pitch, pixels, xoff, yoff, xcopy, ycopy);
 		}
@@ -3336,25 +3408,15 @@ vulkan_renderer_attach_shm(struct weston_surface *surface, struct weston_buffer 
 		return;
 	}
 
+	if (vs->draw_state) {
+		wl_list_insert(&vr->deferred_surface_destroy_list,
+			       &vs->draw_state->link);
+		vs->draw_state = NULL;
+	}
+
 	if (vs->buffer)
 		destroy_buffer_state(vs->buffer);
 	vs->buffer = NULL;
-
-	// TODO: intermediate state, remove this when there is a deferred destroy
-	VkResult result;
-	result = vkQueueWaitIdle(vr->queue);
-	check_vk_success(result, "vkQueueWaitIdle");
-
-	if (vs->image_view)
-		vkDestroyImageView(vr->dev, vs->image_view, NULL);
-	destroy_sampler(vr->dev, vs->sampler_linear);
-	destroy_sampler(vr->dev, vs->sampler_nearest);
-	if (vs->ycbcr_conv)
-		vr->destroy_sampler_ycbcr_conversion(vr->dev, vs->ycbcr_conv, NULL);
-	vs->image_view = VK_NULL_HANDLE;
-	vs->sampler_linear = VK_NULL_HANDLE;
-	vs->sampler_nearest = VK_NULL_HANDLE;
-	vs->ycbcr_conv = VK_NULL_HANDLE;
 
 	vb = xzalloc(sizeof(*vb));
 	vb->vr = vr;
@@ -3368,8 +3430,15 @@ vulkan_renderer_attach_shm(struct weston_surface *surface, struct weston_buffer 
 	vb->needs_full_upload = true;
 	vb->num_planes = num_planes;
 
+	struct vulkan_buffer_draw_state *vbds = xzalloc(sizeof *vbds);
+	wl_list_init(&vbds->link);
+	vb->draw_state = vbds;
+
 	vs->buffer = vb;
 	vs->surface = surface;
+
+	struct vulkan_surface_draw_state *vsds = xzalloc(sizeof *vsds);
+	wl_list_init(&vsds->link);
 
 	bool separate_filter = true;
 
@@ -3386,25 +3455,27 @@ vulkan_renderer_attach_shm(struct weston_surface *surface, struct weston_buffer 
 		color_rep = weston_fill_color_representation(&surface->color_representation,
 							     buffer->pixel_format);
 		create_texture_ycbcr_conv(vr, buffer->pixel_format, &color_rep,
-					  &vs->ycbcr_conv,
+					  &vsds->ycbcr_conv,
 					  format_props);
 	}
 
 	if (num_planes > 1) {
-		create_texture_image_multiplanar(vr, &vb->texture, buffer->pixel_format,
+		create_texture_image_multiplanar(vr, &vbds->texture, buffer->pixel_format,
 						 buffer->width, buffer->height);
 	} else {
-		create_texture_image(vr, &vb->texture, buffer->pixel_format,
+		create_texture_image(vr, &vbds->texture, buffer->pixel_format,
 				     buffer->width, buffer->height, pitch);
 	}
 
 	if (is_ycbcr && !separate_filter)
 		weston_log("warning: format %s does not support separate reconstruction filter\n", buffer->pixel_format->drm_format_name);
 
-	create_texture_sampler_ycbcr(vr, &vs->sampler_nearest, vs->ycbcr_conv, VK_FILTER_NEAREST);
-	create_texture_sampler_ycbcr(vr, &vs->sampler_linear, vs->ycbcr_conv, VK_FILTER_LINEAR);
-	create_image_view_ycbcr(vr->dev, vb->texture.image, buffer->pixel_format->vulkan_format,
-				vs->ycbcr_conv, &vs->image_view);
+	create_texture_sampler_ycbcr(vr, &vsds->sampler_nearest, vsds->ycbcr_conv, VK_FILTER_NEAREST);
+	create_texture_sampler_ycbcr(vr, &vsds->sampler_linear, vsds->ycbcr_conv, VK_FILTER_LINEAR);
+	create_image_view_ycbcr(vr->dev, vbds->texture.image, buffer->pixel_format->vulkan_format,
+				vsds->ycbcr_conv, &vsds->image_view);
+
+	vs->draw_state = vsds;
 }
 
 static void
@@ -3474,21 +3545,14 @@ vulkan_renderer_attach_buffer(struct weston_surface *surface,
 
 	vs->buffer = vb;
 
-	// TODO: intermediate state, remove this when there is a deferred destroy
-	VkResult result;
-	result = vkQueueWaitIdle(vr->queue);
-	check_vk_success(result, "vkQueueWaitIdle");
+	if (vs->draw_state) {
+		wl_list_insert(&vr->deferred_surface_destroy_list,
+			       &vs->draw_state->link);
+		vs->draw_state = NULL;
+	}
 
-	if (vs->image_view)
-		vkDestroyImageView(vr->dev, vs->image_view, NULL);
-	destroy_sampler(vr->dev, vs->sampler_linear);
-	destroy_sampler(vr->dev, vs->sampler_nearest);
-	if (vs->ycbcr_conv)
-		vr->destroy_sampler_ycbcr_conversion(vr->dev, vs->ycbcr_conv, NULL);
-	vs->image_view = VK_NULL_HANDLE;
-	vs->sampler_linear = VK_NULL_HANDLE;
-	vs->sampler_nearest = VK_NULL_HANDLE;
-	vs->ycbcr_conv = VK_NULL_HANDLE;
+	struct vulkan_surface_draw_state *vsds = xzalloc(sizeof *vsds);
+	wl_list_init(&vsds->link);
 
 	const struct pixel_format_info *pixel_format = buffer->pixel_format;
 	bool separate_filter = true;
@@ -3506,17 +3570,19 @@ vulkan_renderer_attach_buffer(struct weston_surface *surface,
 		separate_filter = !!(features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_SEPARATE_RECONSTRUCTION_FILTER_BIT);
 
 		create_texture_ycbcr_conv(vr, pixel_format, &color_rep,
-					  &vs->ycbcr_conv,
+					  &vsds->ycbcr_conv,
 					  format_props);
 	}
 
-	if (!separate_filter && vs->ycbcr_conv != VK_NULL_HANDLE)
+	if (!separate_filter && vsds->ycbcr_conv != VK_NULL_HANDLE)
 		weston_log("warning: format %s does not support separate reconstruction filter\n", pixel_format->drm_format_name);
 
-	create_texture_sampler_ycbcr(vr, &vs->sampler_nearest, vs->ycbcr_conv, VK_FILTER_NEAREST);
-	create_texture_sampler_ycbcr(vr, &vs->sampler_linear, vs->ycbcr_conv, VK_FILTER_LINEAR);
-	create_image_view_ycbcr(vr->dev, vb->texture.image, pixel_format->vulkan_format,
-				vs->ycbcr_conv, &vs->image_view);
+	create_texture_sampler_ycbcr(vr, &vsds->sampler_nearest, vsds->ycbcr_conv, VK_FILTER_NEAREST);
+	create_texture_sampler_ycbcr(vr, &vsds->sampler_linear, vsds->ycbcr_conv, VK_FILTER_LINEAR);
+	create_image_view_ycbcr(vr->dev, vb->draw_state->texture.image, pixel_format->vulkan_format,
+				vsds->ycbcr_conv, &vsds->image_view);
+
+	vs->draw_state = vsds;
 }
 
 static void
@@ -4168,11 +4234,13 @@ vulkan_renderer_destroy(struct weston_compositor *ec)
 {
 	struct vulkan_renderer *vr = get_renderer(ec);
 
-	wl_signal_emit(&vr->destroy_signal, vr);
-
 	VkResult result;
 	result = vkDeviceWaitIdle(vr->dev);
 	check_vk_success(result, "vkDeviceWaitIdle");
+
+	wl_signal_emit(&vr->destroy_signal, vr);
+
+	flush_deferred_destroys(vr, UINT64_MAX);
 
 	vulkan_renderer_pipeline_list_destroy(vr);
 
@@ -4426,11 +4494,15 @@ vulkan_renderer_import_dmabuf(struct weston_compositor *ec,
 	pixman_region32_init(&vb->texture_damage);
 	wl_list_init(&vb->destroy_listener.link);
 
+	struct vulkan_buffer_draw_state *vbds = xzalloc(sizeof *vbds);
+	wl_list_init(&vbds->link);
+	vb->draw_state = vbds;
+
 	create_dmabuf_image(vr, &dmabuf->attributes,
 			    VK_IMAGE_USAGE_SAMPLED_BIT,
-			    &vb->texture.image);
+			    &vbds->texture.image);
 
-	import_dmabuf(vr, vb->texture.image, &vb->texture.memory, &dmabuf->attributes);
+	import_dmabuf(vr, vbds->texture.image, &vbds->texture.memory, &dmabuf->attributes);
 
 	assert(vb->num_planes == 0);
 	vb->num_planes = 1;
@@ -4892,6 +4964,8 @@ vulkan_renderer_display_create(struct weston_compositor *ec,
 
 	wl_list_init(&vr->dmabuf_formats);
 	wl_signal_init(&vr->destroy_signal);
+	wl_list_init(&vr->deferred_surface_destroy_list);
+	wl_list_init(&vr->deferred_buffer_destroy_list);
 
 	vulkan_renderer_create_instance(vr);
 

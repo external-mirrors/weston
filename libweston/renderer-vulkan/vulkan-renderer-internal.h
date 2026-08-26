@@ -168,6 +168,7 @@ struct vulkan_renderer {
 	VkPhysicalDeviceProperties phys_dev_props;
 	VkQueue queue;
 	uint32_t queue_family;
+	uint64_t frame_seq; /* Count frame submissions to this queue */
 
 	uint64_t device_extensions;
 	bool semaphore_import_export;
@@ -183,6 +184,9 @@ struct vulkan_renderer {
 	struct wl_signal destroy_signal;
 	struct wl_list pipeline_list;
 	struct dmabuf_allocator *allocator;
+
+	struct wl_list deferred_surface_destroy_list;
+	struct wl_list deferred_buffer_destroy_list;
 
 #if defined(BUILD_WAYLAND_COMPOSITOR)
 	PFN_vkCreateWaylandSurfaceKHR create_wayland_surface;
