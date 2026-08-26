@@ -403,12 +403,13 @@ recreate_swapchain(struct window *window)
 	create_swapchain(window);
 }
 
-static void
+static bool
 update_buffer_geometry(struct window *window)
 {
 	enum wl_output_transform new_buffer_transform;
 	struct geometry new_buffer_size;
 	struct geometry new_viewport_dest_size;
+	bool size_changed = false;
 
 	new_buffer_transform = compute_buffer_transform(window);
 	if (window->buffer_transform != new_buffer_transform) {
@@ -480,6 +481,7 @@ update_buffer_geometry(struct window *window)
 	if (window->buffer_size.width != new_buffer_size.width ||
 	    window->buffer_size.height != new_buffer_size.height) {
 		window->buffer_size = new_buffer_size;
+		size_changed = true;
 	}
 
 	if (window->fractional_buffer_scale > 0.0)
@@ -488,6 +490,8 @@ update_buffer_geometry(struct window *window)
 					    new_viewport_dest_size.height);
 
 	window->needs_buffer_geometry_update = false;
+
+	return size_changed;
 }
 
 static VkFormat
@@ -1512,8 +1516,8 @@ redraw(struct window *window)
 	VkResult result;
 
 	if (window->needs_buffer_geometry_update) {
-		update_buffer_geometry(window);
-		recreate_swapchain(window);
+		if (update_buffer_geometry(window))
+			recreate_swapchain(window);
 	}
 
 	gettimeofday(&tv, NULL);
