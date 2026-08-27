@@ -39,17 +39,6 @@ enum color_chan_index {
 	COLOR_CHAN_NUM
 };
 
-/* column vector when used in linear algebra */
-struct color_float {
-	union {
-		float rgb[COLOR_CHAN_NUM];
-		struct {
-			float r, g, b;
-		};
-	};
-	float a;
-};
-
 enum transfer_fn {
 	TRANSFER_FN_IDENTITY,
 	TRANSFER_FN_SRGB,
@@ -63,12 +52,12 @@ enum transfer_fn {
 };
 
 void
-sRGB_linearize(struct color_float *cf);
+sRGB_linearize(struct weston_vec4f *cf);
 
 void
-sRGB_delinearize(struct color_float *cf);
+sRGB_delinearize(struct weston_vec4f *cf);
 
-struct color_float
+struct weston_vec4f
 a8r8g8b8_to_float(uint32_t v);
 
 void
@@ -85,17 +74,17 @@ process_pixel_using_pipeline(enum transfer_fn pre_curve,
 			     struct weston_mat3f mat,
 			     enum transfer_fn post_curve,
 			     const double vcgt_exponents[COLOR_CHAN_NUM],
-			     const struct color_float *in,
-			     struct color_float *out);
+			     const struct weston_vec4f *in,
+			     struct weston_vec4f *out);
 
-struct color_float
-color_float_unpremult(struct color_float in);
+struct weston_vec4f
+color_float_unpremult(struct weston_vec4f in);
 
-struct color_float
-color_float_apply_curve(enum transfer_fn fn, struct color_float c);
+struct weston_vec4f
+color_float_apply_curve(enum transfer_fn fn, struct weston_vec4f c);
 
-struct color_float
-color_float_apply_matrix(struct weston_mat3f mat, struct color_float c);
+struct weston_vec4f
+color_float_apply_matrix(struct weston_mat3f mat, struct weston_vec4f c);
 
 enum transfer_fn
 transfer_fn_invert(enum transfer_fn fn);
@@ -109,10 +98,10 @@ transfer_fn_name(enum transfer_fn fn);
  */
 struct scalar_stat {
 	double min;
-	struct color_float min_pos;
+	struct weston_vec4f min_pos;
 
 	double max;
-	struct color_float max_pos;
+	struct weston_vec4f max_pos;
 
 	double sum;
 	unsigned count;
@@ -153,7 +142,7 @@ struct rgb_diff_stat {
 void
 scalar_stat_update(struct scalar_stat *stat,
 		   double val,
-		   const struct color_float *pos);
+		   const struct weston_vec4f *pos);
 
 float
 scalar_stat_avg(const struct scalar_stat *stat);
@@ -163,9 +152,9 @@ scalar_stat_print_float(const struct scalar_stat *stat);
 
 void
 rgb_diff_stat_update(struct rgb_diff_stat *stat,
-		     const struct color_float *ref,
-		     const struct color_float *val,
-		     const struct color_float *pos);
+		     const struct weston_vec4f *ref,
+		     const struct weston_vec4f *val,
+		     const struct weston_vec4f *pos);
 
 void
 rgb_diff_stat_print(const struct rgb_diff_stat *stat,

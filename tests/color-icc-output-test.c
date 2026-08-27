@@ -27,7 +27,7 @@
 #include "config.h"
 
 #include <lcms2.h>
-#include <libweston/linalg-3.h>
+#include <libweston/linalg.h>
 
 #include "weston-test-client-helper.h"
 #include "weston-test-assert.h"
@@ -376,7 +376,7 @@ gen_ramp_rgb(pixman_image_t *image, int bitwidth, int width_bar)
 
 		pixel = image_header_get_row_u32(&ih, y);
 		for (x = 0; x < ih.width; x++, pixel++) {
-			struct color_float rgb = { .rgb = { 0, 0, 0 } };
+			struct weston_vec4f rgb = WESTON_VEC4F(0, 0, 0, 1);
 
 			value = (float)x / (float)(ih.width - 1);
 
@@ -385,7 +385,7 @@ gen_ramp_rgb(pixman_image_t *image, int bitwidth, int width_bar)
 
 			for (chan = 0; chan < COLOR_CHAN_NUM; chan++) {
 				if (hue[hue_index][chan])
-					rgb.rgb[chan] = value;
+					rgb.el[chan] = value;
 			}
 
 			sRGB_delinearize(&rgb);
@@ -418,9 +418,9 @@ process_pipeline_comparison(const struct buffer *src_buf,
 	struct image_header ih_src = image_header_from(src_buf->image);
 	struct image_header ih_shot = image_header_from(shot_buf->image);
 	int y, x;
-	struct color_float pix_src;
-	struct color_float pix_src_pipeline;
-	struct color_float pix_shot;
+	struct weston_vec4f pix_src;
+	struct weston_vec4f pix_src_pipeline;
+	struct weston_vec4f pix_shot;
 	struct rgb_diff_stat diffstat = { .dump = dump };
 	float avg_err;
 	float max_err;
@@ -521,9 +521,9 @@ opaque_pixel_conversion(struct wet_testsuite_data *suite_data)
 	return RESULT_OK;
 }
 
-static struct color_float
+static struct weston_vec4f
 convert_to_blending_space(const struct lcms_pipeline *pip,
-			  struct color_float cf)
+			  struct weston_vec4f cf)
 {
 	/* Blending space is the linearized output space,
 	 * or simply output space without the non-linear encoding
@@ -535,12 +535,12 @@ convert_to_blending_space(const struct lcms_pipeline *pip,
 static void
 compare_blend(const struct lcms_pipeline *pip,
 	      const double vcgt_exponents[COLOR_CHAN_NUM],
-	      struct color_float bg,
-	      struct color_float fg,
-	      const struct color_float *shot,
+	      struct weston_vec4f bg,
+	      struct weston_vec4f fg,
+	      const struct weston_vec4f *shot,
 	      struct rgb_diff_stat *diffstat)
 {
-	struct color_float ref;
+	struct weston_vec4f ref;
 	unsigned i;
 
 	/* convert sources to straight alpha */
@@ -552,14 +552,14 @@ compare_blend(const struct lcms_pipeline *pip,
 
 	/* blend */
 	for (i = 0; i < COLOR_CHAN_NUM; i++)
-		ref.rgb[i] = (1.0f - fg.a) * bg.rgb[i] + fg.a * fg.rgb[i];
+		ref.el[i] = (1.0f - fg.a) * bg.el[i] + fg.a * fg.el[i];
 
 	/* non-linear encoding for output */
 	ref = color_float_apply_curve(pip->post_fn, ref);
 
 	if (should_include_vcgt(vcgt_exponents))
 		for (i = 0; i < COLOR_CHAN_NUM; i++)
-			ref.rgb[i] = pow(ref.rgb[i], vcgt_exponents[i]);
+			ref.el[i] = pow(ref.el[i], vcgt_exponents[i]);
 
 	rgb_diff_stat_update(diffstat, &ref, shot, &fg);
 }
@@ -603,9 +603,9 @@ check_blend_pattern(struct buffer *bg_buf,
 	int x;
 
 	for (x = 0; x < BLOCK_WIDTH * ALPHA_STEPS; x++) {
-		struct color_float bg = a8r8g8b8_to_float(bg_row[x]);
-		struct color_float fg = a8r8g8b8_to_float(fg_row[x]);
-		struct color_float shot = a8r8g8b8_to_float(shot_row[x]);
+		struct weston_vec4f bg = a8r8g8b8_to_float(bg_row[x]);
+		struct weston_vec4f fg = a8r8g8b8_to_float(fg_row[x]);
+		struct weston_vec4f shot = a8r8g8b8_to_float(shot_row[x]);
 
 		compare_blend(arg->pipeline, arg->vcgt_exponents, bg, fg, &shot, &diffstat);
 	}

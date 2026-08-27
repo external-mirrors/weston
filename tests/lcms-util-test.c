@@ -27,6 +27,7 @@
 
 #include <math.h>
 #include <lcms2.h>
+#include <libweston/linalg.h>
 
 #include "weston-test-client-helper.h"
 #include "weston-test-assert.h"
@@ -46,7 +47,7 @@ compare_pipeline_to_transfer_fn(cmsPipeline *pipeline, enum transfer_fn fn,
 		float y;
 
 		cmsPipelineEvalFloat(&x, &y, pipeline);
-		scalar_stat_update(stat, y - ref, &(struct color_float){ .r = x });
+		scalar_stat_update(stat, y - ref, &WESTON_VEC4F(x, 0, 0, 0));
 	}
 }
 

@@ -181,10 +181,10 @@ compare_sRGB_blend_a8r8g8b8(uint32_t bg32, uint32_t fg32, uint32_t dst32,
 			    struct rgb_diff_stat *diffstat,
 			    enum blend_space space)
 {
-	struct color_float bg = a8r8g8b8_to_float(bg32);
-	struct color_float fg = a8r8g8b8_to_float(fg32);
-	struct color_float dst = a8r8g8b8_to_float(dst32);
-	struct color_float ref;
+	struct weston_vec4f bg = a8r8g8b8_to_float(bg32);
+	struct weston_vec4f fg = a8r8g8b8_to_float(fg32);
+	struct weston_vec4f dst = a8r8g8b8_to_float(dst32);
+	struct weston_vec4f ref;
 	int i;
 
 	bg = color_float_unpremult(bg);
@@ -197,7 +197,7 @@ compare_sRGB_blend_a8r8g8b8(uint32_t bg32, uint32_t fg32, uint32_t dst32,
 	}
 
 	for (i = 0; i < COLOR_CHAN_NUM; i++)
-		ref.rgb[i] = (1.0f - fg.a) * bg.rgb[i] + fg.a * fg.rgb[i];
+		ref.el[i] = (1.0f - fg.a) * bg.el[i] + fg.a * fg.el[i];
 
 	if (space == BLEND_LINEAR)
 		sRGB_delinearize(&ref);

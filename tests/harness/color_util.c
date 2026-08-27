@@ -32,20 +32,20 @@
 #include <string.h>
 #include <stddef.h>
 
-#include <libweston/linalg-3.h>
+#include <libweston/linalg.h>
 #include "color_util.h"
 #include "weston-test-runner.h"
 #include "weston-test-assert.h"
 #include "shared/helpers.h"
 
-static_assert(sizeof(struct color_float) == 4 * sizeof(float),
-	      "unexpected padding in struct color_float");
-static_assert(offsetof(struct color_float, r) == offsetof(struct color_float, rgb[COLOR_CHAN_R]),
-	      "unexpected offset for struct color_float::r");
-static_assert(offsetof(struct color_float, g) == offsetof(struct color_float, rgb[COLOR_CHAN_G]),
-	      "unexpected offset for struct color_float::g");
-static_assert(offsetof(struct color_float, b) == offsetof(struct color_float, rgb[COLOR_CHAN_B]),
-	      "unexpected offset for struct color_float::b");
+static_assert(sizeof(struct weston_vec4f) == 4 * sizeof(float),
+	      "unexpected padding in struct weston_vec4f");
+static_assert(offsetof(struct weston_vec4f, r) == offsetof(struct weston_vec4f, el[COLOR_CHAN_R]),
+	      "unexpected offset for struct weston_vec4f::r");
+static_assert(offsetof(struct weston_vec4f, g) == offsetof(struct weston_vec4f, el[COLOR_CHAN_G]),
+	      "unexpected offset for struct weston_vec4f::g");
+static_assert(offsetof(struct weston_vec4f, b) == offsetof(struct weston_vec4f, el[COLOR_CHAN_B]),
+	      "unexpected offset for struct weston_vec4f::b");
 
 struct tone_curve_info {
 	enum transfer_fn fn;
@@ -257,10 +257,10 @@ apply_tone_curve(enum transfer_fn fn, float r)
 	return find_tone_curve_info(fn)->apply(r);
 }
 
-struct color_float
+struct weston_vec4f
 a8r8g8b8_to_float(uint32_t v)
 {
-	struct color_float cf;
+	struct weston_vec4f cf;
 
 	cf.a = ((v >> 24) & 0xff) / 255.f;
 	cf.r = ((v >> 16) & 0xff) / 255.f;
@@ -270,59 +270,57 @@ a8r8g8b8_to_float(uint32_t v)
 	return cf;
 }
 
-struct color_float
-color_float_apply_curve(enum transfer_fn fn, struct color_float c)
+struct weston_vec4f
+color_float_apply_curve(enum transfer_fn fn, struct weston_vec4f c)
 {
 	unsigned i;
 
 	for (i = 0; i < COLOR_CHAN_NUM; i++)
-		c.rgb[i] = apply_tone_curve(fn, c.rgb[i]);
+		c.el[i] = apply_tone_curve(fn, c.el[i]);
 
 	return c;
 }
 
 void
-sRGB_linearize(struct color_float *cf)
+sRGB_linearize(struct weston_vec4f *cf)
 {
 	*cf = color_float_apply_curve(TRANSFER_FN_POWER2_2_EOTF, *cf);
 }
 
 void
-sRGB_delinearize(struct color_float *cf)
+sRGB_delinearize(struct weston_vec4f *cf)
 {
 	*cf = color_float_apply_curve(TRANSFER_FN_POWER2_2_EOTF_INVERSE, *cf);
 }
 
-struct color_float
-color_float_unpremult(struct color_float in)
+struct weston_vec4f
+color_float_unpremult(struct weston_vec4f in)
 {
-	static const struct color_float transparent = {
+	static const struct weston_vec4f transparent = {
 		.r = 0.0f, .g = 0.0f, .b = 0.0f, .a = 0.0f,
 	};
-	struct color_float out;
+	struct weston_vec4f out;
 	int i;
 
 	if (in.a == 0.0f)
 		return transparent;
 
 	for (i = 0; i < COLOR_CHAN_NUM; i++)
-		out.rgb[i] = in.rgb[i] / in.a;
+		out.el[i] = in.el[i] / in.a;
 	out.a = in.a;
 	return out;
 }
 
 /*
  * Returns the result of the matrix-vector multiplication mat * c.
+ * Alpha value passes through untouched.
  */
-struct color_float
-color_float_apply_matrix(struct weston_mat3f mat, struct color_float c)
+struct weston_vec4f
+color_float_apply_matrix(struct weston_mat3f mat, struct weston_vec4f c)
 {
 	struct weston_vec3f v = weston_m3f_mul_v3f(mat, WESTON_VEC3F(c.r, c.g, c.b));
 
-	return (struct color_float){
-		.rgb = { v.r, v.g, v.b },
-		.a = c.a,
-	};
+	return WESTON_VEC4F(v.r, v.g, v.b, c.a);
 }
 
 bool
@@ -342,10 +340,10 @@ process_pixel_using_pipeline(enum transfer_fn pre_curve,
 			     struct weston_mat3f mat,
 			     enum transfer_fn post_curve,
 			     const double vcgt_exponents[COLOR_CHAN_NUM],
-			     const struct color_float *in,
-			     struct color_float *out)
+			     const struct weston_vec4f *in,
+			     struct weston_vec4f *out)
 {
-	struct color_float cf;
+	struct weston_vec4f cf;
 	unsigned i;
 
 	cf = color_float_apply_curve(pre_curve, *in);
@@ -354,7 +352,7 @@ process_pixel_using_pipeline(enum transfer_fn pre_curve,
 
 	if (should_include_vcgt(vcgt_exponents))
 		for (i = 0; i < COLOR_CHAN_NUM; i++)
-			cf.rgb[i] = pow(cf.rgb[i], vcgt_exponents[i]);
+			cf.el[i] = pow(cf.el[i], vcgt_exponents[i]);
 
 	*out = cf;
 }
@@ -381,7 +379,7 @@ process_pixel_using_pipeline(enum transfer_fn pre_curve,
 void
 scalar_stat_update(struct scalar_stat *stat,
 		   double val,
-		   const struct color_float *pos)
+		   const struct weston_vec4f *pos)
 {
 	if (stat->count == 0 || stat->min > val) {
 		stat->min = val;
@@ -419,7 +417,7 @@ scalar_stat_print_float(const struct scalar_stat *stat)
 }
 
 static void
-print_stat_at_pos(const char *lim, double val, struct color_float pos, double scale)
+print_stat_at_pos(const char *lim, double val, struct weston_vec4f pos, double scale)
 {
 	testlog("    %s %8.5f at rgb(%7.2f, %7.2f, %7.2f)\n",
 		lim, val * scale, pos.r * scale, pos.g * scale, pos.b * scale);
@@ -496,9 +494,9 @@ rgb_diff_stat_print(const struct rgb_diff_stat *stat,
  */
 void
 rgb_diff_stat_update(struct rgb_diff_stat *stat,
-		     const struct color_float *ref,
-		     const struct color_float *val,
-		     const struct color_float *pos)
+		     const struct weston_vec4f *ref,
+		     const struct weston_vec4f *val,
+		     const struct weston_vec4f *pos)
 {
 	unsigned i;
 	double ssd = 0.0;
@@ -506,7 +504,7 @@ rgb_diff_stat_update(struct rgb_diff_stat *stat,
 	double two_norm;
 
 	for (i = 0; i < COLOR_CHAN_NUM; i++) {
-		diff[i] = val->rgb[i] - ref->rgb[i];
+		diff[i] = val->el[i] - ref->el[i];
 
 		scalar_stat_update(&stat->rgb[i], diff[i], pos);
 		ssd += diff[i] * diff[i];
