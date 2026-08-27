@@ -404,6 +404,9 @@ scalar_stat_update(struct scalar_stat *stat,
 float
 scalar_stat_avg(const struct scalar_stat *stat)
 {
+	if (stat->count == 0)
+		return 0.0f;
+
 	return stat->sum / stat->count;
 }
 
@@ -417,21 +420,21 @@ scalar_stat_print_float(const struct scalar_stat *stat)
 }
 
 static void
-print_stat_at_pos(const char *lim, double val, struct weston_vec4f pos)
+print_val_at_pos(const char *lim, double val, struct weston_vec4f pos)
 {
 	testlog("    %s %8.5f at (%7.2f, %7.2f, %7.2f, %7.2f)\n",
 		lim, val, pos.x, pos.y, pos.z, pos.w);
 }
 
 static void
-print_rgb_at_pos(const struct scalar_stat *stat, double scale)
+print_stat_at_pos(const struct scalar_stat *stat, double scale)
 {
-	print_stat_at_pos("min", stat->min * scale, stat->min_pos);
-	print_stat_at_pos("max", stat->max * scale, stat->max_pos);
+	print_val_at_pos("min", stat->min * scale, stat->min_pos);
+	print_val_at_pos("max", stat->max * scale, stat->max_pos);
 	testlog("    avg %8.5f\n", scalar_stat_avg(stat) * scale);
 }
 
-/** Print min/max/avg for each R/G/B/two-norm statistics
+/** Print min/max/avg for each R/G/B/A/two-norm statistics
  *
  * \param stat The statistics to print.
  * \param title A custom title to include in the heading which shall be printed
@@ -439,7 +442,7 @@ print_rgb_at_pos(const struct scalar_stat *stat, double scale)
  * \param scaling_bits Determines a scaling factor for the printed color values
  * as 2^scaling_bits - 1.
  *
- * Usually RGB values are stored in unsigned integer representation. 8-bit
+ * Usually RGB(A) values are stored in unsigned integer representation. 8-bit
  * integer range is [0, 255] for example. Passing scaling_bits=8 will multiply
  * pixel values (differences, two-norm errors) by 2^8 - 1 = 255.
  * This makes interpreting the recorded errors more intuitive
@@ -449,20 +452,21 @@ void
 rgb_diff_stat_print(const struct rgb_diff_stat *stat,
 		    const char *title, unsigned scaling_bits)
 {
-	const char *const chan_name[COLOR_CHAN_NUM] = { "r", "g", "b" };
+	const char *const chan_name[] = { "r", "g", "b", "a" };
 	float scale = exp2f(scaling_bits) - 1.0f;
+	unsigned end = stat->mode == ALPHA_IGNORE ? 3 : 4;
 	unsigned i;
 
 	test_assert_uint_gt(scaling_bits, 0);
 
 	testlog("%s error statistics, %u samples, value range 0.0 - %.1f:\n",
 		title, stat->two_norm.count, scale);
-	for (i = 0; i < COLOR_CHAN_NUM; i++) {
+	for (i = 0; i < end; i++) {
 		testlog("  ch %s (signed):\n", chan_name[i]);
-		print_rgb_at_pos(&stat->rgb[i], scale);
+		print_stat_at_pos(&stat->rgba[i], scale);
 	}
-	testlog("  rgb two-norm:\n");
-	print_rgb_at_pos(&stat->two_norm, scale);
+	testlog("  rgb%s two-norm:\n", stat->mode == ALPHA_IGNORE ? "" : "a");
+	print_stat_at_pos(&stat->two_norm, scale);
 }
 
 /** Update RGB difference statistics
@@ -472,24 +476,28 @@ rgb_diff_stat_print(const struct rgb_diff_stat *stat,
  * \param val The color produced by the algorithm under test; a sample.
  * \param pos The position to be recorded with extremes.
  *
- * Computes the RGB difference by subtracting the reference color from the
- * sample. This signed difference is tracked separately for each color channel
+ * Computes the difference by subtracting the reference color from the
+ * sample. This signed difference is tracked separately for each channel
  * in a scalar_stat to find the min, max, and average signed difference. The
- * two-norm (Euclidean length) of the RGB difference vector is tracked in
+ * two-norm (Euclidean length) of the difference vector is tracked in
  * another scalar_stat.
  *
- * The position is stored separately for each of the eight min/max
- * R/G/B/two-norm values recorded. A good way to use position is to record
+ * If \c stat->mode is \c ALPHA_IGNORE, the difference vector is computed
+ * from R, G and B channels. Otherwise, the difference vector uses all channels.
+ *
+ * The position is stored separately for each of the ten min/max
+ * R/G/B/A/two-norm values recorded. A good way to use position is to record
  * the algorithm input color.
  *
- * To use this, declare a variable of type struct rgb_diff_stat and
- * zero-initalize it. Repeatedly call rgb_diff_stat_update() to accumulate
+ * To use this, declare a variable of type struct rgb_diff_stat,
+ * zero-initalize it and set the \c mode field.
+ * Repeatedly call \c rgb_diff_stat_update() to accumulate
  * statistics. Then either directly read out what you are interested in from
- * the structure or use rgb_diff_stat_print().
+ * the structure or use \c rgb_diff_stat_print().
  *
  * If you also want to collect a debug log of all calls to this function,
- * initialize the .dump member to a writable file handle. This is easiest
- * with fopen_dump_file(). Remember to fclose() the handle after you have
+ * initialize the \c .dump member to a writable file handle. This is easiest
+ * with \c fopen_dump_file(). Remember to \c fclose() the handle after you have
  * no more samples to add.
  */
 void
@@ -498,15 +506,16 @@ rgb_diff_stat_update(struct rgb_diff_stat *stat,
 		     const struct weston_vec4f *val,
 		     const struct weston_vec4f *pos)
 {
+	unsigned end = stat->mode == ALPHA_IGNORE ? 3 : 4;
 	unsigned i;
 	double ssd = 0.0;
-	double diff[COLOR_CHAN_NUM];
+	double diff[4] = {};
 	double two_norm;
 
-	for (i = 0; i < COLOR_CHAN_NUM; i++) {
+	for (i = 0; i < end; i++) {
 		diff[i] = val->el[i] - ref->el[i];
 
-		scalar_stat_update(&stat->rgb[i], diff[i], pos);
+		scalar_stat_update(&stat->rgba[i], diff[i], pos);
 		ssd += diff[i] * diff[i];
 	}
 	two_norm = sqrt(ssd);
@@ -514,9 +523,9 @@ rgb_diff_stat_update(struct rgb_diff_stat *stat,
 	scalar_stat_update(&stat->two_norm, two_norm, pos);
 
 	if (stat->dump) {
-		fprintf(stat->dump, "%.8g %.8g %.8g %.8g %.5g %.5g %.5g %.5g\n",
+		fprintf(stat->dump, "%.8g %.8g %.8g %.8g %.8g %.5g %.5g %.5g %.5g\n",
 			two_norm,
-			diff[COLOR_CHAN_R], diff[COLOR_CHAN_G], diff[COLOR_CHAN_B],
+			diff[COLOR_CHAN_R], diff[COLOR_CHAN_G], diff[COLOR_CHAN_B], diff[3],
 			pos->x, pos->y, pos->z, pos->w);
 	}
 }

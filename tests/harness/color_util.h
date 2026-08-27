@@ -118,12 +118,22 @@ struct scalar_stat {
 	FILE *dump;
 };
 
+/** How the alpha channel should be handled */
+enum compare_alpha_mode {
+	/** Ignored completely */
+	ALPHA_IGNORE = 0,
+
+	/** Compared just like R, G and B */
+	ALPHA_COMPARE,
+};
+
 /** RGB difference statistics
  *
  * See rgb_diff_stat_update().
  */
 struct rgb_diff_stat {
-	struct scalar_stat rgb[COLOR_CHAN_NUM];
+	enum compare_alpha_mode mode;
+	struct scalar_stat rgba[4];
 	struct scalar_stat two_norm;
 
 	/** Debug dump into file
