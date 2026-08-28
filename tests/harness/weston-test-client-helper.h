@@ -52,6 +52,8 @@
 #include "commit-timing-v1-client-protocol.h"
 #include "weston-restricted-buffer-client-protocol.h"
 
+#include "color_util.h"
+
 struct color_manager_client;
 
 struct client {

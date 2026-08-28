@@ -365,8 +365,8 @@ npm(struct wet_testsuite_data *suite_data,
 static enum test_result_code
 bradform_adaptation_D65_D50(struct wet_testsuite_data *suite_data)
 {
-	const struct weston_CIExy D65 = { 0.3127, 0.3290 };
-	const struct weston_CIExy D50 = { 0.3457, 0.3585 };
+	const struct weston_CIExy D65xy = D65;
+	const struct weston_CIExy D50xy = { 0.3457, 0.3585 };
 	const struct weston_mat3f ref = WESTON_MAT3F(
 		1.04790738171017, 0.0229333845542104, -0.0502016347980104,
 		0.0296059594177168, 0.990456039910785, -0.01707552919587,
@@ -374,7 +374,7 @@ bradform_adaptation_D65_D50(struct wet_testsuite_data *suite_data)
 	);
 	struct weston_mat3f M;
 
-	M = weston_bradford_adaptation(D65, D50);
+	M = weston_bradford_adaptation(D65xy, D50xy);
 	test_assert_f32_ge(diff_precision(M, ref), 13);
 
 	return RESULT_OK;
