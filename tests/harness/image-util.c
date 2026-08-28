@@ -32,6 +32,7 @@
 #include "image-iter.h"
 
 #include <cairo.h>
+#include <libweston/linalg-4.h>
 #include "image-file-lib/png-writer.h"
 
 #define max(a, b) (((a) > (b)) ? (a) : (b))
@@ -62,24 +63,6 @@ format_cairo2pixman(cairo_format_t fmt)
 	test_assert_not_reached("unknown Cairo pixel format");
 
 	return 0;
-}
-
-/**
- * Validate range
- *
- * \param r Range to validate or NULL.
- * \return The given range, or {0, 0} for NULL.
- *
- * Will abort if range is invalid, that is a > b.
- */
-static struct range
-range_get(const struct range *r)
-{
-	if (!r)
-		return (struct range){ 0, 0 };
-
-	test_assert_int_le(r->a, r->b);
-	return *r;
 }
 
 /**
@@ -130,49 +113,6 @@ image_check_get_roi(const struct image_header *ih_a,
 	return box;
 }
 
-struct pixel_diff_stat {
-	struct pixel_diff_stat_channel {
-		int min_diff;
-		int max_diff;
-	} ch[4];
-};
-
-static void
-testlog_pixel_diff_stat(const struct pixel_diff_stat *stat)
-{
-	int i;
-
-	testlog("Image difference statistics:\n");
-	for (i = 0; i < 4; i++) {
-		testlog("\tch %d: [%d, %d]\n",
-			i, stat->ch[i].min_diff, stat->ch[i].max_diff);
-	}
-}
-
-static bool
-fuzzy_match_pixels(uint32_t pix_a, uint32_t pix_b,
-		   const struct range *fuzz,
-		   struct pixel_diff_stat *stat)
-{
-	bool ret = true;
-	int shift;
-	int i;
-
-	for (shift = 0, i = 0; i < 4; shift += 8, i++) {
-		int val_a = (pix_a >> shift) & 0xffu;
-		int val_b = (pix_b >> shift) & 0xffu;
-		int d = val_b - val_a;
-
-		stat->ch[i].min_diff = min(stat->ch[i].min_diff, d);
-		stat->ch[i].max_diff = max(stat->ch[i].max_diff, d);
-
-		if (d < fuzz->a || d > fuzz->b)
-			ret = false;
-	}
-
-	return ret;
-}
-
 /**
  * Test if a given region within two images are pixel-identical
  *
@@ -182,8 +122,7 @@ fuzzy_match_pixels(uint32_t pix_a, uint32_t pix_b,
  * \param img_b Second image.
  * \param clip_rect The region of interest, or NULL for comparing the whole
  * images.
- * \param prec Per-channel allowed difference, or NULL for identical match
- * required.
+ * \param tol Two-norm allowed error, or NULL for identical match required.
  *
  * This function hard-fails if clip_rect is not inside both images. If clip_rect
  * is given, the images do not have to match in size, otherwise size mismatch
@@ -196,34 +135,49 @@ fuzzy_match_pixels(uint32_t pix_a, uint32_t pix_b,
  */
 bool
 check_images_match(pixman_image_t *img_a, pixman_image_t *img_b,
-		   const struct rectangle *clip_rect, const struct range *prec)
+		   const struct rectangle *clip_rect,
+		   const struct two_norm_tolerance *tol)
 {
-	struct range fuzz = range_get(prec);
-	struct pixel_diff_stat diffstat = {};
+	struct rgb_diff_stat diffstat = {};
+	static const struct two_norm_tolerance zero_tol = {
+		.max_limit = 0.0,
+		.avg_limit = -1.0
+	};
 	struct image_header ih_a = image_header_from(img_a);
 	struct image_header ih_b = image_header_from(img_b);
 	pixman_box32_t box;
 	int x, y;
+	struct weston_vec4f pos = WESTON_VEC4F_ZERO;
 	uint32_t *pix_a;
 	uint32_t *pix_b;
+
+	if (!tol)
+		tol = &zero_tol;
+
+	if (ih_a.pixman_format != PIXMAN_a8r8g8b8 ||
+	    ih_b.pixman_format != PIXMAN_a8r8g8b8)
+		abort();
 
 	box = image_check_get_roi(&ih_a, &ih_b, clip_rect);
 
 	for (y = box.y1; y < box.y2; y++) {
 		pix_a = image_header_get_row_u32(&ih_a, y) + box.x1;
 		pix_b = image_header_get_row_u32(&ih_b, y) + box.x1;
+		pos.y = y;
 
 		for (x = box.x1; x < box.x2; x++) {
-			if (!fuzzy_match_pixels(*pix_a, *pix_b,
-						&fuzz, &diffstat))
-				return false;
+			struct weston_vec4f cf_a = a8r8g8b8_to_float(*pix_a);
+			struct weston_vec4f cf_b = a8r8g8b8_to_float(*pix_b);
+
+			pos.x = x;
+			rgb_diff_stat_update(&diffstat, &cf_b, &cf_a, &pos);
 
 			pix_a++;
 			pix_b++;
 		}
 	}
 
-	return true;
+	return rgb_diff_stat_validate(&diffstat, *tol, "check_images_match()");
 }
 
 /**
@@ -255,8 +209,9 @@ tint(uint32_t src, uint32_t add)
  * \param img_b Second image.
  * \param clip_rect The region of interest, or NULL for comparing the whole
  * images.
- * \param prec Per-channel allowed difference, or NULL for identical match
- * required.
+ * \param lim Determines whether the alpha channel is ignored for
+ * the two-norm computation, and the maximum two-norm allowed for an RGB(A)
+ * difference vector. If \c NULL, the exact match of RGBA are required.
  * \return A new image with the differences highlighted.
  *
  * Regions outside of the region of interest are shaded with black, matching
@@ -266,19 +221,16 @@ tint(uint32_t src, uint32_t add)
  * This function hard-fails if clip_rect is not inside both images. If clip_rect
  * is given, the images do not have to match in size, otherwise size mismatch
  * will be a hard failure.
- *
- * The per-pixel, per-channel difference is computed as img_b - img_a which is
- * required to be in the range [prec->a, prec->b] inclusive. The difference is
- * signed. All four channels are compared the same way, without any special
- * meaning on alpha channel.
  */
 pixman_image_t *
 visualize_image_difference(pixman_image_t *img_a, pixman_image_t *img_b,
 			   const struct rectangle *clip_rect,
-			   const struct range *prec)
+			   const struct pixel_diff_limit *lim)
 {
-	struct range fuzz = range_get(prec);
-	struct pixel_diff_stat diffstat = {};
+	static const struct pixel_diff_limit no_lim = {
+		.mode = ALPHA_COMPARE,
+		.two_norm_limit = 0.0,
+	};
 	pixman_image_t *diffimg;
 	pixman_image_t *shade;
 	struct image_header ih_a = image_header_from(img_a);
@@ -290,6 +242,9 @@ visualize_image_difference(pixman_image_t *img_a, pixman_image_t *img_b,
 	uint32_t *pix_b;
 	uint32_t *pix_d;
 	pixman_color_t shade_color = { 0, 0, 0, 32768 };
+
+	if (!lim)
+		lim = &no_lim;
 
 	box = image_check_get_roi(&ih_a, &ih_b, clip_rect);
 
@@ -315,8 +270,10 @@ visualize_image_difference(pixman_image_t *img_a, pixman_image_t *img_b,
 		pix_d = image_header_get_row_u32(&ih_d, y) + box.x1;
 
 		for (x = box.x1; x < box.x2; x++) {
-			if (fuzzy_match_pixels(*pix_a, *pix_b,
-					       &fuzz, &diffstat))
+			struct weston_vec4f cf_a = a8r8g8b8_to_float(*pix_a);
+			struct weston_vec4f cf_b = a8r8g8b8_to_float(*pix_b);
+
+			if (two_norm_tolerance_check(*lim, &cf_b, &cf_a))
 				*pix_d = tint(*pix_d, 0x00008000); /* green */
 			else
 				*pix_d = tint(*pix_d, 0x00c00000); /* red */
@@ -326,8 +283,6 @@ visualize_image_difference(pixman_image_t *img_a, pixman_image_t *img_b,
 			pix_d++;
 		}
 	}
-
-	testlog_pixel_diff_stat(&diffstat);
 
 	return diffimg;
 }

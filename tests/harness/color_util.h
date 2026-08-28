@@ -170,6 +170,48 @@ void
 rgb_diff_stat_print(const struct rgb_diff_stat *stat,
 		    const char *title, unsigned scaling_bits);
 
+/** Tolerances for \c rgb_diff_stat two-norm
+ *
+ * Can be used for testing whether error statistics are withing the tolerances.
+ */
+struct two_norm_tolerance {
+	/**
+	 * Maximum acceptable value for the maximum (over all tested pixels) of
+	 * the two-norm error (Euclidean length of an RGB difference vector),
+	 * negative if not used.
+	 */
+	double max_limit;
+
+	/**
+	 * Maximum acceptable value for the average (over all tested pixels) of
+	 * the two-norm error (Euclidean length of an RGB difference vector),
+	 * negative if not used.
+	 */
+	double avg_limit;
+};
+
+bool
+rgb_diff_stat_validate(const struct rgb_diff_stat *stat,
+		       struct two_norm_tolerance tol,
+		       const char *title);
+
+/** Per-pixel difference check limits */
+struct pixel_diff_limit {
+	/** How to handle the alpha channel */
+	enum compare_alpha_mode mode;
+
+	/**
+	 * Maximum acceptable value for the two-norm error (Euclidean length of
+	 * an RGB difference vector), negative if not used.
+	 */
+	double two_norm_limit;
+};
+
+bool
+two_norm_tolerance_check(struct pixel_diff_limit lim,
+			 const struct weston_vec4f *ref,
+			 const struct weston_vec4f *val);
+
 #define NO_VALUE -1.f
 
 #define D65 { 0.3127f, 0.3290f }

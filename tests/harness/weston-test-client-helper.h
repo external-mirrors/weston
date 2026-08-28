@@ -228,11 +228,6 @@ struct rectangle {
 	int height;
 };
 
-struct range {
-	int a;
-	int b;
-};
-
 enum screenshot_decoration_mode {
 	INCLUDE_DECORATIONS,
 	NO_DECORATIONS,
@@ -344,12 +339,12 @@ read_blob_from_file(const char *fname, char **data_out);
 bool
 check_images_match(pixman_image_t *img_a, pixman_image_t *img_b,
 		   const struct rectangle *clip,
-		   const struct range *prec);
+		   const struct two_norm_tolerance *tol);
 
 pixman_image_t *
 visualize_image_difference(pixman_image_t *img_a, pixman_image_t *img_b,
 			   const struct rectangle *clip_rect,
-			   const struct range *prec);
+			   const struct pixel_diff_limit *lim);
 
 bool
 write_image_as_png(pixman_image_t *image, const char *fname);

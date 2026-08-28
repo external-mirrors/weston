@@ -529,3 +529,70 @@ rgb_diff_stat_update(struct rgb_diff_stat *stat,
 			pos->x, pos->y, pos->z, pos->w);
 	}
 }
+
+static double
+inf_if_negative(double x)
+{
+	if (x >= 0.0)
+		return x;
+	else
+		return INFINITY;
+}
+
+/** Test two-norm RGB difference statistics
+ *
+ * \param stat The statistics to evaluate.
+ * \param tol The acceptable error tolerances.
+ * \param title A custom title to include in the printed heading if the
+ * statistics are not acceptable.
+ * \return True if the statistics are acceptable and false if not.
+ *
+ * Compares the two-norm member of the given statistics against the
+ * tolerances. Exceeding a tolerance prints the RGB difference statistics
+ * with 8-bit scaling.
+ */
+bool
+rgb_diff_stat_validate(const struct rgb_diff_stat *stat,
+		       struct two_norm_tolerance tol,
+		       const char *title)
+{
+	bool ok = true;
+
+	if (tol.max_limit >= 0.0) {
+		if (stat->two_norm.max > tol.max_limit)
+			ok = false;
+	}
+
+	if (tol.avg_limit >= 0.0) {
+		if (scalar_stat_avg(&stat->two_norm) > tol.avg_limit)
+			ok = false;
+	}
+
+	if (!ok) {
+		testlog("rgb_diff_stat validation failure, max_limit = %f, avg_limit = %f\n",
+			inf_if_negative(tol.max_limit) * 255.0,
+			inf_if_negative(tol.avg_limit) * 255.0);
+		rgb_diff_stat_print(stat, title, 8);
+	}
+
+	return ok;
+}
+
+bool
+two_norm_tolerance_check(struct pixel_diff_limit lim,
+			 const struct weston_vec4f *ref,
+			 const struct weston_vec4f *val)
+{
+	unsigned end = lim.mode == ALPHA_IGNORE ? 3 : 4;
+	double maxlim = lim.two_norm_limit;
+	unsigned i;
+	double ssd = 0.0;
+
+	for (i = 0; i < end; i++) {
+		double diff = val->el[i] - ref->el[i];
+
+		ssd += diff * diff;
+	}
+
+	return ssd <= maxlim * maxlim;
+}

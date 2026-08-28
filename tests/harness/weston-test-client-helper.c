@@ -1806,13 +1806,13 @@ write_visual_diff(pixman_image_t *ref_image,
 		  pixman_image_t *shot,
 		  const struct rectangle *clip,
 		  int seq_no,
-		  const struct range *fuzz)
+		  const struct pixel_diff_limit *lim)
 {
 	char *fname;
 	pixman_image_t *diff;
 
 	fname = output_filename_for_test_case("diff", seq_no, "png");
-	diff = visualize_image_difference(ref_image, shot, clip, fuzz);
+	diff = visualize_image_difference(ref_image, shot, clip, lim);
 	write_image_as_png(diff, fname);
 
 	pixman_image_unref(diff);
@@ -1848,7 +1848,15 @@ verify_image(pixman_image_t *shot,
 	     const struct verify_image_target *vit,
 	     int seq_no)
 {
-	const struct range gl_fuzz = { -5, 4 };
+	struct two_norm_tolerance tol = {
+		/* +/- 4/255 on every channel + 1/255 for fixture 5 of icc_output_decorations test */
+		.max_limit = 9.0 / 255.0,
+		.avg_limit = -1.0,
+	};
+	struct pixel_diff_limit lim = {
+		.mode = ALPHA_COMPARE,
+		.two_norm_limit = tol.max_limit,
+	};
 	pixman_image_t *ref = NULL;
 	char *ref_fname = NULL;
 	char *shot_fname;
@@ -1859,12 +1867,12 @@ verify_image(pixman_image_t *shot,
 	ref = load_image_from_png(ref_fname);
 
 	if (ref) {
-		match = check_images_match(ref, shot, vit->clip, &gl_fuzz);
+		match = check_images_match(ref, shot, vit->clip, &tol);
 		testlog("Verify reference image %s vs. shot %s: %s\n",
 			ref_fname, shot_fname, match ? "PASS" : "FAIL");
 
-		if (!match) {
-			write_visual_diff(ref, shot, vit->clip, seq_no, &gl_fuzz);
+		if (!match && tol.max_limit >= 0.0) {
+			write_visual_diff(ref, shot, vit->clip, seq_no, &lim);
 		}
 
 		pixman_image_unref(ref);
