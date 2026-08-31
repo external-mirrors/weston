@@ -250,7 +250,8 @@ get_middle_row(pixman_image_t *image)
 
 static bool
 check_blend_pattern(struct buffer *bg, struct buffer *fg, struct buffer *shot,
-		    enum blend_space space)
+		    enum blend_space space,
+		    struct two_norm_tolerance tol)
 {
 	FILE *dump = NULL;
 #if 0
@@ -262,16 +263,6 @@ check_blend_pattern(struct buffer *bg, struct buffer *fg, struct buffer *shot,
 	 */
 	dump = fopen_dump_file("dump");
 #endif
-
-	/*
-	 * Allow for +/- 1.72 code points of two-norm error in non-linear
-	 * 8-bit channel value. This is necessary for the BLEND_LINEAR case.
-	 *
-	 * llvmpipe would be ok with +/- 1.0 code points error threshold
-	 * if not for one particular case of blending (a=254, r=0) into r=255,
-	 * which results in error of 1.701 code points.
-	 */
-	const float tolerance = 1.72f / 255.f;
 
 	uint32_t *bg_row = get_middle_row(bg->image);
 	uint32_t *fg_row = get_middle_row(fg->image);
@@ -288,10 +279,8 @@ check_blend_pattern(struct buffer *bg, struct buffer *fg, struct buffer *shot,
 					    &diffstat, space);
 	}
 
-	if (diffstat.two_norm.max > tolerance)
+	if (!rgb_diff_stat_validate(&diffstat, tol, "check_blend_pattern"))
 		ret = false;
-
-	rgb_diff_stat_print(&diffstat, __func__, 8);
 
 	if (dump)
 		fclose(dump);
@@ -401,7 +390,20 @@ alpha_blend(struct wet_testsuite_data *suite_data)
 	shot = capture_screenshot_of_output(client, NULL, NO_DECORATIONS);
 	test_assert_ptr_not_null(shot);
 	match = verify_image(shot->image, &vit, 0);
-	test_assert_true(check_blend_pattern(bg, fg, shot, space));
+
+	/*
+	 * Allow for +/- 1.72 code points of two-norm error in non-linear
+	 * 8-bit channel value. This is necessary for the BLEND_LINEAR case.
+	 *
+	 * llvmpipe would be ok with +/- 1.0 code points error threshold
+	 * if not for one particular case of blending (a=254, r=0) into r=255,
+	 * which results in error of 1.701 code points.
+	 */
+	const struct two_norm_tolerance tol = {
+		.max_limit = 1.72 / 255.0,
+		.avg_limit = 0.5 / 255.0,
+	};
+	test_assert_true(check_blend_pattern(bg, fg, shot, space, tol));
 	test_assert_true(match);
 
 	buffer_destroy(shot);
