@@ -422,9 +422,6 @@ process_pipeline_comparison(const struct buffer *src_buf,
 	struct weston_vec4f pix_src_pipeline;
 	struct weston_vec4f pix_shot;
 	struct rgb_diff_stat diffstat = { .dump = dump };
-	float avg_err;
-	float max_err;
-	bool ok;
 
 	/* no point to compare different images */
 	test_assert_int_eq(ih_src.width, ih_shot.width);
@@ -451,20 +448,15 @@ process_pipeline_comparison(const struct buffer *src_buf,
 		}
 	}
 
-	avg_err = diffstat.two_norm.sum / diffstat.two_norm.count * 255.0f;
-	max_err = diffstat.two_norm.max * 255.0f;
-	ok = max_err <= arg->max_tol && avg_err <= arg->avg_tol;
-
-	testlog("%s %s %s tolerances avg: %.2f <= %.2f, max: %.2f <= %.2f\n",
-		__func__, ok ? "SUCCESS" : "FAILURE", arg->meta.name,
-		avg_err, arg->avg_tol, max_err, arg->max_tol);
-
-	rgb_diff_stat_print(&diffstat, __func__, 8);
-
 	if (dump)
 		fclose(dump);
 
-	return ok;
+	struct two_norm_tolerance tol = {
+		.max_limit = arg->max_tol / 255.0,
+		.avg_limit = arg->avg_tol / 255.0,
+	};
+
+	return rgb_diff_stat_validate(&diffstat, tol, "process_pipeline_comparison");
 }
 
 /*
