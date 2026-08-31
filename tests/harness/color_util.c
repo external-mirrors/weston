@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
+#include <sys/file.h>
 
 #include <libweston/linalg.h>
 #include "color_util.h"
@@ -530,6 +531,34 @@ rgb_diff_stat_update(struct rgb_diff_stat *stat,
 	}
 }
 
+static FILE *
+locked_file_open_for_append(const char *name)
+{
+	FILE *fp;
+	int ret;
+
+	fp = fopen(name, "a");
+	if (!fp) {
+		fprintf(stderr, "Error in %s, fopen('%s'): %s (%d)\n",
+			__func__, name, strerror(errno), errno);
+		abort();
+	}
+
+	do {
+		ret = 0;
+		if (flock(fileno(fp), LOCK_EX) < 0)
+			ret = errno;
+	} while (ret == EINTR);
+
+	if (ret != 0) {
+		fprintf(stderr, "Error in %s, flock('%s'): %s (%d)\n",
+			__func__, name, strerror(errno), errno);
+		abort();
+	}
+
+	return fp;
+}
+
 static double
 inf_if_negative(double x)
 {
@@ -537,6 +566,38 @@ inf_if_negative(double x)
 		return x;
 	else
 		return INFINITY;
+}
+
+static void
+maybe_record(const struct rgb_diff_stat *stat,
+	     struct two_norm_tolerance tol,
+	     const char *title)
+{
+	/* Set this env var to a file name to append records */
+	const char *name = getenv("WESTON_TEST_RGB_DIFF_STAT_RECORD");
+	double S = 255.0;
+	FILE *fp;
+
+	if (!name)
+		return;
+
+	double max_limit = inf_if_negative(tol.max_limit);
+	double avg_limit = inf_if_negative(tol.avg_limit);
+
+	fp = locked_file_open_for_append(name);
+
+	double gap_max = max_limit - stat->two_norm.max;
+	double gap_avg = avg_limit - scalar_stat_avg(&stat->two_norm);
+
+	fprintf(fp, "%s %s two_norm max %f lim %f, avg %f lim %f%s%s%s\n",
+		get_test_name(), title,
+		stat->two_norm.max * S, max_limit * S,
+		scalar_stat_avg(&stat->two_norm) * S, avg_limit * S,
+		gap_max * S > 2.0 ? " max?" : "",
+		gap_avg * S > 1.0 ? " avg?" : "",
+		gap_avg < 0.0 || gap_max < 0.0 ? " FAIL!" : "");
+
+	fclose(fp);
 }
 
 /** Test two-norm RGB difference statistics
@@ -574,6 +635,8 @@ rgb_diff_stat_validate(const struct rgb_diff_stat *stat,
 			inf_if_negative(tol.avg_limit) * 255.0);
 		rgb_diff_stat_print(stat, title, 8);
 	}
+
+	maybe_record(stat, tol, title);
 
 	return ok;
 }
