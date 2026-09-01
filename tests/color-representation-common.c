@@ -25,6 +25,8 @@
 
 #include "config.h"
 
+#include <endian.h>
+
 #include "color-representation-common.h"
 
 #include "image-iter.h"
@@ -229,8 +231,8 @@ create_and_fill_nv12_buffer_with_cake(struct client *client,
 			if ((y & 1) == 0 && (x & 1) == 0) {
 				x8r8g8b8_to_ycbcr8(argb, color_state, y_row + x,
 						   &cb, &cr);
-				*(uv_row + x / 2) = ((uint16_t) cb) |
-				                    ((uint16_t) cr << 8);
+				*(uv_row + x / 2) = htole16(((uint16_t) cb) |
+				                    ((uint16_t) cr << 8));
 			} else {
 				x8r8g8b8_to_ycbcr8(argb, color_state, y_row + x,
 						   NULL, NULL);
