@@ -2957,7 +2957,16 @@ update_borders_tex(struct gl_renderer *gr,
 		   struct gl_output_state *go)
 {
 	WESTON_TRACE_FUNC();
+	/*
+	 * pending->data is a native-endian CAIRO_FORMAT_ARGB32 surface
+	 * uploaded as GL_RGBA/GL_UNSIGNED_BYTE, so the byte order the shader
+	 * samples differs per host. Swizzle it back.
+	 */
+#if __BYTE_ORDER == __LITTLE_ENDIAN
 	GLint swizzles[] = { GL_BLUE, GL_GREEN, GL_RED, GL_ALPHA };
+#else
+	GLint swizzles[] = { GL_GREEN, GL_BLUE, GL_ALPHA, GL_RED };
+#endif
 	int i;
 
 	for (i = 0; i < 4; i++) {
