@@ -3667,9 +3667,11 @@ drm_writeback_save_callback(int fd, uint32_t mask, void *data)
 {
 	struct drm_writeback_state *state = data;
 
-	wl_event_source_remove(state->wb_source);
-	close(fd);
+	/* Don't close fd; state owns it and closes it when destroyed. */
+	weston_assert_int_eq(state->output->base.compositor,
+			     fd, state->out_fence_fd);
 
+	wl_event_source_remove(state->wb_source);
 	drm_writeback_success_screenshot(state);
 
 	return 0;
