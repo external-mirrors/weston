@@ -373,6 +373,8 @@ write_image_as_png(pixman_image_t *image, const char *fname)
 		testlog("Failed to save image '%s': %s\n", fname,
 			cairo_status_to_string(status));
 
+		cairo_surface_destroy(cairo_surface);
+
 		return false;
 	}
 
