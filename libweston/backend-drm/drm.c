@@ -2888,12 +2888,16 @@ should_wait_drm_events(struct drm_device *device)
 	return false;
 }
 
+static void
+drm_writeback_complete_sync(struct drm_writeback_state *state);
+
 static int
 drm_output_enable(struct weston_output *base)
 {
 	struct drm_output *output = to_drm_output(base);
 	struct drm_device *device = output->device;
 	struct drm_backend *b = device->backend;
+	struct drm_crtc *crtc;
 	int ret;
 
 	assert(output);
@@ -2910,8 +2914,18 @@ drm_output_enable(struct weston_output *base)
 	 * not find DRM objects available and fail. So we spin here until the
 	 * flip completes and the output gets destroyed/disabled and release the
 	 * DRM objects. */
-	while (should_wait_drm_events(device))
+	while (should_wait_drm_events(device)) {
+		/* on_drm_input() won't handle the flip events while a writeback
+		 * is in flight, and the event loop that would finish the
+		 * writeback is not running here. Failing the screenshot is not
+		 * enough, as the wb job would still be running on the CRTC. */
+		wl_list_for_each(crtc, &device->crtc_list, link) {
+			if (crtc->output && crtc->output->wb_state)
+				drm_writeback_complete_sync(crtc->output->wb_state);
+		}
+
 		on_drm_input(device->kms_device->fd, 0 /* unused mask */, device);
+	}
 
 	output->connector_colorspace = wdrm_colorspace_from_output(&output->base);
 	if (output->connector_colorspace == WDRM_COLORSPACE__COUNT)
@@ -3679,16 +3693,31 @@ drm_writeback_save_callback(int fd, uint32_t mask, void *data)
 	return 0;
 }
 
+enum writeback_poll_mode {
+	WRITEBACK_POLL_MODE_DONT_BLOCK = 0,
+	WRITEBACK_POLL_MODE_BLOCK,
+};
+
 static bool
-drm_writeback_has_finished(struct drm_writeback_state *state)
+drm_writeback_has_finished(struct drm_writeback_state *state,
+			   enum writeback_poll_mode mode)
 {
+	struct weston_compositor *wc = state->output->base.compositor;
 	struct pollfd pollfd;
+	int timeout_ms;
 	int ret;
 
 	pollfd.fd = state->out_fence_fd;
 	pollfd.events = POLLIN;
 
-	while ((ret = poll(&pollfd, 1, 0)) == -1 && errno == EINTR)
+	if (mode == WRITEBACK_POLL_MODE_DONT_BLOCK)
+		timeout_ms = 0;
+	else if (mode == WRITEBACK_POLL_MODE_BLOCK)
+		timeout_ms = -1;
+	else
+		weston_assert_not_reached(wc, "unknown finish wb mode");
+
+	while ((ret = poll(&pollfd, 1, timeout_ms)) == -1 && errno == EINTR)
 		continue;
 
 	if (ret < 0) {
@@ -3725,7 +3754,7 @@ drm_writeback_try_complete(struct drm_writeback_state *state)
 		return false;
 
 	if (state->state == DRM_OUTPUT_WB_SCREENSHOT_CHECK_FENCE) {
-		if (drm_writeback_has_finished(state))
+		if (drm_writeback_has_finished(state, WRITEBACK_POLL_MODE_DONT_BLOCK))
 			return true;
 
 		/* The writeback has not finished yet. So add callback that gets
@@ -3747,6 +3776,21 @@ drm_writeback_try_complete(struct drm_writeback_state *state)
 	}
 
 	weston_assert_not_reached(ec, "drm_writeback_try_complete() called without a wb task submitted");
+}
+
+/**
+ * Complete an in-flight writeback, blocking until it is done. Same as
+ * drm_writeback_try_complete(), but for callers that can't return to the event
+ * loop and so can't be notified of the fence being signalled.
+ */
+static void
+drm_writeback_complete_sync(struct drm_writeback_state *state)
+{
+	struct weston_compositor *wc = state->output->base.compositor;
+
+	weston_assert_s32_ge(wc, state->out_fence_fd, 0);
+
+	drm_writeback_has_finished(state, WRITEBACK_POLL_MODE_BLOCK);
 }
 
 void
