@@ -730,6 +730,9 @@ drm_writeback_state_free(struct weston_compositor *c,
 	/* Capture task must be retired before freeing the state. */
 	weston_assert_ptr_null(c, state->ct);
 
+	if (state->wb_source)
+		wl_event_source_remove(state->wb_source);
+
 	if (state->out_fence_fd >= 0)
 		close(state->out_fence_fd);
 
@@ -3671,7 +3674,6 @@ drm_writeback_save_callback(int fd, uint32_t mask, void *data)
 	weston_assert_int_eq(state->output->base.compositor,
 			     fd, state->out_fence_fd);
 
-	wl_event_source_remove(state->wb_source);
 	drm_writeback_success_screenshot(state);
 
 	return 0;
