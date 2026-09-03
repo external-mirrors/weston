@@ -179,7 +179,10 @@ The following illustrates how to use it:
    ./weston-debug timeline > log.json
    ./wesgr -i log.json -o log.svg
 
-Weston has experimental support for `Perfetto <https://perfetto.dev>`_ for
+Perfetto profiling
+------------------
+
+Weston has support for `Perfetto <https://perfetto.dev>`_ for
 performance profiling. It can be enabled by using `-Dperfetto=true` during
 the meson invocation to configure the build.
 
@@ -187,8 +190,25 @@ If Perfetto support is built in, timeline points are added to Perfetto tracks
 when Perfetto is running, even when the 'timeline' scope is not enabled.
 
 For capturing a trace you can use the supplied
-`out of process trace <https://gitlab.freedesktop.org/wayland/weston/-/tree/main/doc/perfetto/perfetto_out_of_process_trace.cfg>`_.
+`out of process trace <https://gitlab.freedesktop.org/wayland/weston/-/tree/main/doc/perfetto/perfetto_out_of_process_trace.cfg>`_
 config file.
+
+Tracing depends on the distribution and platform your using. It
+requires having `traced <https://perfetto.dev/docs/reference/traced>`_ and
+`traced_probes <https://perfetto.dev/docs/reference/traced_probes>`_ daemons running.
+To actually capture a trace we'd use the
+`perfetto cli <https://perfetto.dev/docs/reference/perfetto-cli>`_ cli binary.
+
+So make sure the daemons are started, start Weston then capture a trace like:
+
+.. code-block:: console
+
+   perfetto -c /path/to/perfetto_out_of_process_trace.conf --txt -o /tmp/trace.perfetto-trace
+
+Alternatively, use the `tracebox application <https://perfetto.dev/docs/reference/tracebox>`_
+provided by Perfetto developers that bundles everything into a single Python script.
+See `tracing on linux <https://perfetto.dev/docs/getting-started/linux-cookbook>`_
+on how to retrieve and use it.
 
 Inserting timeline points
 ~~~~~~~~~~~~~~~~~~~~~~~~~
