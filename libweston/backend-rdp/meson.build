@@ -18,6 +18,7 @@ if dep_frdp3.found()
 	endif
 
 	dep_wpr = dependency('winpr3', version: '>= 3.0.0', required: false)
+	config_h.set('WITHOUT_WINPR_3x_DEPRECATED', '1')
 	if not dep_wpr.found()
 		error('RDP-backend v3 requires winpr >= 3.0.0 which was not found. Or, you can use \'-Dbackend-rdp=false\'.')
 	endif
