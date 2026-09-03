@@ -321,33 +321,52 @@ _weston_trace_scope_end(uint64_t *scope)
  * Brackets are necessary, and the value can be any type understood by the
  * _Generic block in _WESTON_TRACE_ANNOTATE_ADD
  */
+/** \ingroup trace */
 #define WESTON_TRACE_ANNOTATE(...)                                          \
 	_WESTON_TRACE_ANNOTATE(__VA_ARGS__)
 
+/** \ingroup trace */
 #define WESTON_TRACE_INIT() _WESTON_TRACE_INIT()
+/** \ingroup trace */
 #define WESTON_TRACE_IS_TRACING() _WESTON_TRACE_IS_TRACING()
 
+/** \ingroup trace */
 #define WESTON_TRACE_FLOW_START(flow) _WESTON_TRACE_FLOW_START(flow)
+/** \ingroup trace */
 #define WESTON_TRACE_FLOW_JOIN(target, flow) _WESTON_TRACE_FLOW_JOIN(target, flow)
+/** \ingroup trace */
 #define WESTON_TRACE_FLOW_TEMP(flow_name) _WESTON_TRACE_FLOW_TEMP(flow_name)
 
+/** \ingroup trace */
 #define WESTON_TRACE_CLIENT_INIT(client) _WESTON_TRACE_CLIENT_INIT(client)
+/** \ingroup trace */
 #define WESTON_TRACE_CLIENT_FINI(client) _WESTON_TRACE_CLIENT_FINI(client)
+/** \ingroup trace */
 #define WESTON_TRACE_CLIENT_ACTION(flow, client, action) \
 	_WESTON_TRACE_CLIENT_ACTION(flow, client, action)
 
+/** \ingroup trace */
 #define WESTON_TRACE_COMPOSITOR_INIT(compositor) _WESTON_TRACE_COMPOSITOR_INIT(compositor)
+/** \ingroup trace */
 #define WESTON_TRACE_COMPOSITOR_FINI(compositor) _WESTON_TRACE_COMPOSITOR_FINI(compositor)
 
+/** \ingroup trace */
 #define WESTON_TRACE_OUTPUT_INIT(output) _WESTON_TRACE_OUTPUT_INIT(output)
+/** \ingroup trace */
 #define WESTON_TRACE_OUTPUT_FINI(output) _WESTON_TRACE_OUTPUT_FINI(output)
 
+/** \ingroup trace */
 #define WESTON_TRACE_SURFACE_INIT(surface, client) _WESTON_TRACE_SURFACE_INIT(surface, client)
+/** \ingroup trace */
 #define WESTON_TRACE_SURFACE_UPDATE(surface, label) _WESTON_TRACE_SURFACE_UPDATE(surface, label)
+/** \ingroup trace */
 #define WESTON_TRACE_SURFACE_FINI(surface) _WESTON_TRACE_SURFACE_FINI(surface)
 
+/** \ingroup trace */
 #define WESTON_TRACE_FEEDBACK_CREATE(surface, state) _WESTON_TRACE_FEEDBACK_CREATE(surface, state)
+/** \ingroup trace */
 #define WESTON_TRACE_FEEDBACK_DISCARD(feedback) _WESTON_TRACE_FEEDBACK_DISCARD(feedback)
+/** \ingroup trace */
 #define WESTON_TRACE_FEEDBACK_PRESENT(feedback, output, refresh_nsec, ts, seq, flags) \
 	_WESTON_TRACE_FEEDBACK_PRESENT(feedback, output, refresh_nsec, ts, seq, flags)
 

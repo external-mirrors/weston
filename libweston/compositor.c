@@ -102,6 +102,7 @@
  * \defgroup head Head
  * \defgroup output Output
  * \defgroup compositor Compositor
+ * \defgroup trace Perfetto
  * \defgroup client Wayland Clients
  */
 

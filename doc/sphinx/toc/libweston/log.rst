@@ -243,6 +243,12 @@ Logging API
 .. doxygengroup:: log
    :content-only:
 
+Perfetto tracing API
+--------------------
+
+.. doxygengroup:: trace
+   :content-only:
+
 Internal logging API
 --------------------
 
