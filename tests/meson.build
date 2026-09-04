@@ -46,7 +46,6 @@ tests = [
 	},
 	{	'name': 'color-representation-protocol', },
 	{	'name': 'commit-timing', },
-	{	'name': 'fast-forward', },
 	{	'name': 'config-parser', },
 	{
 		'name': 'constraints',
@@ -67,6 +66,7 @@ tests = [
 	{	'name': 'drm-smoke', 'run_exclusive': true },
 	{	'name': 'drm-writeback-screenshot', 'run_exclusive': true },
 	{	'name': 'event', },
+	{	'name': 'fast-forward', },
 	{	'name': 'fifo', },
 	{	'name': 'idalloc', },
 	{
