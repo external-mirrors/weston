@@ -63,18 +63,30 @@ format_cairo2pixman(cairo_format_t fmt)
 	return 0;
 }
 
-static cairo_format_t
-format_pixman2cairo(pixman_format_code_t fmt)
+static bool
+format_pixman2cairo_try(pixman_format_code_t fmt, cairo_format_t *cairo_fmt)
 {
 	unsigned i;
 
-	for (i = 0; i < ARRAY_LENGTH(format_map); i++)
-		if (format_map[i].pixman == fmt)
-			return format_map[i].cairo;
+	for (i = 0; i < ARRAY_LENGTH(format_map); i++) {
+		if (format_map[i].pixman == fmt) {
+			*cairo_fmt = format_map[i].cairo;
+			return true;
+		}
+	}
 
-	test_assert_not_reached("unknown Pixman pixel format");
+	return false;
+}
 
-	return 0;
+static cairo_format_t
+format_pixman2cairo(pixman_format_code_t fmt)
+{
+	cairo_format_t cairo_fmt;
+
+	if (!format_pixman2cairo_try(fmt, &cairo_fmt))
+		test_assert_not_reached("unknown Pixman pixel format");
+
+	return cairo_fmt;
 }
 
 /**
@@ -362,7 +374,16 @@ write_image_as_png(pixman_image_t *image, const char *fname)
 	cairo_surface_t *cairo_surface;
 	cairo_status_t status;
 	struct image_header ih = image_header_from(image);
-	cairo_format_t fmt = format_pixman2cairo(ih.pixman_format);
+	pixman_image_t *converted = NULL;
+	cairo_format_t fmt;
+
+	/* Cairo has no equivalent of the byte-order Pixman formats, so
+	 * convert rather than relabel. */
+	if (!format_pixman2cairo_try(ih.pixman_format, &fmt)) {
+		converted = image_convert_to_a8r8g8b8(image);
+		ih = image_header_from(converted);
+		fmt = format_pixman2cairo(ih.pixman_format);
+	}
 
 	cairo_surface = cairo_image_surface_create_for_data(ih.data, fmt,
 							    ih.width, ih.height,
@@ -374,11 +395,15 @@ write_image_as_png(pixman_image_t *image, const char *fname)
 			cairo_status_to_string(status));
 
 		cairo_surface_destroy(cairo_surface);
+		if (converted)
+			pixman_image_unref(converted);
 
 		return false;
 	}
 
 	cairo_surface_destroy(cairo_surface);
+	if (converted)
+		pixman_image_unref(converted);
 
 	return true;
 }
