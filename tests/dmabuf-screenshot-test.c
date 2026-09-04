@@ -78,6 +78,7 @@ screenshot(struct wet_testsuite_data *suite_data)
         struct rectangle clip;
         char *fname;
         bool match;
+        pixman_image_t *shot;
         pixman_image_t *reference;
         pixman_image_t *diffimg;
         pixman_color_t red, green;
@@ -125,18 +126,20 @@ screenshot(struct wet_testsuite_data *suite_data)
 	clip.height = 200;
 
 	client_buffer_util_maybe_sync_dmabuf_start(buf_screenshot->buf);
-        match = check_images_match(buf_screenshot->image, reference, &clip, NULL);
+	shot = image_convert_to_a8r8g8b8(buf_screenshot->image);
+        match = check_images_match(shot, reference, &clip, NULL);
 	client_buffer_util_maybe_sync_dmabuf_end(buf_screenshot->buf);
 
 	testlog("Screenshot %s reference image\n", match? "equal to" : "different from");
 	if (!match) {
-		diffimg = visualize_image_difference(buf_screenshot->image, reference, &clip, NULL);
+		diffimg = visualize_image_difference(shot, reference, &clip, NULL);
 		fname = output_filename_for_test_case("error", 0, "png");
 		write_image_as_png(diffimg, fname);
 		pixman_image_unref(diffimg);
 		free(fname);
 	}
 
+        pixman_image_unref(shot);
         pixman_image_unref(reference);
 	buffer_destroy(buf_sub);
 	buffer_destroy(buf_main);
