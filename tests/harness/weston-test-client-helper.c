@@ -1707,6 +1707,8 @@ client_capture_output(struct client *client,
 
 	buf = create_buffer(client, capt.width, capt.height, capt.drm_format,
 			    buffer_type);
+	if (!test_assert_ptr_not_null(buf))
+		abort();
 
 	weston_capture_source_v1_capture(capt.source, buf->proxy);
 	while (!capt.complete)

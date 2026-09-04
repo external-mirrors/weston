@@ -320,11 +320,21 @@ retry_on_wrong_format(struct wet_testsuite_data *suite_data)
 
 	buf = create_buffer(client, capt->width, capt->height,
 			    drm_format, fix->buffer_type);
+	if (!test_assert_ptr_not_null(buf)) {
+		capturer_destroy(capt);
+		client_destroy(client);
+		return RESULT_FAIL;
+	}
 
 	weston_capture_source_v1_capture(capt->source, buf->proxy);
-	while (!capt->events.reply)
-		if (!test_assert_int_ge(wl_display_dispatch(client->wl_display), 0))
+	while (!capt->events.reply) {
+		if (!test_assert_int_ge(wl_display_dispatch(client->wl_display), 0)) {
+			capturer_destroy(capt);
+			buffer_destroy(buf);
+			client_destroy(client);
 			return RESULT_FAIL;
+		}
+	}
 
 	test_assert_enum_eq(capt->state, CAPTURE_TASK_RETRY);
 

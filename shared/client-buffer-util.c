@@ -27,6 +27,7 @@
 
 #include "client-buffer-util.h"
 
+#include <assert.h>
 #include <fcntl.h>
 #include <linux/dma-buf.h>
 #include <linux/udmabuf.h>
@@ -321,6 +322,8 @@ client_buffer_util_create_dmabuf_buffer(struct wl_display *display,
 	struct udmabuf_create create;
 	int udmabuf_fd = -1;
 	int mem_fd = -1;
+
+	assert(dmabuf && "zwp_linux_dmabuf_v1 not available on this client");
 
 	buf = xzalloc(sizeof *buf);
 	buf->fmt = fmt;
