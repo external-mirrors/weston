@@ -319,8 +319,9 @@ test_color_representation(const struct color_state *color_state,
 	test_assert_ptr_not_null(screenshot);
 
 	client_buffer_util_maybe_sync_dmabuf_start(screenshot->buf);
-	match = verify_image(screenshot->image, "color-representation", 0,
-		NULL, 0);
+	pixman_image_t *shot = image_convert_to_a8r8g8b8(screenshot->image);
+	match = verify_image(shot, "color-representation", 0, NULL, 0);
+	pixman_image_unref(shot);
 	client_buffer_util_maybe_sync_dmabuf_end(screenshot->buf);
 
 	buffer_destroy(screenshot);
