@@ -858,6 +858,26 @@ err:
 	free(msg);
 }
 
+static void
+drm_output_fail_writeback(struct drm_output *output)
+{
+	struct weston_capture_task *ct;
+	const char *err_msg = "drm: output repaint failed";
+
+	/* A state that is still waiting to be committed will never be, as the
+	 * repaint that would commit it failed.
+	 */
+	if (drm_output_get_writeback_state(output) == DRM_OUTPUT_WB_SCREENSHOT_PREPARE_COMMIT)
+		drm_writeback_fail_screenshot(output->wb_state, err_msg);
+
+	while ((ct = weston_output_pull_capture_task(&output->base,
+						     WESTON_OUTPUT_CAPTURE_SOURCE_WRITEBACK,
+						     output->base.current_mode->width,
+						     output->base.current_mode->height, NULL,
+						     weston_output_get_writeback_formats(&output->base))))
+		weston_capture_task_retire_failed(ct, err_msg);
+}
+
 #ifdef BUILD_DRM_GBM
 /**
  * Update the image for the current cursor surface
@@ -999,6 +1019,7 @@ drm_output_repaint(struct weston_output *output_base)
 	return 0;
 
 err:
+	drm_output_fail_writeback(output);
 	drm_output_state_free(state);
 	return -1;
 }
