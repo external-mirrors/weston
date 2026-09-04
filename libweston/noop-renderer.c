@@ -30,6 +30,7 @@
 
 #include <libweston/libweston.h>
 #include "libweston-internal.h"
+#include "pixel-formats.h"
 
 struct noop_renderer {
 	struct weston_renderer base;
@@ -127,6 +128,24 @@ noop_renderer_destroy(struct weston_compositor *ec)
 	ec->renderer = NULL;
 }
 
+static void
+noop_renderer_add_shm_format(struct weston_compositor *ec,
+			     pixman_format_code_t pixman_format)
+{
+	const struct pixel_format_info *info;
+
+	info = pixel_format_get_info_by_pixman(pixman_format);
+	if (!info)
+		return;
+
+	/* Skip the formats libwayland registers by default. */
+	if (info->format == WL_SHM_FORMAT_ARGB8888 ||
+	    info->format == WL_SHM_FORMAT_XRGB8888)
+		return;
+
+	wl_display_add_shm_format(ec->wl_display, info->format);
+}
+
 WL_EXPORT int
 noop_renderer_init(struct weston_compositor *ec)
 {
@@ -149,6 +168,14 @@ noop_renderer_init(struct weston_compositor *ec)
 		WESTON_CAP_VIEW_CLIP_MASK |
 		WESTON_CAP_COLOR_OPS |
 		WESTON_CAP_COLOR_REP;
+
+	/*
+	 * This renderer never looks at pixels, so any format will do. Add
+	 * the codes matching a native-endian Cairo ARGB32/RGB24 surface; on
+	 * big-endian those are not the two that libwayland registers.
+	 */
+	noop_renderer_add_shm_format(ec, PIXMAN_a8r8g8b8);
+	noop_renderer_add_shm_format(ec, PIXMAN_x8r8g8b8);
 
 	return 0;
 }
