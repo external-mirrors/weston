@@ -25,6 +25,7 @@
 
 #include "config.h"
 
+#include <endian.h>
 #include <fcntl.h>
 #include <math.h>
 #include <stdio.h>
@@ -391,11 +392,11 @@ rgba4444_create_buffer(struct client *client,
 			uint16_t g = (src_row[x] >> 12) & 0xf;
 			uint16_t b = (src_row[x] >> 4) & 0xf;
 
-			dst_row[x] =
+			dst_row[x] = htole16(
 				r << (swizzles[idx][0] * 4) |
 				g << (swizzles[idx][1] * 4) |
 				b << (swizzles[idx][2] * 4) |
-				a << (swizzles[idx][3] * 4);
+				a << (swizzles[idx][3] * 4));
 		}
 	}
 	client_buffer_util_maybe_sync_dmabuf_end(buf);
@@ -454,9 +455,9 @@ rgba5551_create_buffer(struct client *client,
 
 			if (drm_format == DRM_FORMAT_RGBX5551 ||
 			    drm_format == DRM_FORMAT_RGBA5551)
-				dst_row[x] = r << 11 | g << 6 | b << 1 | a;
+				dst_row[x] = htole16(r << 11 | g << 6 | b << 1 | a);
 			else
-				dst_row[x] = b << 11 | g << 6 | r << 1 | a;
+				dst_row[x] = htole16(b << 11 | g << 6 | r << 1 | a);
 		}
 	}
 	client_buffer_util_maybe_sync_dmabuf_end(buf);
@@ -502,9 +503,9 @@ rgb565_create_buffer(struct client *client,
 			uint16_t b = (src_row[x] >> 3) & 0x1f;
 
 			if (drm_format == DRM_FORMAT_RGB565)
-				dst_row[x] = r << 11 | g << 5 | b;
+				dst_row[x] = htole16(r << 11 | g << 5 | b);
 			else
-				dst_row[x] = b << 11 | g << 5 | r;
+				dst_row[x] = htole16(b << 11 | g << 5 | r);
 		}
 	}
 	client_buffer_util_maybe_sync_dmabuf_end(buf);
@@ -657,11 +658,11 @@ rgba8888_create_buffer(struct client *client,
 			uint32_t g = (src_row[x] >> 8) & 0xff;
 			uint32_t b = (src_row[x] >> 0) & 0xff;
 
-			dst_row[x] =
+			dst_row[x] = htole32(
 				r << (swizzles[idx][0] * 8) |
 				g << (swizzles[idx][1] * 8) |
 				b << (swizzles[idx][2] * 8) |
-				a << (swizzles[idx][3] * 8);
+				a << (swizzles[idx][3] * 8));
 		}
 	}
 	client_buffer_util_maybe_sync_dmabuf_end(buf);
@@ -719,9 +720,9 @@ rgba2101010_create_buffer(struct client *client,
 
 			if (drm_format == DRM_FORMAT_XRGB2101010 ||
 			    drm_format == DRM_FORMAT_ARGB2101010)
-				dst_row[x] = a << 30 | r << 20 | g << 10 | b;
+				dst_row[x] = htole32(a << 30 | r << 20 | g << 10 | b);
 			else
-				dst_row[x] = a << 30 | b << 20 | g << 10 | r;
+				dst_row[x] = htole32(a << 30 | b << 20 | g << 10 | r);
 		}
 	}
 	client_buffer_util_maybe_sync_dmabuf_end(buf);
@@ -798,11 +799,11 @@ rgba16161616_create_buffer(struct client *client,
 			uint64_t g = ((src_row[x] >> 8) & 0xff) << 8;
 			uint64_t b = ((src_row[x] >> 0) & 0xff) << 8;
 
-			dst_row[x] =
+			dst_row[x] = htole64(
 				r << (swizzles[idx][0] * 16) |
 				g << (swizzles[idx][1] * 16) |
 				b << (swizzles[idx][2] * 16) |
-				a << (swizzles[idx][3] * 16);
+				a << (swizzles[idx][3] * 16));
 		}
 	}
 	client_buffer_util_maybe_sync_dmabuf_end(buf);
@@ -907,11 +908,11 @@ rgba16161616f_create_buffer(struct client *client,
 			g = binary16_from_binary32(g / 65535.0f);
 			b = binary16_from_binary32(b / 65535.0f);
 
-			dst_row[x] =
+			dst_row[x] = htole64(
 				r << (swizzles[idx][0] * 16) |
 				g << (swizzles[idx][1] * 16) |
 				b << (swizzles[idx][2] * 16) |
-				a << (swizzles[idx][3] * 16);
+				a << (swizzles[idx][3] * 16));
 		}
 	}
 	client_buffer_util_maybe_sync_dmabuf_end(buf);
@@ -1172,9 +1173,9 @@ nv12_create_buffer(struct client *client,
 			if ((y & 1) == 0 && (x & 1) == 0) {
 				x8r8g8b8_to_ycbcr8_bt709(argb, y_row + x,
 							 &cb, &cr);
-				*(uv_row + x / 2) =
+				*(uv_row + x / 2) = htole16(
 					((uint16_t) cr << (swizzles[idx][1] * 8)) |
-					((uint16_t) cb << (swizzles[idx][0] * 8));
+					((uint16_t) cb << (swizzles[idx][0] * 8)));
 			} else {
 				x8r8g8b8_to_ycbcr8_bt709(argb, y_row + x,
 							 NULL, NULL);
@@ -1261,9 +1262,9 @@ nv16_create_buffer(struct client *client,
 			if ((x & 1) == 0) {
 				x8r8g8b8_to_ycbcr8_bt709(argb, y_row + x,
 							 &cb, &cr);
-				*(uv_row + x / 2) =
+				*(uv_row + x / 2) = htole16(
 					((uint16_t) cr << (swizzles[idx][1] * 8)) |
-					((uint16_t) cb << (swizzles[idx][0] * 8));
+					((uint16_t) cb << (swizzles[idx][0] * 8)));
 			} else {
 				x8r8g8b8_to_ycbcr8_bt709(argb, y_row + x,
 							 NULL, NULL);
@@ -1345,9 +1346,9 @@ nv24_create_buffer(struct client *client,
 
 			x8r8g8b8_to_ycbcr8_bt709(argb, y_row + x,
 						 &cb, &cr);
-			*(uv_row + x) =
+			*(uv_row + x) = htole16(
 				((uint16_t) cr << (swizzles[idx][1] * 8)) |
-				((uint16_t) cb << (swizzles[idx][0] * 8));
+				((uint16_t) cb << (swizzles[idx][0] * 8)));
 		}
 	}
 	client_buffer_util_maybe_sync_dmabuf_end(buf);
@@ -1430,11 +1431,11 @@ yuyv_create_buffer(struct client *client,
 			 * filtering/averaging/siting.
 			 */
 			x8r8g8b8_to_ycbcr8_bt709(*(rgb_row + x), &y0, &cb, &cr);
-			*(yuv_row + x / 2) =
+			*(yuv_row + x / 2) = htole32(
 				((uint32_t)cr << (swizzles[idx][3] * 8)) |
 				((uint32_t)y0 << (swizzles[idx][2] * 8)) |
 				((uint32_t)cb << (swizzles[idx][1] * 8)) |
-				((uint32_t)y0 << (swizzles[idx][0] * 8));
+				((uint32_t)y0 << (swizzles[idx][0] * 8)));
 		}
 	}
 	client_buffer_util_maybe_sync_dmabuf_end(buf);
@@ -1491,11 +1492,11 @@ xyuv8888_create_buffer(struct client *client,
 			 * The unused byte is intentionally set to "garbage"
 			 * to catch any accidental use of it in the compositor.
 			 */
-			*(yuv_row + x) =
+			*(yuv_row + x) = htole32(
 				((uint32_t)x << 24) |
 				((uint32_t)y0 << 16) |
 				((uint32_t)cb << 8) |
-				((uint32_t)cr << 0);
+				((uint32_t)cr << 0));
 		}
 	}
 	client_buffer_util_maybe_sync_dmabuf_end(buf);
@@ -1538,6 +1539,7 @@ p016_create_buffer(struct client *client,
 	uint32_t argb;
 	uint16_t cr;
 	uint16_t cb;
+	uint16_t yv;
 
 	switch (drm_format) {
 	case DRM_FORMAT_P016:
@@ -1580,14 +1582,16 @@ p016_create_buffer(struct client *client,
 			 */
 			if ((x & 1) == 0 && (y & 1) == 0) {
 				x8r8g8b8_to_ycbcr16_bt709(argb, depth,
-							  y_row + x,  &cb, &cr);
-				*(uv_row + x / 2) =
+							  &yv, &cb, &cr);
+				*(uv_row + x / 2) = htole32(
 					((uint32_t) cr << 16) |
-					((uint32_t) cb << 0);
+					((uint32_t) cb << 0));
 			} else {
 				x8r8g8b8_to_ycbcr16_bt709(argb, depth,
-							  y_row + x, NULL, NULL);
+							  &yv, NULL, NULL);
 			}
+
+			*(y_row + x) = htole16(yv);
 		}
 	}
 	client_buffer_util_maybe_sync_dmabuf_end(buf);
