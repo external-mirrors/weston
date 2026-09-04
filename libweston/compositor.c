@@ -10671,6 +10671,8 @@ weston_compositor_create(struct wl_display *display,
 	wl_signal_init(&ec->session_signal);
 	wl_signal_init(&ec->output_capture.ask_auth);
 	wl_signal_init(&ec->touch_device_created_signal);
+	wl_signal_init(&ec->weston_test_immediate_signal);
+
 	ec->session_active = true;
 
 	ec->output_id_pool = 0;

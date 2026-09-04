@@ -101,6 +101,8 @@
              summary="after output repaint (filter type: wl_output)"/>
       <entry name="post_latch" value="1"
              summary="after output latch (filter type: wl_output)"/>
+      <entry name="immediate" value="2"
+             summary="immediately"/>
     </enum>
 
     <request name="client_break">

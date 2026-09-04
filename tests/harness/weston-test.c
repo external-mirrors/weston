@@ -69,6 +69,7 @@ struct weston_test {
 	struct wl_list output_list;
 	struct wl_listener output_created_listener;
 	struct wl_listener output_destroyed_listener;
+	struct wl_listener weston_test_immediate_listener;
 
 	struct wl_event_source *launch_source;
 };
@@ -588,6 +589,7 @@ client_break(struct wl_client *client, struct wl_resource *resource,
 	     uint32_t _breakpoint, uint32_t resource_id)
 {
 	struct weston_test *test = wl_resource_get_user_data(resource);
+	struct weston_compositor *compositor = test->compositor;
 	struct wet_testsuite_data *tsd = weston_compositor_get_test_data(test->compositor);
 	struct wet_test_pending_breakpoint *bp;
 	enum weston_test_breakpoint breakpoint = _breakpoint;
@@ -603,6 +605,11 @@ client_break(struct wl_client *client, struct wl_resource *resource,
 	}
 
 	wl_list_insert(&tsd->breakpoints.list, &bp->link);
+
+	if (breakpoint == WESTON_TEST_BREAKPOINT_IMMEDIATE) {
+		wl_signal_emit(&compositor->weston_test_immediate_signal,
+			       compositor);
+	}
 }
 
 static const struct weston_test_interface test_implementation = {
@@ -864,6 +871,16 @@ handle_compositor_destroy(struct wl_listener *listener,
 	free(test);
 }
 
+static void
+weston_test_immediate_listener(struct wl_listener *listener, void *data)
+{
+	struct weston_test *test =
+		container_of(listener, struct weston_test,
+			     weston_test_immediate_listener);
+
+	maybe_breakpoint(test, WESTON_TEST_BREAKPOINT_IMMEDIATE, data);
+}
+
 WL_EXPORT int
 wet_module_init(struct weston_compositor *ec,
 		int *argc, char *argv[])
@@ -901,6 +918,10 @@ wet_module_init(struct weston_compositor *ec,
 					"weston-test plugin's own actions\n",
 					NULL, NULL, NULL);
 
+	test->weston_test_immediate_listener.notify = weston_test_immediate_listener;
+	wl_signal_add(&ec->weston_test_immediate_signal,
+		      &test->weston_test_immediate_listener);
+
 	if (wl_global_create(ec->wl_display, &weston_test_interface, 1,
 			     test, bind_test) == NULL)
 		goto out_free;
@@ -929,6 +950,7 @@ out_free:
 
 	wl_list_remove(&test->output_destroyed_listener.link);
 	wl_list_remove(&test->destroy_listener.link);
+	wl_list_remove(&test->weston_test_immediate_listener.link);
 	free(test);
 	return -1;
 }
