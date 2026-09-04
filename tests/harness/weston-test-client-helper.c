@@ -582,7 +582,14 @@ create_shm_buffer(struct client *client, int width, int height,
 struct buffer *
 create_shm_buffer_a8r8g8b8(struct client *client, int width, int height)
 {
-	return create_shm_buffer(client, width, height, DRM_FORMAT_ARGB8888);
+	const struct pixel_format_info *pfmt;
+
+	/* DRM formats are little-endian, PIXMAN_a8r8g8b8 is native-endian, so
+	 * the DRM format to ask for depends on the host. */
+	pfmt = pixel_format_get_info_by_pixman(PIXMAN_a8r8g8b8);
+	test_assert_ptr_not_null(pfmt);
+
+	return create_shm_buffer(client, width, height, pfmt->format);
 }
 
 static struct buffer *
