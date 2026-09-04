@@ -32,6 +32,7 @@
 #include "weston-test-assert.h"
 #include "shared/client-buffer-util.h"
 #include "shared/weston-drm-fourcc.h"
+#include "pixel-formats.h"
 
 #define SKIP_NO_UDMABUF(buffer_type)						  \
 do {										  \
@@ -287,6 +288,38 @@ simple_shot(struct wet_testsuite_data *suite_data)
 }
 
 /*
+ * Which formats a compositor advertises varies with renderer and CPU
+ * endianness, so ask the client rather than hardcoding one.
+ */
+static uint32_t
+find_unwanted_format(struct client *client, uint32_t wanted,
+		     enum client_buffer_type buffer_type)
+{
+	unsigned int i, count = pixel_format_get_info_count();
+
+	for (i = 0; i < count; i++) {
+		const struct pixel_format_info *info;
+
+		info = pixel_format_get_info_by_index(i);
+		if (info->format == wanted || info->hide_from_clients ||
+		    info->num_planes > 1)
+			continue;
+
+		if (buffer_type == CLIENT_BUFFER_TYPE_SHM) {
+			if (support_shm_format(client,
+					       pixel_format_get_shm_format(info)))
+				return info->format;
+		} else {
+			if (support_drm_format(client, info->format,
+					       DRM_FORMAT_MOD_LINEAR))
+				return info->format;
+		}
+	}
+
+	return DRM_FORMAT_INVALID;
+}
+
+/*
  * Use a guaranteed source, but use an unsupported pixel format.
  * This should always cause a retry.
  */
@@ -294,7 +327,7 @@ static enum test_result_code
 retry_on_wrong_format(struct wet_testsuite_data *suite_data)
 {
 	const struct setup_args *fix = &my_setup_args[get_test_fixture_index()];
-	const uint32_t drm_format = DRM_FORMAT_ABGR2101010;
+	uint32_t drm_format;
 	struct client *client;
 	struct capturer *capt;
 	struct buffer *buf;
@@ -311,7 +344,9 @@ retry_on_wrong_format(struct wet_testsuite_data *suite_data)
 	test_assert_true(capt->events.size);
 	test_assert_enum_eq(capt->state, CAPTURE_TASK_PENDING);
 
-	/* Fix this test if triggered. */
+	drm_format = find_unwanted_format(client, capt->drm_format,
+					  fix->buffer_type);
+	test_assert_u32_ne(drm_format, DRM_FORMAT_INVALID);
 	test_assert_u32_ne(capt->drm_format, drm_format);
 
 	test_assert_int_gt(capt->width, 0);
