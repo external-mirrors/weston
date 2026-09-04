@@ -33,6 +33,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
+#include <endian.h>
 #include <math.h>
 #include <assert.h>
 #include <time.h>
@@ -96,6 +97,13 @@ struct display {
 	struct zwp_pointer_constraints_v1 *pointer_constraints;
 	struct wp_single_pixel_buffer_manager_v1 *single_pixel_buffer_manager;
 	uint32_t serial;
+
+	/*
+	 * Only meaningful on big-endian hosts. See
+	 * display_create_shm_surface_from_pool().
+	 */
+	bool has_bgra8888_shm_format;
+	bool has_bgrx8888_shm_format;
 
 	uint32_t color_manager_features;
 	uint32_t color_manager_rendering_intents;
@@ -893,10 +901,26 @@ display_create_shm_surface_from_pool(struct display *display,
 	cairo_surface_set_user_data(surface, &shm_surface_data_key,
 				    data, shm_surface_data_destroy);
 
-	if (flags & SURFACE_OPAQUE)
+	/*
+	 * What wl_shm formats 0 and 1 mean on a big-endian host is unsettled
+	 * (wayland issue #11). BGRA8888/BGRX8888 are unambiguous and match
+	 * what Cairo writes there, so prefer them when advertised, otherwise
+	 * fall back with wrong colors.
+	 * https://gitlab.freedesktop.org/wayland/wayland/-/issues/11
+	 */
+	if (flags & SURFACE_OPAQUE) {
 		format = WL_SHM_FORMAT_XRGB8888;
-	else
+#if __BYTE_ORDER != __LITTLE_ENDIAN
+		if (display->has_bgrx8888_shm_format)
+			format = WL_SHM_FORMAT_BGRX8888;
+#endif
+	} else {
 		format = WL_SHM_FORMAT_ARGB8888;
+#if __BYTE_ORDER != __LITTLE_ENDIAN
+		if (display->has_bgra8888_shm_format)
+			format = WL_SHM_FORMAT_BGRA8888;
+#endif
+	}
 
 	data->buffer = wl_shm_pool_create_buffer(pool->pool, offset,
 						 rectangle->width,
@@ -6791,6 +6815,21 @@ global_destroy(struct display *disp, struct global *g)
 }
 
 static void
+shm_format(void *data, struct wl_shm *wl_shm, uint32_t format)
+{
+	struct display *d = data;
+
+	if (format == WL_SHM_FORMAT_BGRA8888)
+		d->has_bgra8888_shm_format = true;
+	else if (format == WL_SHM_FORMAT_BGRX8888)
+		d->has_bgrx8888_shm_format = true;
+}
+
+static const struct wl_shm_listener shm_listener = {
+	shm_format
+};
+
+static void
 registry_handle_global(void *data, struct wl_registry *registry, uint32_t id,
 		       const char *interface, uint32_t version)
 {
@@ -6824,6 +6863,7 @@ registry_handle_global(void *data, struct wl_registry *registry, uint32_t id,
 					 1);
 	} else if (strcmp(interface, "wl_shm") == 0) {
 		d->shm = wl_registry_bind(registry, id, &wl_shm_interface, 1);
+		wl_shm_add_listener(d->shm, &shm_listener, d);
 	} else if (strcmp(interface, "wl_data_device_manager") == 0) {
 		display_add_data_device(d, id, version);
 	} else if (strcmp(interface, "xdg_wm_base") == 0) {
