@@ -429,7 +429,8 @@ weston_capture_task_create(struct weston_capture_source *csrc,
 	wl_resource_add_destroy_listener(buffer->resource,
 					 &ct->buffer_resource_destroy_listener);
 
-	wl_list_insert(&csrc->output->capture_info->pending_capture_list,
+	/* Insert at end of list, so we pull tasks in FIFO order. */
+	wl_list_insert(csrc->output->capture_info->pending_capture_list.prev,
 		       &ct->link);
 
 	if (ct->owner->pixel_source != WESTON_OUTPUT_CAPTURE_SOURCE_WRITEBACK)
