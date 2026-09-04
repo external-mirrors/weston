@@ -179,7 +179,7 @@ struct gl_output_state {
 	/* struct timeline_render_point::link */
 	struct wl_list timeline_render_point_list;
 
-	const struct pixel_format_info *shadow_format;
+	bool needs_shadow;
 	struct gl_texture_parameters shadow_param;
 	GLuint shadow_tex;
 	GLuint shadow_fb;
@@ -4698,7 +4698,6 @@ gl_renderer_resize_output(struct weston_output *output,
 {
 	struct gl_renderer *gr = get_renderer(output->compositor);
 	struct gl_output_state *go = get_output_state(output);
-	const struct pixel_format_info *shfmt = go->shadow_format;
 	bool ret;
 
 	check_compositing_area(fb_size, area);
@@ -4727,22 +4726,20 @@ gl_renderer_resize_output(struct weston_output *output,
 		return false;
 	}
 
-	if (!shfmt)
+	if (!go->needs_shadow)
 		return true;
 
 	if (shadow_exists(go))
 		gl_fbo_texture_fini(&go->shadow_fb, &go->shadow_tex);
 
-	ret = gl_fbo_texture_init(gr, shfmt->gl.internal, area->width,
-				  area->height, &go->shadow_fb,
-				  &go->shadow_tex);
+	ret = gl_fbo_texture_init(gr, GL_RGBA16F, area->width, area->height,
+				  &go->shadow_fb, &go->shadow_tex);
 	gl_texture_parameters_init(gr, &go->shadow_param, GL_TEXTURE_2D, NULL,
 				   NULL, NULL, false);
 
-	if (!ret) {
-		weston_log("Output %s failed to create %s shadow.\n",
-			   output->name, shfmt->drm_format_name);
-	}
+	if (!ret)
+		weston_log("Output %s failed to create shadow.\n",
+			   output->name);
 
 	return ret;
 }
@@ -4876,8 +4873,7 @@ setup_shader_blending_or_shadow(struct gl_renderer *gr,
 			needs_shadow = true;
 	}
 
-	if (needs_shadow)
-		go->shadow_format = pixel_format_get_info(DRM_FORMAT_ABGR16161616F);
+	go->needs_shadow = needs_shadow;
 
 	return true;
 }
@@ -4932,8 +4928,7 @@ gl_renderer_output_create(struct weston_output *output,
 	}
 
 	if (shadow_exists(go)) {
-		weston_log("Output %s uses %s shadow.\n",
-			   output->name, go->shadow_format->drm_format_name);
+		weston_log("Output %s uses shadow.\n", output->name);
 	} else if (go->shader_blender) {
 		weston_log("Output %s uses in-shader blending.\n",
 			   output->name);
