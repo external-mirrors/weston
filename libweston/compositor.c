@@ -10281,6 +10281,7 @@ debug_scene_view_print(FILE *fp, struct weston_view *view)
 	struct weston_output *output;
 	pixman_box32_t *box;
 	pid_t pid = 0;
+	uint32_t surf_id = 0;
 
 	if (view->surface->resource) {
 		struct wl_resource *resource = view->surface->resource;
@@ -10288,12 +10289,13 @@ debug_scene_view_print(FILE *fp, struct weston_view *view)
 		struct weston_client *wc = weston_compositor_get_client(ec, wlc);
 
 		pid = wc->pid;
+		surf_id = wl_resource_get_id(resource);
 	}
 
-	fprintf(fp, "\tView %s (role %s, PID %d, '%s'):\n",
+	fprintf(fp, "\tView %s (role %s, resource ID: %u, PID %d, '%s'):\n",
 		view->internal_name,
 		view->surface->role_name ?: "none",
-		pid, view->surface->label);
+		surf_id, pid, view->surface->label);
 
 	if (!weston_view_is_mapped(view))
 		fputs("\t[view is not mapped!]\n", fp);
