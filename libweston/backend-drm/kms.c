@@ -1496,9 +1496,6 @@ drm_connector_set_color_format(struct drm_connector *connector,
 			       enum wdrm_color_format color_format,
 			       drmModeAtomicReq *req)
 {
-	const struct drm_property_info *info;
-	const struct drm_property_enum_info *enum_info;
-
 	assert(color_format >= 0);
 	assert(color_format < WDRM_COLOR_FORMAT__COUNT);
 
@@ -1509,12 +1506,8 @@ drm_connector_set_color_format(struct drm_connector *connector,
 		return -1;
 	}
 
-	info = &connector->props[WDRM_CONNECTOR_COLOR_FORMAT];
-	enum_info = &info->enum_values[color_format];
-	assert(enum_info->valid);
-
-	return connector_add_prop(req, connector, WDRM_CONNECTOR_COLOR_FORMAT,
-				  enum_info->value);
+	return connector_add_prop_enum(req, connector,
+				       WDRM_CONNECTOR_COLOR_FORMAT, color_format);
 }
 
 static int
