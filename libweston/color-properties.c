@@ -398,13 +398,13 @@ static const struct weston_color_tf_info color_tf_info_table[] = {
 		.kms_colorop_inverse = WDRM_COLOROP_CURVE_1D__COUNT,
 		.count_parameters = 0,
 	},
-        {
+	{
 		.tf = WESTON_TF_POWER,
 		.desc = "power-law with custom exponent",
 		.kms_colorop = WDRM_COLOROP_CURVE_1D__COUNT,
 		.kms_colorop_inverse = WDRM_COLOROP_CURVE_1D__COUNT,
 		.count_parameters = 1,
-        },
+	},
 };
 
 WL_EXPORT const struct weston_color_feature_info *
@@ -481,11 +481,11 @@ weston_color_primaries_info_from(enum weston_color_primaries primaries)
 WL_EXPORT const struct weston_color_primaries_info *
 weston_color_primaries_info_from_protocol(uint32_t protocol_primaries)
 {
-        unsigned int i;
+	unsigned int i;
 
-        for (i = 0; i < ARRAY_LENGTH(color_primaries_info_table); i++)
-                if (color_primaries_info_table[i].protocol_primaries == protocol_primaries)
-                        return &color_primaries_info_table[i];
+	for (i = 0; i < ARRAY_LENGTH(color_primaries_info_table); i++)
+		if (color_primaries_info_table[i].protocol_primaries == protocol_primaries)
+			return &color_primaries_info_table[i];
 
 	return NULL;
 }
@@ -525,23 +525,23 @@ weston_color_tf_info_from(enum weston_transfer_function tf)
 WL_EXPORT const struct weston_color_tf_info *
 weston_color_tf_info_from_protocol(uint32_t protocol_tf)
 {
-        unsigned int i;
+	unsigned int i;
 
-        for (i = 0; i < ARRAY_LENGTH(color_tf_info_table); i++) {
+	for (i = 0; i < ARRAY_LENGTH(color_tf_info_table); i++) {
 		/**
 		 * Skip TF's that do not have a corresponding protocol code.
 		 * Zero is an invalid TF code according to the protocol, so we
 		 * init protocol_tf of TF's without a corresponding protocol
 		 * code with zero.
 		 */
-                if (color_tf_info_table[i].protocol_tf == 0)
-                        continue;
+		if (color_tf_info_table[i].protocol_tf == 0)
+			continue;
 
-                if (color_tf_info_table[i].protocol_tf == protocol_tf)
-                        return &color_tf_info_table[i];
-        }
+		if (color_tf_info_table[i].protocol_tf == protocol_tf)
+			return &color_tf_info_table[i];
+	}
 
-        return NULL;
+	return NULL;
 }
 
 /**
