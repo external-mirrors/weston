@@ -2501,6 +2501,9 @@ struct weston_surface *
 weston_surface_create(struct weston_compositor *compositor,
 		      struct weston_client *client);
 
+struct weston_surface *
+weston_surface_from_resource(struct wl_resource *resource);
+
 void
 weston_surface_set_color_profile(struct weston_surface *surface,
 				 struct weston_color_profile *cprof,

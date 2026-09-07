@@ -274,6 +274,11 @@ protocol_log_fn(void *user_data,
 	const char *signature = message->message->signature;
 	int i;
 	char type;
+	struct weston_compositor *ec = user_data;
+	struct weston_client *weston_client = NULL;
+	struct weston_surface *surface = NULL;
+	const char *name_sep = "";
+	const char *surface_internal_name = "";
 
 	if (!weston_log_scope_is_enabled(protocol_scope))
 		return;
@@ -283,16 +288,23 @@ protocol_log_fn(void *user_data,
 		return;
 
 	wl_client_get_credentials(client, &pid, NULL, NULL);
+	surface = weston_surface_from_resource(res);
+	weston_client = weston_compositor_get_client(ec, client);
 
 	weston_log_scope_timestamp(protocol_scope,
 			timestr, sizeof timestr);
 	fprintf(fp, "%s ", timestr);
-	fprintf(fp, "client %p (PID %d) %s ", client, pid,
+	fprintf(fp, "client %s (PID %d) %s ",
+		weston_client_get_internal_name(weston_client), pid,
 		direction == WL_PROTOCOL_LOGGER_REQUEST ? "rq" : "ev");
-	fprintf(fp, "%s@%u.%s(",
-		wl_resource_get_class(res),
-		wl_resource_get_id(res),
-		message->message->name);
+
+	if (surface) {
+		name_sep = ",";
+		surface_internal_name = surface->internal_name;
+	}
+
+	fprintf(fp, "%s@%u%s%s.%s(", wl_resource_get_class(res), wl_resource_get_id(res),
+		name_sep, surface_internal_name, message->message->name);
 
 	for (i = 0; i < message->arguments_count; i++) {
 		signature = get_next_argument(signature, &type);
@@ -5135,7 +5147,7 @@ wet_main(int argc, char *argv[], const struct weston_testsuite_data *test_data)
 
 	protologger = wl_display_add_protocol_logger(display,
 						     protocol_log_fn,
-						     NULL);
+						     wet.compositor);
 	if (debug_protocol) {
 		weston_compositor_enable_debug_protocol(wet.compositor);
 		weston_compositor_add_screenshot_authority(wet.compositor,

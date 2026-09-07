@@ -104,6 +104,7 @@
  * \defgroup compositor Compositor
  * \defgroup trace Perfetto
  * \defgroup client Wayland Clients
+ * \defgroup surface-view-pnode weston_surface, weston_view and weston_paint_node
  */
 
 #define DEFAULT_REPAINT_WINDOW 7 /* milliseconds */
@@ -10646,6 +10647,27 @@ weston_client_get_internal_name(const struct weston_client *client)
 		return "comp";
 
 	return client->internal_name;
+}
+
+/** Get the backing object of wl_surface
+ *
+ * \param resource A wl_surface protocol object.
+ * \return The backing object (user data) of a wl_resource representing a
+ * wl_surface protocol object or NULL if the resource is not a wl_surface
+ * based.
+ *
+ * \ingroup surface-view-pnode
+ */
+WL_EXPORT struct weston_surface *
+weston_surface_from_resource(struct wl_resource *resource)
+{
+	int iof = wl_resource_instance_of(resource,
+					  &wl_surface_interface,
+					  &surface_interface);
+	if (!iof)
+		return NULL;
+
+	return wl_resource_get_user_data(resource);
 }
 
 /** Set a custom internal name for a client
