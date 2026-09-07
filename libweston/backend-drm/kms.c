@@ -1033,6 +1033,38 @@ crtc_add_prop(drmModeAtomicReq *req, const struct drm_crtc *crtc,
 	return (ret <= 0) ? -1 : 0;
 }
 
+/** Set MODE_ID CRTC property, printing out the mode in human-readable format
+ *
+ * \param req The atomic KMS request to append to.
+ * \param crtc The CRTC whose property to set.
+ * \param mode The mode to set.
+ *
+ * \return 0 on succcess, -1 on failure.
+ */
+static int
+crtc_add_prop_mode_id(drmModeAtomicReq *req, const struct drm_crtc *crtc,
+		      const struct drm_mode *mode)
+{
+	struct drm_device *device = crtc->device;
+	struct drm_backend *b = device->backend;
+	const struct drm_property_info *info = &crtc->props_crtc[WDRM_CRTC_MODE_ID];
+	int ret;
+	uint64_t id = mode ? mode->blob_id : 0;
+
+	drm_debug(b, "\t\t\t[CRTC:%lu] %s (%lu) -> %s (0x%llx)\n",
+		  (unsigned long) crtc->crtc_id, info->name,
+		  (unsigned long) info->prop_id,
+		  mode ? mode->mode_info.name : "off",
+		  (long long unsigned) id);
+
+	if (info->prop_id == 0)
+		return -1;
+
+	ret = drmModeAtomicAddProperty(req, crtc->crtc_id, info->prop_id, id);
+
+	return (ret <= 0) ? -1 : 0;
+}
+
 /** Set a CRTC property, allowing zero value for non-existing property
  *
  * \param req The atomic KMS request to append to.
@@ -1734,8 +1766,7 @@ drm_output_apply_state_atomic(struct drm_output_state *state,
 		if (ret != 0)
 			return ret;
 
-		ret |= crtc_add_prop(req, crtc, WDRM_CRTC_MODE_ID,
-				     current_mode->blob_id);
+		ret |= crtc_add_prop_mode_id(req, crtc, current_mode);
 		ret |= crtc_add_prop(req, crtc, WDRM_CRTC_ACTIVE, 1);
 
 		if (output->base.from_blend_to_output_by_backend &&
@@ -1786,7 +1817,7 @@ drm_output_apply_state_atomic(struct drm_output_state *state,
 				wb_state->state = DRM_OUTPUT_WB_SCREENSHOT_CHECK_FENCE;
 		}
 	} else {
-		ret |= crtc_add_prop(req, crtc, WDRM_CRTC_MODE_ID, 0);
+		ret |= crtc_add_prop_mode_id(req, crtc, NULL);
 		ret |= crtc_add_prop(req, crtc, WDRM_CRTC_ACTIVE, 0);
 
 		if (wb_screenshot_state == DRM_OUTPUT_WB_SCREENSHOT_PREPARE_COMMIT) {
