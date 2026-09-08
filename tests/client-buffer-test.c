@@ -1835,13 +1835,16 @@ test_client_buffer(const struct client_buffer_case *cb_case,
 		show_window_with_client_buffer(client, buf);
 
 		if (restriction == WESTON_BUFFER_RESTRICTION_YES) {
-			match = verify_screen_content(client, "restricted-client-buffer",
-						      0, NULL, 0,
-						      NULL, NO_DECORATIONS);
+			struct verify_image_target vit = {
+				.ref.basename = "restricted-client-buffer",
+			};
+			match = verify_screen_content(client, &vit, 0);
 		} else {
-			match = verify_screen_content(client, "client-buffer",
-						      cb_case->ref_seq_no, NULL, 0,
-						      NULL, NO_DECORATIONS);
+			struct verify_image_target vit = {
+				.ref.basename = "client-buffer",
+				.ref.seq_no = cb_case->ref_seq_no,
+			};
+			match = verify_screen_content(client, &vit, 0);
 		}
 		res = match ? RESULT_OK : RESULT_FAIL;
 

@@ -368,8 +368,10 @@ fifo_on_occluded_surface(struct wet_testsuite_data *suite_data)
 	/* Let's take a shot to make sure the smaller red parent surface is above the
 	 * large green subsurface at this point.
 	 */
-	match = verify_screen_content(client, "fifo_occlude_start", 0, NULL,
-				      0, NULL, NO_DECORATIONS);
+	struct verify_image_target vit_start = {
+		.ref.basename = "fifo_occlude_start",
+	};
+	match = verify_screen_content(client, &vit_start, 0);
 	test_assert_true(match);
 
 	fifo = wp_fifo_manager_v1_get_fifo(client->fifo_manager, client->surface->wl_surface);
@@ -413,8 +415,10 @@ fifo_on_occluded_surface(struct wet_testsuite_data *suite_data)
 		test_assert_int_ge(wl_display_dispatch(client->wl_display), 0);
 
 	/* And let's make sure what we're seeing is just the subsurface */
-	match = verify_screen_content(client, "fifo_occlude_restack", 0, NULL,
-				      0, NULL, NO_DECORATIONS);
+	struct verify_image_target vit_restack = {
+		.ref.basename = "fifo_occlude_restack"
+	};
+	match = verify_screen_content(client, &vit_restack, 0);
 	test_assert_true(match);
 
 	wp_presentation_destroy(pres);
@@ -522,8 +526,10 @@ fifo_on_subsurface(struct wet_testsuite_data *suite_data)
 
 	fifo = wp_fifo_manager_v1_get_fifo(client->fifo_manager, surf);
 
-	match = verify_screen_content(client, "fifo_subsurface_start", 0,
-				      NULL, 0, NULL, NO_DECORATIONS);
+	struct verify_image_target vit = {
+		.ref.basename = "fifo_subsurface_start",
+	};
+	match = verify_screen_content(client, &vit, 0);
 	test_assert_true(match);
 
 	client_push_breakpoint(client, suite_data,
@@ -632,8 +638,10 @@ fifo_when_occlusion_changes(struct wet_testsuite_data *suite_data)
 					   client->surface->wl_surface);
 
 	/* Wait for a render before we start queuing up fifo requests */
-	match = verify_screen_content(client, "occlusion_change_start", 0,
-				      NULL, 0, NULL, NO_DECORATIONS);
+	struct verify_image_target vit = {
+		.ref.basename = "occlusion_change_start",
+	};
+	match = verify_screen_content(client, &vit, 0);
 	test_assert_true(match);
 
 	client_push_breakpoint(client, suite_data,

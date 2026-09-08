@@ -84,10 +84,13 @@ output_decorations(struct wet_testsuite_data *suite_data)
 {
 	struct client *client;
 	bool match;
+	struct verify_image_target vit = {
+		.ref.basename = "output-decorations",
+	};
 
 	client = create_client();
 
-	match = verify_screen_content(client, "output-decorations", 0, NULL, 0,
+	match = verify_output_content(client, &vit, 0,
 				      client->output->name, INCLUDE_DECORATIONS);
 	test_assert_true(match);
 

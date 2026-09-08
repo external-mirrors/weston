@@ -78,6 +78,9 @@ drm_smoke(struct wet_testsuite_data *suite_data)
 static enum test_result_code
 drm_screenshot_no_damage(struct wet_testsuite_data *suite_data)
 {
+	struct verify_image_target vit = {
+		.ref.basename = "drm_screenshot_no_damage",
+	};
 	struct client *client;
 	int i;
 	bool ret;
@@ -95,8 +98,7 @@ drm_screenshot_no_damage(struct wet_testsuite_data *suite_data)
 	 * might get stuck. This test makes sure they run regardless.
 	 */
 	for (i = 0; i < 5; i++) {
-		ret = verify_screen_content(client, "drm_screenshot_no_damage",
-					    0, NULL, i, NULL, NO_DECORATIONS);
+		ret = verify_screen_content(client, &vit, i);
 		test_assert_true(ret);
 	}
 

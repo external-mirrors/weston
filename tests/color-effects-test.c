@@ -260,8 +260,12 @@ color_effects(struct wet_testsuite_data *suite_data)
 		.width = arg->object_width,
 		.height = arg->object_height,
 	};
-	res = verify_screen_content(client, arg->ref_image_prefix, seq_no, &clip,
-				    seq_no, NULL, NO_DECORATIONS);
+	struct verify_image_target vit = {
+		.ref.basename = arg->ref_image_prefix,
+		.ref.seq_no = seq_no,
+		.clip = &clip,
+	};
+	res = verify_screen_content(client, &vit, seq_no);
 
 	if (buffer) {
 		buffer_destroy(buffer);

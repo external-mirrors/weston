@@ -1835,25 +1835,17 @@ write_visual_diff(pixman_image_t *ref_image,
  * with 8 bits per channel data.
  *
  * \param shot The image to be verified, usually a screenshot.
- * \param ref_image The reference image file basename, without sequence number
- * and .png suffix.
- * \param ref_seq_no The reference image sequence number.
- * \param clip The region of interest, or NULL for comparing the whole
- * images.
- * \param seq_no Test sequence number, for writing output files.
+ * \param vit The arguments; the reference image, the clip rectangle.
+ * \param seq_no Sequence number for writing output files on failure.
+ * Among all the calls where \c get_test_name() would return the same string,
+ * the number must be unique in each call.
  * \return True if the shot matches the reference image, false otherwise.
- *
- * For bootstrapping, ref_image can be NULL or the file can be missing.
- * In that case the screenshot file is written but no comparison is performed,
- * and false is returned.
  *
  * \sa verify_screen_content
  */
 bool
 verify_image(pixman_image_t *shot,
-	     const char *ref_image,
-	     int ref_seq_no,
-	     const struct rectangle *clip,
+	     const struct verify_image_target *vit,
 	     int seq_no)
 {
 	const struct range gl_fuzz = { -5, 4 };
@@ -1863,16 +1855,16 @@ verify_image(pixman_image_t *shot,
 	bool match = false;
 
 	shot_fname = output_filename_for_test_case("shot", seq_no, "png");
-	ref_fname = screenshot_reference_filename(ref_image, ref_seq_no);
+	ref_fname = screenshot_reference_filename(vit->ref.basename, vit->ref.seq_no);
 	ref = load_image_from_png(ref_fname);
 
 	if (ref) {
-		match = check_images_match(ref, shot, clip, &gl_fuzz);
+		match = check_images_match(ref, shot, vit->clip, &gl_fuzz);
 		testlog("Verify reference image %s vs. shot %s: %s\n",
 			ref_fname, shot_fname, match ? "PASS" : "FAIL");
 
 		if (!match) {
-			write_visual_diff(ref, shot, clip, seq_no, &gl_fuzz);
+			write_visual_diff(ref, shot, vit->clip, seq_no, &gl_fuzz);
 		}
 
 		pixman_image_unref(ref);
@@ -1895,9 +1887,7 @@ verify_image(pixman_image_t *shot,
  * Takes a screenshot and calls verify_image() with it.
  *
  * \param client The client, for connecting to the compositor.
- * \param ref_image See verify_image().
- * \param ref_seq_no See verify_image().
- * \param clip See verify_image().
+ * \param vit The arguments to verify_image().
  * \param seq_no See verify_image().
  * \param output_name the output name as specified by wl_output.name. If NULL,
  * this is the last wl_output advertised by wl_registry.
@@ -1905,13 +1895,14 @@ verify_image(pixman_image_t *shot,
  * decorations, or false if it should include just the client content
  * \return True if the screen contents matches the reference image,
  * false otherwise.
+ *
+ * For a simpler form, see \c verify_screen_content().
  */
 bool
-verify_screen_content(struct client *client,
-		      const char *ref_image,
-		      int ref_seq_no,
-		      const struct rectangle *clip,
-		      int seq_no, const char *output_name,
+verify_output_content(struct client *client,
+		      const struct verify_image_target *vit,
+		      int seq_no,
+		      const char *output_name,
 		      enum screenshot_decoration_mode include_decorations)
 {
 	struct buffer *shot;
@@ -1920,10 +1911,33 @@ verify_screen_content(struct client *client,
 	shot = capture_screenshot_of_output(client, output_name,
 					    include_decorations);
 	test_assert_ptr_not_null(shot);
-	match = verify_image(shot->image, ref_image, ref_seq_no, clip, seq_no);
+	match = verify_image(shot->image, vit, seq_no);
 	buffer_destroy(shot);
 
 	return match;
+}
+
+/**
+ * Take a screenshot and verify its contents
+ *
+ * Takes a screenshot and calls verify_image() with it.
+ *
+ * \param client The client, for connecting to the compositor.
+ * \param vit The arguments to verify_image().
+ * \param seq_no See verify_image().
+ * \return True if the screen contents matches the reference image,
+ * false otherwise.
+ *
+ * Uses the last output advertised by wl_registry, and does not include
+ * potential output decorations. If you need something else, see
+ * \c verify_output_content().
+ */
+bool
+verify_screen_content(struct client *client,
+		      const struct verify_image_target *vit,
+		      int seq_no)
+{
+	return verify_output_content(client, vit, seq_no, NULL, NO_DECORATIONS);
 }
 
 /**

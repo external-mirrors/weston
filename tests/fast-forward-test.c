@@ -167,8 +167,10 @@ use_ffwd(struct wet_testsuite_data *suite_data)
 	/* The red surface should be visible, because its timestamp was
 	 * ignored. But the green surface will wait a long time to display.
 	 */
-	match = verify_screen_content(client, "ffwd_red", 0, NULL, 0, NULL,
-				      NO_DECORATIONS);
+	struct verify_image_target vit_red = {
+		.ref.basename = "ffwd_red",
+	};
+	match = verify_screen_content(client, &vit_red, 0);
 	test_assert_true(match);
 
 	weston_fast_forward_v1_fast_forward(ffwd);
@@ -177,8 +179,10 @@ use_ffwd(struct wet_testsuite_data *suite_data)
 	/* The green surface should be visible because we ignore its
 	 * timestamp now.
 	 */
-	match = verify_screen_content(client, "ffwd_green", 0, NULL, 0, NULL,
-				      NO_DECORATIONS);
+	struct verify_image_target vit_green = {
+		.ref.basename = "ffwd_green",
+	};
+	match = verify_screen_content(client, &vit_green, 0);
 	test_assert_true(match);
 
 	wp_commit_timer_v1_destroy(timer);

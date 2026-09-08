@@ -152,8 +152,10 @@ buffer_transform(struct wet_testsuite_data *suite_data,
 					bargs->transform);
 	move_client(client, 19, 19);
 
-	match = verify_screen_content(client, refname, 0, NULL, 0, NULL,
-				      NO_DECORATIONS);
+	struct verify_image_target vit = {
+		.ref.basename = refname,
+	};
+	match = verify_screen_content(client, &vit, 0);
 	test_assert_true(match);
 
 	client_destroy(client);
@@ -214,8 +216,10 @@ buffer_transform_split(struct wet_testsuite_data *suite_data,
 
 	wl_surface_commit(client->surface->wl_surface);
 
-	match = verify_screen_content(client, refname, 0, NULL, 0, NULL,
-				      NO_DECORATIONS);
+	struct verify_image_target vit = {
+		.ref.basename = refname,
+	};
+	match = verify_screen_content(client, &vit, 0);
 	test_assert_true(match);
 
 	client_destroy(client);

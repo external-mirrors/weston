@@ -368,20 +368,54 @@ client_capture_output(struct client *client,
 pixman_image_t *
 image_convert_to_a8r8g8b8(pixman_image_t *image);
 
+/**
+ * Reference image file declaration for image comparison tests
+ *
+ * The file is searched for in the directory named by the
+ * \c WESTON_TEST_REFERENCE_PATH environment variable is set, or otherwise in
+ * the project source directory \c tests/reference/ . If the file is not found,
+ * any test using it is deemed failed.
+ */
+struct reference_image_file {
+	/**
+	 * The reference image file basename, without sequence number and .png suffix.
+	 * For bootstrapping, this can be \c NULL.
+	 */
+	const char *basename;
+
+	/** The sequence number to be added to the basename. */
+	int seq_no;
+};
+
+struct verify_image_target {
+	/** The reference image to be loaded */
+	struct reference_image_file ref;
+
+	/**
+	 * The region of interest, or \c NULL for comparing the whole image.
+	 * If set, the region of interest must fit within both the reference
+	 * image and the test image. If \c NULL, the two images must match in
+	 * size.
+	 */
+	const struct rectangle *clip;
+};
+
 bool
 verify_image(pixman_image_t *shot,
-	     const char *ref_image,
-	     int ref_seq_no,
-	     const struct rectangle *clip,
+	     const struct verify_image_target *vit,
 	     int seq_no);
 
 bool
-verify_screen_content(struct client *client,
-		      const char *ref_image,
-		      int ref_seq_no,
-		      const struct rectangle *clip,
-		      int seq_no, const char *output_name,
+verify_output_content(struct client *client,
+		      const struct verify_image_target *vit,
+		      int seq_no,
+		      const char *output_name,
 		      enum screenshot_decoration_mode include_decorations);
+
+bool
+verify_screen_content(struct client *client,
+		      const struct verify_image_target *vit,
+		      int seq_no);
 
 struct buffer *
 client_buffer_from_image_file(struct client *client,

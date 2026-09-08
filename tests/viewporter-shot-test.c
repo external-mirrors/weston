@@ -96,8 +96,10 @@ viewport_upscale_solid(struct wet_testsuite_data *suite_data)
 
 	move_client(client, 19, 19);
 
-	match = verify_screen_content(client, "viewport_upscale_solid", 0,
-				      NULL, 0, NULL, NO_DECORATIONS);
+	struct verify_image_target vit = {
+		.ref.basename = "viewport_upscale_solid",
+	};
+	match = verify_screen_content(client, &vit, 0);
 	test_assert_true(match);
 
 	wp_viewport_destroy(viewport);

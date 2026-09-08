@@ -99,6 +99,9 @@ pointer_cursor_retains_committed_buffer_after_reenter(struct wet_testsuite_data 
 	struct surface *back_surface;
 	struct surface *main_cursor_surface;
 	struct surface *back_cursor_surface;
+	struct verify_image_target vit = {
+		.ref.basename = "pointer_cursor_reenter",
+	};
 
 	color_rgb888(&red, 255, 0, 0);
 	color_rgb888(&green, 0, 255, 0);
@@ -123,7 +126,7 @@ pointer_cursor_retains_committed_buffer_after_reenter(struct wet_testsuite_data 
 	back_cursor_surface->buffer =
 		surface_commit_color(client, back_cursor_surface->wl_surface,
 				     &magenta, 25, 25);
-	
+
 	/* We need our own background surface so that we are able to change the cursor
 	 * when the pointer leaves the main surface.
 	 */
@@ -143,8 +146,8 @@ pointer_cursor_retains_committed_buffer_after_reenter(struct wet_testsuite_data 
 	wl_pointer_set_cursor(client->input->pointer->wl_pointer,
 			      client->input->pointer->serial,
 			      main_cursor_surface->wl_surface, 0, 0);
-	match = verify_screen_content(client, "pointer_cursor_reenter", 0,
-				      NULL, 0, NULL, NO_DECORATIONS);
+	vit.ref.seq_no = 0;
+	match = verify_screen_content(client, &vit, 0);
 	test_assert_true(match);
 
 	/* Move the cursor just outside the main surface. */
@@ -152,8 +155,8 @@ pointer_cursor_retains_committed_buffer_after_reenter(struct wet_testsuite_data 
 	wl_pointer_set_cursor(client->input->pointer->wl_pointer,
 			      client->input->pointer->serial,
 			      back_cursor_surface->wl_surface, 0, 0);
-	match = verify_screen_content(client, "pointer_cursor_reenter", 1,
-				      NULL, 1, NULL, NO_DECORATIONS);
+	vit.ref.seq_no = 1;
+	match = verify_screen_content(client, &vit, 1);
 	test_assert_true(match);
 
 	/* And back in the main surface again. */
@@ -161,8 +164,8 @@ pointer_cursor_retains_committed_buffer_after_reenter(struct wet_testsuite_data 
 	wl_pointer_set_cursor(client->input->pointer->wl_pointer,
 			      client->input->pointer->serial,
 			      main_cursor_surface->wl_surface, 0, 0);
-	match = verify_screen_content(client, "pointer_cursor_reenter", 2,
-				      NULL, 2, NULL, NO_DECORATIONS);
+	vit.ref.seq_no = 2;
+	match = verify_screen_content(client, &vit, 2);
 	test_assert_true(match);
 
 	surface_destroy(back_cursor_surface);

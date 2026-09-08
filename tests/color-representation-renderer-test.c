@@ -241,8 +241,12 @@ drm_color_representation_reuse_buffer(struct wet_testsuite_data *suite_data)
 	xdg_surface_maybe_ack_configure(xdg_surface);
 	wl_surface_commit(toplevel_surface);
 
-	match = verify_screen_content(client, "color-representation", 1,
-		&clip, 0, NULL, NO_DECORATIONS);
+	struct verify_image_target vit = {
+		.ref.basename = "color-representation",
+		.ref.seq_no = 1,
+		.clip = &clip,
+	};
+	match = verify_screen_content(client, &vit, 0);
 
 	for (int i = 0; i < n_color_state_cases; i++) {
 		if (color_representation_surface[i])

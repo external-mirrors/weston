@@ -101,8 +101,10 @@ solid_buffer_argb_u32(struct wet_testsuite_data *suite_data)
 	wl_surface_commit(client->surface->wl_surface);
 	frame_callback_wait(client, &done);
 
-	match = verify_screen_content(client, "single-pixel-buffer", 0,
-				      NULL, 0, NULL, NO_DECORATIONS);
+	struct verify_image_target vit = {
+		.ref.basename = "single-pixel-buffer",
+	};
+	match = verify_screen_content(client, &vit, 0);
 	test_assert_true(match);
 
 	wl_buffer_destroy(buffer);
@@ -142,8 +144,10 @@ solid_buffer_argb_u32_semi_transparent(struct wet_testsuite_data *suite_data)
 	wl_surface_commit(client->surface->wl_surface);
 	frame_callback_wait(client, &done);
 
-	match = verify_screen_content(client, "single-pixel-buffer-semi-transparent", 0,
-				      NULL, 0, NULL, NO_DECORATIONS);
+	struct verify_image_target vit = {
+		.ref.basename = "single-pixel-buffer-semi-transparent",
+	};
+	match = verify_screen_content(client, &vit, 0);
 	test_assert_true(match);
 
 	wl_buffer_destroy(buffer);

@@ -225,8 +225,11 @@ output_damage(struct wet_testsuite_data *suite_data)
 	 */
 	for (i = 1; i < COUNT_BUFS; i++) {
 		commit_buffer_with_damage(client->surface, buf[i], damages[i]);
-		if (!verify_screen_content(client, refname, i, NULL, i, NULL,
-					   NO_DECORATIONS)) {
+		struct verify_image_target vit = {
+			.ref.basename = refname,
+			.ref.seq_no = i,
+		};
+		if (!verify_screen_content(client, &vit, i)) {
 			match = false;
 		}
 	}

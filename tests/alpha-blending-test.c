@@ -345,6 +345,9 @@ alpha_blend(struct wet_testsuite_data *suite_data)
 		.alpha = 0xffff
 	};
 	const struct setup_args *args;
+	struct verify_image_target vit = {
+		.ref.basename = "alpha_blend",
+	};
 	struct client *client;
 	struct buffer *bg;
 	struct buffer *fg;
@@ -353,15 +356,14 @@ alpha_blend(struct wet_testsuite_data *suite_data)
 	struct wl_subsurface *sub;
 	struct buffer *shot;
 	bool match;
-	int seq_no;
 	enum blend_space space;
 
 	args = &my_setup_args[get_test_fixture_index()];
 	if (args->color_management) {
-		seq_no = 1;
+		vit.ref.seq_no = 1;
 		space = BLEND_LINEAR;
 	} else {
-		seq_no = 0;
+		vit.ref.seq_no = 0;
 		space = BLEND_NONLINEAR;
 	}
 
@@ -396,7 +398,7 @@ alpha_blend(struct wet_testsuite_data *suite_data)
 
 	shot = capture_screenshot_of_output(client, NULL, NO_DECORATIONS);
 	test_assert_ptr_not_null(shot);
-	match = verify_image(shot->image, "alpha_blend", seq_no, NULL, seq_no);
+	match = verify_image(shot->image, &vit, vit.ref.seq_no);
 	test_assert_true(check_blend_pattern(bg, fg, shot, space));
 	test_assert_true(match);
 

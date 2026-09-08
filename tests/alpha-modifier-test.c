@@ -97,8 +97,11 @@ set_multiplier_then_destroy_before_commit(struct wet_testsuite_data *suite_data)
 	color_rgb888(&blue, 0, 0, 255);
 	buf = surface_commit_color(client, client->surface->wl_surface, &blue, 100, 100);
 
-	match = verify_screen_content(client, "alpha-modifier",
-				      0, NULL, seq_no, NULL, NO_DECORATIONS);
+	struct verify_image_target vit = {
+		.ref.basename = "alpha-modifier",
+		.ref.seq_no = 0,
+	};
+	match = verify_screen_content(client, &vit, seq_no);
 	test_assert_true(match);
 
 	buffer_destroy(buf);
@@ -131,8 +134,11 @@ various_set_multiplier_before_commit(struct wet_testsuite_data *suite_data)
 	color_rgb888(&blue, 0, 0, 255);
 	buf = surface_commit_color(client, client->surface->wl_surface, &blue, 100, 100);
 
-	match = verify_screen_content(client, "alpha-modifier",
-				      1, NULL, seq_no, NULL, NO_DECORATIONS);
+	struct verify_image_target vit = {
+		.ref.basename = "alpha-modifier",
+		.ref.seq_no = 1,
+	};
+	match = verify_screen_content(client, &vit, seq_no);
 	test_assert_true(match);
 
 	buffer_destroy(buf);
@@ -208,8 +214,11 @@ overlapping_surfaces(struct wet_testsuite_data *suite_data,
 	buf_main = surface_commit_color(client, client->surface->wl_surface, &blue, 100, 100);
 	buf_top = surface_commit_color(client, top_surf, &red, 50, 50);
 
-	match = verify_screen_content(client, "alpha-modifier",
-				      args->ref_no, NULL, seq_no, NULL, NO_DECORATIONS);
+	struct verify_image_target vit = {
+		.ref.basename = "alpha-modifier",
+		.ref.seq_no = args->ref_no,
+	};
+	match = verify_screen_content(client, &vit, seq_no);
 	test_assert_true(match);
 
 	buffer_destroy(buf_main);

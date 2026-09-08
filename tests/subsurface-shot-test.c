@@ -73,15 +73,14 @@ DECLARE_FIXTURE_SETUP_WITH_ARG(fixture_setup, my_setup_args, meta);
 
 static int
 check_screen(struct client *client,
-	     const char *ref_image,
 	     int ref_seq_no,
-	     const struct rectangle *clip,
+	     struct verify_image_target vit,
 	     int seq_no)
 {
 	bool match;
 
-	match = verify_screen_content(client, ref_image, ref_seq_no, clip,
-				      seq_no, NULL, NO_DECORATIONS);
+	vit.ref.seq_no = ref_seq_no;
+	match = verify_screen_content(client, &vit, seq_no);
 
 	return match ? 0 : -1;
 }
@@ -94,7 +93,11 @@ subsurface_recursive_unmap(struct wet_testsuite_data *suite_data)
 	struct buffer *bufs[5] = { 0 };
 	struct wl_surface *surf[5] = { 0 };
 	struct wl_subsurface *sub[5] = { 0 };
-	struct rectangle clip = { 40, 40, 280, 200 };
+	const struct rectangle clip = { 40, 40, 280, 200 };
+	const struct verify_image_target vit = {
+		.ref.basename = "subsurface_z_order",
+		.clip = &clip,
+	};
 	int fail = 0;
 	unsigned i;
 	pixman_color_t red;
@@ -120,7 +123,7 @@ subsurface_recursive_unmap(struct wet_testsuite_data *suite_data)
 	bufs[0] = surface_commit_color(client, surf[0], &red, 100, 100);
 	/* sub[0] is not used */
 
-	fail += check_screen(client, "subsurface_z_order", 0, &clip, 0);
+	fail += check_screen(client, 0, vit, 0);
 
 	/* create a blue sub-surface above red */
 	surf[1] = wl_compositor_create_surface(client->wl_compositor);
@@ -130,7 +133,7 @@ subsurface_recursive_unmap(struct wet_testsuite_data *suite_data)
 	wl_subsurface_set_position(sub[1], 20, 20);
 	wl_surface_commit(surf[0]);
 
-	fail += check_screen(client, "subsurface_z_order", 1, &clip, 1);
+	fail += check_screen(client, 1, vit, 1);
 
 	/* create a cyan sub-surface above blue */
 	surf[2] = wl_compositor_create_surface(client->wl_compositor);
@@ -141,7 +144,7 @@ subsurface_recursive_unmap(struct wet_testsuite_data *suite_data)
 	wl_surface_commit(surf[1]);
 	wl_surface_commit(surf[0]);
 
-	fail += check_screen(client, "subsurface_z_order", 2, &clip, 2);
+	fail += check_screen(client, 2, vit, 2);
 
 	/* create a green sub-surface above blue, sibling to cyan */
 	surf[3] = wl_compositor_create_surface(client->wl_compositor);
@@ -152,12 +155,12 @@ subsurface_recursive_unmap(struct wet_testsuite_data *suite_data)
 	wl_surface_commit(surf[1]);
 	wl_surface_commit(surf[0]);
 
-	fail += check_screen(client, "subsurface_z_order", 3, &clip, 3);
+	fail += check_screen(client, 3, vit, 3);
 
 	/* destroy blue, to immediately unmap blue + red + cyan */
 	wl_surface_destroy(surf[1]);
 	surf[1] = NULL;
-	fail += check_screen(client, "subsurface_z_order", 0, &clip, 0);
+	fail += check_screen(client, 0, vit, 0);
 
 	test_assert_int_eq(fail, 0);
 
@@ -187,7 +190,11 @@ subsurface_z_order(struct wet_testsuite_data *suite_data)
 	struct buffer *bufs[5] = { 0 };
 	struct wl_surface *surf[5] = { 0 };
 	struct wl_subsurface *sub[5] = { 0 };
-	struct rectangle clip = { 40, 40, 280, 200 };
+	const struct rectangle clip = { 40, 40, 280, 200 };
+	const struct verify_image_target vit = {
+		.ref.basename = "subsurface_z_order",
+		.clip = &clip,
+	};
 	int fail = 0;
 	unsigned i;
 	pixman_color_t red;
@@ -213,7 +220,7 @@ subsurface_z_order(struct wet_testsuite_data *suite_data)
 	bufs[0] = surface_commit_color(client, surf[0], &red, 100, 100);
 	/* sub[0] is not used */
 
-	fail += check_screen(client, "subsurface_z_order", 0, &clip, 0);
+	fail += check_screen(client, 0, vit, 0);
 
 	/* create a blue sub-surface above red */
 	surf[1] = wl_compositor_create_surface(client->wl_compositor);
@@ -223,7 +230,7 @@ subsurface_z_order(struct wet_testsuite_data *suite_data)
 	wl_subsurface_set_position(sub[1], 20, 20);
 	wl_surface_commit(surf[0]);
 
-	fail += check_screen(client, "subsurface_z_order", 1, &clip, 1);
+	fail += check_screen(client, 1, vit, 1);
 
 	/* create a cyan sub-surface above blue */
 	surf[2] = wl_compositor_create_surface(client->wl_compositor);
@@ -234,7 +241,7 @@ subsurface_z_order(struct wet_testsuite_data *suite_data)
 	wl_surface_commit(surf[1]);
 	wl_surface_commit(surf[0]);
 
-	fail += check_screen(client, "subsurface_z_order", 2, &clip, 2);
+	fail += check_screen(client, 2, vit, 2);
 
 	/* create a green sub-surface above blue, sibling to cyan */
 	surf[3] = wl_compositor_create_surface(client->wl_compositor);
@@ -245,13 +252,13 @@ subsurface_z_order(struct wet_testsuite_data *suite_data)
 	wl_surface_commit(surf[1]);
 	wl_surface_commit(surf[0]);
 
-	fail += check_screen(client, "subsurface_z_order", 3, &clip, 3);
+	fail += check_screen(client, 3, vit, 3);
 
 	/* stack blue below red, which brings also cyan and green below red */
 	wl_subsurface_place_below(sub[1], surf[0]);
 	wl_surface_commit(surf[0]);
 
-	fail += check_screen(client, "subsurface_z_order", 4, &clip, 4);
+	fail += check_screen(client, 4, vit, 4);
 
 	test_assert_int_eq(fail, 0);
 
@@ -281,7 +288,11 @@ subsurface_sync_damage_buffer(struct wet_testsuite_data *suite_data)
 	struct buffer *bufs[2] = { 0 };
 	struct wl_surface *surf[2] = { 0 };
 	struct wl_subsurface *sub[2] = { 0 };
-	struct rectangle clip = { 40, 40, 280, 200 };
+	const struct rectangle clip = { 40, 40, 280, 200 };
+	const struct verify_image_target vit = {
+		.ref.basename = "subsurface_sync_damage_buffer",
+		.clip = &clip,
+	};
 	int fail = 0;
 	unsigned i;
 	pixman_color_t red;
@@ -305,7 +316,7 @@ subsurface_sync_damage_buffer(struct wet_testsuite_data *suite_data)
 	bufs[0] = surface_commit_color(client, surf[0], &red, 100, 100);
 	/* sub[0] is not used */
 
-	fail += check_screen(client, "subsurface_sync_damage_buffer", 0, &clip, 0);
+	fail += check_screen(client, 0, vit, 0);
 
 	/* create a blue sub-surface above red */
 	surf[1] = wl_compositor_create_surface(client->wl_compositor);
@@ -315,13 +326,13 @@ subsurface_sync_damage_buffer(struct wet_testsuite_data *suite_data)
 	wl_subsurface_set_position(sub[1], 20, 20);
 	wl_surface_commit(surf[0]);
 
-	fail += check_screen(client, "subsurface_sync_damage_buffer", 1, &clip, 1);
+	fail += check_screen(client, 1, vit, 1);
 
 	buffer_destroy(bufs[1]);
 	bufs[1] = surface_commit_color(client, surf[1], &green, 100, 100);
 	wl_surface_commit(surf[0]);
 
-	fail += check_screen(client, "subsurface_sync_damage_buffer", 2, &clip, 2);
+	fail += check_screen(client, 2, vit, 2);
 
 	test_assert_int_eq(fail, 0);
 
@@ -354,7 +365,11 @@ subsurface_empty_mapping(struct wet_testsuite_data *suite_data)
 	struct wl_surface *surf[3] = { 0 };
 	struct wl_subsurface *sub[3] = { 0 };
 	struct wp_viewport *viewport;
-	struct rectangle clip = { 40, 40, 280, 200 };
+	const struct rectangle clip = { 40, 40, 280, 200 };
+	const struct verify_image_target ref = {
+		.ref.basename = "subsurface_empty_mapping",
+		.clip = &clip,
+	};
 	int fail = 0;
 	unsigned i;
 	pixman_color_t red;
@@ -380,7 +395,7 @@ subsurface_empty_mapping(struct wet_testsuite_data *suite_data)
 	bufs[0] = surface_commit_color(client, surf[0], &red, 100, 100);
 	/* sub[0] is not used */
 
-	fail += check_screen(client, "subsurface_empty_mapping", 0, &clip, 0);
+	fail += check_screen(client, 0, ref, 0);
 
 	/* create an empty subsurface on top */
 	surf[1] = wl_compositor_create_surface(client->wl_compositor);
@@ -390,7 +405,7 @@ subsurface_empty_mapping(struct wet_testsuite_data *suite_data)
 	wl_subsurface_set_position(sub[1], 20, 20);
 	wl_surface_commit(surf[0]);
 
-	fail += check_screen(client, "subsurface_empty_mapping", 0, &clip, 1);
+	fail += check_screen(client, 0, ref, 1);
 
 	/* create a green subsurface on top */
 	surf[2] = wl_compositor_create_surface(client->wl_compositor);
@@ -401,59 +416,59 @@ subsurface_empty_mapping(struct wet_testsuite_data *suite_data)
 	wl_subsurface_set_position(sub[2], 20, 20);
 	wl_surface_commit(surf[1]);
 
-	fail += check_screen(client, "subsurface_empty_mapping", 0, &clip, 2);
+	fail += check_screen(client, 0, ref, 2);
 
 	wl_surface_attach(surf[1], NULL, 0, 0);
 	wl_surface_commit(surf[1]);
 
-	fail += check_screen(client, "subsurface_empty_mapping", 0, &clip, 3);
+	fail += check_screen(client, 0, ref, 3);
 
 	wl_surface_set_buffer_scale (surf[1], 1);
 	wl_surface_commit(surf[1]);
 
-	fail += check_screen(client, "subsurface_empty_mapping", 0, &clip, 4);
+	fail += check_screen(client, 0, ref, 4);
 
 	viewport = wp_viewporter_get_viewport(viewporter, surf[1]);
 	wp_viewport_set_destination(viewport, 5, 5);
 	wl_surface_commit(surf[1]);
 
-	fail += check_screen(client, "subsurface_empty_mapping", 0, &clip, 5);
+	fail += check_screen(client, 0, ref, 5);
 
 	wp_viewport_set_destination(viewport, -1, -1);
 	wl_surface_commit(surf[1]);
 
-	fail += check_screen(client, "subsurface_empty_mapping", 0, &clip, 6);
+	fail += check_screen(client, 0, ref, 6);
 
 	/* map the previously empty middle surface with a blue buffer */
 	bufs[1] = surface_commit_color(client, surf[1], &blue, 100, 100);
 
-	fail += check_screen(client, "subsurface_empty_mapping", 1, &clip, 7);
+	fail += check_screen(client, 1, ref, 7);
 
 	/* try to trigger a recomputation of the buffer size with the
 	 * shm-buffer potentially being released already */
 	wl_surface_set_buffer_scale (surf[1], 1);
 	wl_surface_commit(surf[1]);
 
-	fail += check_screen(client, "subsurface_empty_mapping", 1, &clip, 8);
+	fail += check_screen(client, 1, ref, 8);
 
 	/* try more */
 	wp_viewport_set_destination(viewport, 100, 100);
 	wl_surface_commit(surf[1]);
 
-	fail += check_screen(client, "subsurface_empty_mapping", 1, &clip, 9);
+	fail += check_screen(client, 1, ref, 9);
 
 	/* unmap the middle surface again to ensure recursive unmapping */
 	wl_surface_attach(surf[1], NULL, 0, 0);
 	wl_surface_commit(surf[1]);
 
-	fail += check_screen(client, "subsurface_empty_mapping", 0, &clip, 10);
+	fail += check_screen(client, 0, ref, 10);
 
 	/* remap middle surface to ensure recursive mapping */
 	buf_tmp = bufs[1];
 	bufs[1] = surface_commit_color(client, surf[1], &blue, 100, 100);
 	buffer_destroy(buf_tmp);
 
-	fail += check_screen(client, "subsurface_empty_mapping", 1, &clip, 11);
+	fail += check_screen(client, 1, ref, 11);
 
 	test_assert_int_eq(fail, 0);
 

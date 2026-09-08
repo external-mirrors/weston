@@ -486,6 +486,10 @@ opaque_pixel_conversion(struct wet_testsuite_data *suite_data)
 	const int height = WINDOW_HEIGHT;
 	const int bitwidth = 8;
 	const int width_bar = 32;
+	struct verify_image_target vit = {
+		.ref.basename = "shaper_matrix",
+		.ref.seq_no = arg->ref_image_index,
+	};
 
 	struct client *client;
 	struct buffer *buf;
@@ -507,8 +511,7 @@ opaque_pixel_conversion(struct wet_testsuite_data *suite_data)
 	shot = capture_screenshot_of_output(client, NULL, NO_DECORATIONS);
 	test_assert_ptr_not_null(shot);
 
-	match = verify_image(shot->image, "shaper_matrix", arg->ref_image_index,
-			     NULL, seq_no);
+	match = verify_image(shot->image, &vit, seq_no);
 	test_assert_true(process_pipeline_comparison(buf, shot, arg));
 	test_assert_true(match);
 	buffer_destroy(shot);
@@ -689,6 +692,10 @@ output_icc_alpha_blend(struct wet_testsuite_data *suite_data)
 	};
 	int seq_no = get_test_fixture_index();
 	const struct setup_args *arg = &my_setup_args[seq_no];
+	struct verify_image_target vit = {
+		.ref.basename = "output_icc_alpha_blend",
+		.ref.seq_no = arg->ref_image_index,
+	};
 	struct client *client;
 	struct buffer *bg;
 	struct buffer *fg;
@@ -729,8 +736,7 @@ output_icc_alpha_blend(struct wet_testsuite_data *suite_data)
 
 	shot = capture_screenshot_of_output(client, NULL, NO_DECORATIONS);
 	test_assert_ptr_not_null(shot);
-	match = verify_image(shot->image, "output_icc_alpha_blend", arg->ref_image_index,
-			     NULL, seq_no);
+	match = verify_image(shot->image, &vit, seq_no);
 	test_assert_true(check_blend_pattern(bg, fg, shot, arg));
 	test_assert_true(match);
 
@@ -762,13 +768,16 @@ output_icc_decorations(struct wet_testsuite_data *suite_data)
 {
 	int seq_no = get_test_fixture_index();
 	const struct setup_args *arg = &my_setup_args[seq_no];
+	struct verify_image_target vit = {
+		.ref.basename = "output-icc-decorations",
+		.ref.seq_no = arg->ref_image_index,
+	};
 	struct client *client;
 	bool match;
 
 	client = create_client();
 
-	match = verify_screen_content(client, "output-icc-decorations",
-				      arg->ref_image_index, NULL, seq_no,
+	match = verify_output_content(client, &vit, seq_no,
 				      client->output->name, INCLUDE_DECORATIONS);
 	test_assert_true(match);
 
