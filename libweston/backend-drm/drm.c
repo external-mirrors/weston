@@ -765,22 +765,14 @@ drm_writeback_state_ct_destroy_handler(struct wl_listener *listener, void *data)
 }
 
 static void
-drm_output_pick_writeback_capture_task(struct drm_output *output)
+drm_output_consume_writeback_capture_task(struct drm_output *output,
+					  struct weston_capture_task *ct)
 {
-	struct weston_capture_task *ct;
 	struct weston_buffer *buffer;
 	struct drm_writeback *wb;
 	char *msg;
 	int32_t width = output->base.current_mode->width;
 	int32_t height = output->base.current_mode->height;
-	const struct weston_drm_format_array *writeback_formats =
-		weston_output_get_writeback_formats(&output->base);
-
-	ct = weston_output_pull_capture_task(&output->base,
-					     WESTON_OUTPUT_CAPTURE_SOURCE_WRITEBACK,
-					     width, height, NULL, writeback_formats);
-	if (!ct)
-		return;
 
 	if (output->wb_state) {
 		str_printf(&msg, "drm: another writeback task already in progress");
@@ -946,6 +938,8 @@ drm_output_repaint(struct weston_output *output_base)
 	struct drm_plane *cursor_plane = NULL;
 	struct drm_pending_state *pending_state;
 	struct drm_device *device;
+	struct weston_capture_task *ct;
+	const struct weston_drm_format_array *wb_formats;
 
 	assert(output);
 
@@ -1004,7 +998,14 @@ drm_output_repaint(struct weston_output *output_base)
 	if (drm_output_ensure_hdr_output_metadata_blob(output) < 0)
 		goto err;
 
-	drm_output_pick_writeback_capture_task(output);
+	wb_formats = weston_output_get_writeback_formats(&output->base);
+	ct = weston_output_pull_capture_task(&output->base,
+					     WESTON_OUTPUT_CAPTURE_SOURCE_WRITEBACK,
+					     output->base.current_mode->width,
+					     output->base.current_mode->height,
+					     NULL, wb_formats);
+	if (ct)
+		drm_output_consume_writeback_capture_task(output, ct);
 
 	/* Skip the renderer if our mode allows it */
 	if (state->mode == DRM_OUTPUT_PROPOSE_STATE_PLANES_ONLY)
