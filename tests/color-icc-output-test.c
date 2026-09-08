@@ -577,7 +577,8 @@ static bool
 check_blend_pattern(struct buffer *bg_buf,
 		    struct buffer *fg_buf,
 		    struct buffer *shot_buf,
-		    const struct setup_args *arg)
+		    const struct setup_args *arg,
+		    struct two_norm_tolerance tol)
 {
 	FILE *dump = NULL;
 #if 0
@@ -604,13 +605,11 @@ check_blend_pattern(struct buffer *bg_buf,
 		compare_blend(arg->pipeline, arg->vcgt_exponents, bg, fg, &shot, &diffstat);
 	}
 
-	rgb_diff_stat_print(&diffstat, "Blending", 8);
-
 	if (dump)
 		fclose(dump);
 
 	/* Test success condition: */
-	return diffstat.two_norm.max < 1.72f / 255.0f;
+	return rgb_diff_stat_validate(&diffstat, tol, "check_blend_pattern");
 }
 
 static uint32_t
@@ -731,7 +730,12 @@ output_icc_alpha_blend(struct wet_testsuite_data *suite_data)
 	shot = capture_screenshot_of_output(client, NULL, NO_DECORATIONS);
 	test_assert_ptr_not_null(shot);
 	match = verify_image(shot->image, &vit, 0);
-	test_assert_true(check_blend_pattern(bg, fg, shot, arg));
+
+	struct two_norm_tolerance tol = {
+		.max_limit = 1.72 / 255.0,
+		.avg_limit = 0.6 / 255.0,
+	};
+	test_assert_true(check_blend_pattern(bg, fg, shot, arg, tol));
 	test_assert_true(match);
 
 	buffer_destroy(shot);
