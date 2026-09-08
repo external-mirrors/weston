@@ -999,13 +999,13 @@ drm_output_repaint(struct weston_output *output_base)
 		goto err;
 
 	wb_formats = weston_output_get_writeback_formats(&output->base);
-	ct = weston_output_pull_capture_task(&output->base,
-					     WESTON_OUTPUT_CAPTURE_SOURCE_WRITEBACK,
-					     output->base.current_mode->width,
-					     output->base.current_mode->height,
-					     NULL, wb_formats);
-	if (ct)
+	while ((ct = weston_output_pull_capture_task(&output->base,
+						     WESTON_OUTPUT_CAPTURE_SOURCE_WRITEBACK,
+						     output->base.current_mode->width,
+						     output->base.current_mode->height,
+						     NULL, wb_formats))) {
 		drm_output_consume_writeback_capture_task(output, ct);
+	}
 
 	/* Skip the renderer if our mode allows it */
 	if (state->mode == DRM_OUTPUT_PROPOSE_STATE_PLANES_ONLY)
