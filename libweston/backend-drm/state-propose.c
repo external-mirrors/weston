@@ -1574,10 +1574,7 @@ drm_output_propose_state(struct weston_output *output_base,
 			pnode->try_view_on_plane_failure_reasons |=
 				FAILURE_REASONS_INADEQUATE_CONTENT_PROTECTION;
 
-		if (pnode->surface->tear_control)
-			state->tear &= pnode->surface->tear_control->may_tear;
-		else
-			state->tear = 0;
+		state->tear &= pnode->surface->may_tear;
 
 		/* Now try to place it on a plane if we can. */
 		if (!pnode->try_view_on_plane_failure_reasons) {
