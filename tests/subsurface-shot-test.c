@@ -160,7 +160,7 @@ subsurface_recursive_unmap(struct wet_testsuite_data *suite_data)
 	/* destroy blue, to immediately unmap blue + red + cyan */
 	wl_surface_destroy(surf[1]);
 	surf[1] = NULL;
-	fail += check_screen(client, 0, vit, 0);
+	fail += check_screen(client, 0, vit, 4);
 
 	test_assert_int_eq(fail, 0);
 
