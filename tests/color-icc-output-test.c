@@ -511,7 +511,7 @@ opaque_pixel_conversion(struct wet_testsuite_data *suite_data)
 	shot = capture_screenshot_of_output(client, NULL, NO_DECORATIONS);
 	test_assert_ptr_not_null(shot);
 
-	match = verify_image(shot->image, &vit, seq_no);
+	match = verify_image(shot->image, &vit, 0);
 	test_assert_true(process_pipeline_comparison(buf, shot, arg));
 	test_assert_true(match);
 	buffer_destroy(shot);
@@ -736,7 +736,7 @@ output_icc_alpha_blend(struct wet_testsuite_data *suite_data)
 
 	shot = capture_screenshot_of_output(client, NULL, NO_DECORATIONS);
 	test_assert_ptr_not_null(shot);
-	match = verify_image(shot->image, &vit, seq_no);
+	match = verify_image(shot->image, &vit, 0);
 	test_assert_true(check_blend_pattern(bg, fg, shot, arg));
 	test_assert_true(match);
 
@@ -777,7 +777,7 @@ output_icc_decorations(struct wet_testsuite_data *suite_data)
 
 	client = create_client();
 
-	match = verify_output_content(client, &vit, seq_no,
+	match = verify_output_content(client, &vit, 0,
 				      client->output->name, INCLUDE_DECORATIONS);
 	test_assert_true(match);
 

@@ -398,7 +398,7 @@ alpha_blend(struct wet_testsuite_data *suite_data)
 
 	shot = capture_screenshot_of_output(client, NULL, NO_DECORATIONS);
 	test_assert_ptr_not_null(shot);
-	match = verify_image(shot->image, &vit, vit.ref.seq_no);
+	match = verify_image(shot->image, &vit, 0);
 	test_assert_true(check_blend_pattern(bg, fg, shot, space));
 	test_assert_true(match);
 

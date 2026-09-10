@@ -82,7 +82,6 @@ set_multiplier_then_destroy_before_commit(struct wet_testsuite_data *suite_data)
 	struct buffer *buf;
 	pixman_color_t blue;
 	bool match;
-	int seq_no = get_test_fixture_index();
 
 	client = create_client_and_test_surface(100, 50, 100, 100);
 	/* Move pointer away from the screenshot area. */
@@ -101,7 +100,7 @@ set_multiplier_then_destroy_before_commit(struct wet_testsuite_data *suite_data)
 		.ref.basename = "alpha-modifier",
 		.ref.seq_no = 0,
 	};
-	match = verify_screen_content(client, &vit, seq_no);
+	match = verify_screen_content(client, &vit, 0);
 	test_assert_true(match);
 
 	buffer_destroy(buf);
@@ -118,7 +117,6 @@ various_set_multiplier_before_commit(struct wet_testsuite_data *suite_data)
 	struct buffer *buf;
 	pixman_color_t blue;
 	bool match;
-	int seq_no = get_test_fixture_index();
 
 	client = create_client_and_test_surface(100, 50, 100, 100);
 	/* Move pointer away from the screenshot area. */
@@ -138,7 +136,7 @@ various_set_multiplier_before_commit(struct wet_testsuite_data *suite_data)
 		.ref.basename = "alpha-modifier",
 		.ref.seq_no = 1,
 	};
-	match = verify_screen_content(client, &vit, seq_no);
+	match = verify_screen_content(client, &vit, 0);
 	test_assert_true(match);
 
 	buffer_destroy(buf);
@@ -180,7 +178,6 @@ static enum test_result_code
 overlapping_surfaces(struct wet_testsuite_data *suite_data,
 		     const struct overlapping_surfaces_test_case *args)
 {
-	int seq_no = get_test_fixture_index();
 	struct client *client;
 	struct wl_subcompositor *subco;
 	struct wp_alpha_modifier_surface_v1 *ams_main, *ams_top;
@@ -218,7 +215,7 @@ overlapping_surfaces(struct wet_testsuite_data *suite_data,
 		.ref.basename = "alpha-modifier",
 		.ref.seq_no = args->ref_no,
 	};
-	match = verify_screen_content(client, &vit, seq_no);
+	match = verify_screen_content(client, &vit, 0);
 	test_assert_true(match);
 
 	buffer_destroy(buf_main);

@@ -265,7 +265,7 @@ color_effects(struct wet_testsuite_data *suite_data)
 		.ref.seq_no = seq_no,
 		.clip = &clip,
 	};
-	res = verify_screen_content(client, &vit, seq_no);
+	res = verify_screen_content(client, &vit, 0);
 
 	if (buffer) {
 		buffer_destroy(buffer);
