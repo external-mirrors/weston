@@ -444,9 +444,10 @@ process_pipeline_comparison(const struct buffer *src_buf,
 						     arg->vcgt_exponents,
 						     &pix_src, &pix_src_pipeline);
 
+			struct weston_vec4f pos = weston_v4f_mul_scalar(pix_src, 255.0f);
 			rgb_diff_stat_update(&diffstat,
 					     &pix_src_pipeline, &pix_shot,
-					     &pix_src);
+					     &pos);
 		}
 	}
 
@@ -561,7 +562,8 @@ compare_blend(const struct lcms_pipeline *pip,
 		for (i = 0; i < COLOR_CHAN_NUM; i++)
 			ref.el[i] = pow(ref.el[i], vcgt_exponents[i]);
 
-	rgb_diff_stat_update(diffstat, &ref, shot, &fg);
+	struct weston_vec4f pos = weston_v4f_mul_scalar(fg, 255.0f);
+	rgb_diff_stat_update(diffstat, &ref, shot, &pos);
 }
 
 /* Alpha blending test pattern parameters */

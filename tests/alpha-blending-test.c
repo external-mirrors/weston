@@ -28,6 +28,7 @@
 
 #include <math.h>
 #include <stdio.h>
+#include <libweston/linalg-4.h>
 
 #include "weston-test-client-helper.h"
 #include "weston-test-fixture-compositor.h"
@@ -202,7 +203,8 @@ compare_sRGB_blend_a8r8g8b8(uint32_t bg32, uint32_t fg32, uint32_t dst32,
 	if (space == BLEND_LINEAR)
 		sRGB_delinearize(&ref);
 
-	rgb_diff_stat_update(diffstat, &ref, &dst, &fg);
+	struct weston_vec4f pos = weston_v4f_mul_scalar(fg, 255.0f);
+	rgb_diff_stat_update(diffstat, &ref, &dst, &pos);
 }
 
 static uint8_t

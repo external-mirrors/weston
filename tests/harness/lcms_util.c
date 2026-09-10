@@ -245,9 +245,10 @@ test_roundtrip(uint8_t r, uint8_t g, uint8_t b, cmsPipeline *pip,
 {
 	struct weston_vec4f in = WESTON_VEC4F(r / 255.0, g / 255.0, b / 255.0, 1.0);
 	struct weston_vec4f out = WESTON_VEC4F(0, 0, 0, 1);
+	struct weston_vec4f pos = WESTON_VEC4F(r, g, b, 255.0f);
 
 	cmsPipelineEvalFloat(in.el, out.el, pip);
-	rgb_diff_stat_update(stat, &in, &out, &in);
+	rgb_diff_stat_update(stat, &in, &out, &pos);
 }
 
 /*

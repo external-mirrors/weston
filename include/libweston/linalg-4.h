@@ -111,6 +111,13 @@ weston_m4f_from_m3f_v3f(struct weston_mat3f R, struct weston_vec3f t)
 	);
 }
 
+/** Multiply 4-vector with a scalar */
+static inline struct weston_vec4f
+weston_v4f_mul_scalar(struct weston_vec4f a, float s)
+{
+	return WESTON_VEC4F(a.x * s, a.y * s, a.z * s, a.w * s);
+}
+
 /** 4-vector dot product */
 static inline float
 weston_v4f_dot_v4f(struct weston_vec4f a, struct weston_vec4f b)

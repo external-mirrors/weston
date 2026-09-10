@@ -417,17 +417,17 @@ scalar_stat_print_float(const struct scalar_stat *stat)
 }
 
 static void
-print_stat_at_pos(const char *lim, double val, struct weston_vec4f pos, double scale)
+print_stat_at_pos(const char *lim, double val, struct weston_vec4f pos)
 {
 	testlog("    %s %8.5f at (%7.2f, %7.2f, %7.2f, %7.2f)\n",
-		lim, val * scale, pos.x * scale, pos.y * scale, pos.z * scale, pos.w * scale);
+		lim, val, pos.x, pos.y, pos.z, pos.w);
 }
 
 static void
 print_rgb_at_pos(const struct scalar_stat *stat, double scale)
 {
-	print_stat_at_pos("min", stat->min, stat->min_pos, scale);
-	print_stat_at_pos("max", stat->max, stat->max_pos, scale);
+	print_stat_at_pos("min", stat->min * scale, stat->min_pos);
+	print_stat_at_pos("max", stat->max * scale, stat->max_pos);
 	testlog("    avg %8.5f\n", scalar_stat_avg(stat) * scale);
 }
 
@@ -436,13 +436,13 @@ print_rgb_at_pos(const struct scalar_stat *stat, double scale)
  * \param stat The statistics to print.
  * \param title A custom title to include in the heading which shall be printed
  * like "%s error statistics:".
- * \param scaling_bits Determines a scaling factor for the printed numbers as
- * 2^scaling_bits - 1.
+ * \param scaling_bits Determines a scaling factor for the printed color values
+ * as 2^scaling_bits - 1.
  *
  * Usually RGB values are stored in unsigned integer representation. 8-bit
  * integer range is [0, 255] for example. Passing scaling_bits=8 will multiply
- * all values (differences, two-norm errors, and position values) by
- * 2^8 - 1 = 255. This makes interpreting the recorded errors more intuitive
+ * pixel values (differences, two-norm errors) by 2^8 - 1 = 255.
+ * This makes interpreting the recorded errors more intuitive
  * through the integer encoding precision perspective.
  */
 void
