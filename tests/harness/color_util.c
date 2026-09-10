@@ -396,7 +396,7 @@ scalar_stat_update(struct scalar_stat *stat,
 
 	if (stat->dump) {
 		fprintf(stat->dump, "%.8g %.5g %.5g %.5g %.5g\n",
-			val, pos->r, pos->g, pos->b, pos->a);
+			val, pos->x, pos->y, pos->z, pos->w);
 	}
 }
 
@@ -407,20 +407,20 @@ scalar_stat_avg(const struct scalar_stat *stat)
 	return stat->sum / stat->count;
 }
 
-/** Print scalar statistics with pos.r only */
+/** Print scalar statistics with pos.x only */
 void
 scalar_stat_print_float(const struct scalar_stat *stat)
 {
-	testlog("    min %11.5g at %.5f\n", stat->min, stat->min_pos.r);
-	testlog("    max %11.5g at %.5f\n", stat->max, stat->max_pos.r);
+	testlog("    min %11.5g at %.5f\n", stat->min, stat->min_pos.x);
+	testlog("    max %11.5g at %.5f\n", stat->max, stat->max_pos.x);
 	testlog("    avg %11.5g\n", scalar_stat_avg(stat));
 }
 
 static void
 print_stat_at_pos(const char *lim, double val, struct weston_vec4f pos, double scale)
 {
-	testlog("    %s %8.5f at rgb(%7.2f, %7.2f, %7.2f)\n",
-		lim, val * scale, pos.r * scale, pos.g * scale, pos.b * scale);
+	testlog("    %s %8.5f at (%7.2f, %7.2f, %7.2f, %7.2f)\n",
+		lim, val * scale, pos.x * scale, pos.y * scale, pos.z * scale, pos.w * scale);
 }
 
 static void
@@ -517,6 +517,6 @@ rgb_diff_stat_update(struct rgb_diff_stat *stat,
 		fprintf(stat->dump, "%.8g %.8g %.8g %.8g %.5g %.5g %.5g %.5g\n",
 			two_norm,
 			diff[COLOR_CHAN_R], diff[COLOR_CHAN_G], diff[COLOR_CHAN_B],
-			pos->r, pos->g, pos->b, pos->a);
+			pos->x, pos->y, pos->z, pos->w);
 	}
 }
