@@ -1035,6 +1035,10 @@ handle_global(void *data, struct wl_registry *registry,
 		client->alpha_modifier =
 			wl_registry_bind(registry, id,
 					 &wp_alpha_modifier_v1_interface, 1);
+	} else if (strcmp(interface, wp_tearing_control_manager_v1_interface.name) == 0) {
+		client->tearing_control_manager =
+			wl_registry_bind(registry, id,
+					 &wp_tearing_control_manager_v1_interface, 1);
 	} else if (strcmp(interface, weston_restricted_buffer_v1_interface.name) == 0) {
 		client->restricted_buffer =
 			wl_registry_bind(registry, id,
@@ -1320,6 +1324,9 @@ client_destroy(struct client *client)
 
 	if (client->commit_timing_manager)
 		wp_commit_timing_manager_v1_destroy(client->commit_timing_manager);
+
+	if (client->tearing_control_manager)
+		wp_tearing_control_manager_v1_destroy(client->tearing_control_manager);
 
 	if (client->weston_fast_forward_manager)
 		weston_fast_forward_manager_v1_destroy(client->weston_fast_forward_manager);

@@ -40,6 +40,7 @@
 #include "alpha-modifier-v1-client-protocol.h"
 #include "shared/client-buffer-util.h"
 #include "single-pixel-buffer-v1-client-protocol.h"
+#include "tearing-control-v1-client-protocol.h"
 #include "weston-test-runner.h"
 #include "weston-fast-forward-client-protocol.h"
 #include "weston-test-client-protocol.h"
@@ -79,6 +80,7 @@ struct client {
 	struct wp_fifo_manager_v1 *fifo_manager;
 	struct wp_commit_timing_manager_v1 *commit_timing_manager;
 	struct wp_alpha_modifier_v1 *alpha_modifier;
+	struct wp_tearing_control_manager_v1 *tearing_control_manager;
 	/* the seat that is actually used for input events */
 	struct input *input;
 	/* server can have more wl_seats. We need keep them all until we
