@@ -59,7 +59,7 @@ weston_trace_client_setup_name(struct weston_client *client)
 	char friendly_name[WESTON_TRACE_NAME_SIZE];
 	char pathname[60];
 	FILE *procfile;
-	char *start;
+	char *start, *ret;
 	int len;
 
 	/* Try to grab a filename from proc. if we fail for any reason just
@@ -70,7 +70,9 @@ weston_trace_client_setup_name(struct weston_client *client)
 	if (!procfile)
 		goto fail;
 
-	if (!fgets(friendly_name, sizeof(friendly_name), procfile))
+	ret = fgets(friendly_name, sizeof(friendly_name), procfile);
+	fclose(procfile);
+	if (!ret)
 		goto fail;
 
 	start = strrchr(friendly_name, '/');
