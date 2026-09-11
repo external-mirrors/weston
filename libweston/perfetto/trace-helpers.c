@@ -83,7 +83,7 @@ weston_trace_client_setup_name(struct weston_client *client)
 
 	len = snprintf(client->trace.track_name,
 		       sizeof(client->trace.track_name),
-		       "%s (%s)", friendly_name, client->internal_name);
+		       "%s (%s)", start, client->internal_name);
 	if (len < 0 || (size_t)len >= sizeof(client->trace.track_name))
 		goto fail;
 	return;
