@@ -32,7 +32,6 @@
 #include "alpha-modifier-v1-server-protocol.h"
 
 struct weston_alpha_modifier_surface {
-	struct wl_resource *owner;
 	struct weston_surface *surface;
 	struct wl_listener surface_destroy_listener;
 };
@@ -161,14 +160,13 @@ alpha_modifier_get_surface(struct wl_client *client,
 				 version, id);
 	if (!res) {
 	      wl_resource_post_no_memory(alpha_modifier_res);
-	      return;  
+	      return;
 	}
 
 	ams = xzalloc(sizeof(*ams));
 	surface->ams = ams;
 
 	ams->surface = surface;
-	ams->owner = res;
 	ams->surface_destroy_listener.notify = alpha_modifier_base_surface_destroyed;
 	wl_signal_add(&surface->destroy_signal, &ams->surface_destroy_listener);
 
