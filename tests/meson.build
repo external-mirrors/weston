@@ -138,6 +138,7 @@ tests = [
 	{	'name': 'surface', },
 	{	'name': 'surface-global', },
 	{	'name': 'surface-release', },
+	{	'name': 'tearing-control', },
 	{	'name': 'timespec', },
 	{
 		'name': 'touch',
