@@ -395,6 +395,13 @@ struct verify_image_target {
 	 * size.
 	 */
 	const struct rectangle *clip;
+
+	/**
+	 * The two-norm error limits for an image match. If both \c max_limit
+	 * and \c avg_limit are exactly 0.0, then \c verify_image() applies
+	 * its default error limits.
+	 */
+	struct two_norm_tolerance tol;
 };
 
 bool

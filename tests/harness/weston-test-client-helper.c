@@ -1835,7 +1835,8 @@ write_visual_diff(pixman_image_t *ref_image,
  * with 8 bits per channel data.
  *
  * \param shot The image to be verified, usually a screenshot.
- * \param vit The arguments; the reference image, the clip rectangle.
+ * \param vit The arguments; the reference image, the clip rectangle, error
+ * limits.
  * \param seq_no Sequence number for writing output files on failure.
  * Among all the calls where \c get_test_name() would return the same string,
  * the number must be unique in each call.
@@ -1861,6 +1862,9 @@ verify_image(pixman_image_t *shot,
 	char *ref_fname = NULL;
 	char *shot_fname;
 	bool match = false;
+
+	if (vit->tol.avg_limit != 0.0f || vit->tol.max_limit != 0.0f)
+		tol = vit->tol;
 
 	shot_fname = output_filename_for_test_case("shot", seq_no, "png");
 	ref_fname = screenshot_reference_filename(vit->ref.basename, vit->ref.seq_no);
