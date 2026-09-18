@@ -26,6 +26,12 @@ Weston formerly accepted patches via `git-send-email`, sent to
 [tracked using Patchwork](https://patchwork.freedesktop.org/project/wayland/).
 New email patches are no longer accepted.
 
+### LLM-Policy
+
+Weston has a [large language model (LLM) usage guide](LLM-USAGE.md) for LLM assisted
+contributions. Please read it before opening a MR if you want to use any LLM or
+AI tools.
+
 Finding something to work on
 ----------------------------
 
