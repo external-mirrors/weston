@@ -145,7 +145,7 @@ drm_output_fini_cursor(struct drm_output *output)
 	}
 }
 
-static int
+static void
 drm_output_init_cursor(struct drm_output *output, struct drm_backend *b)
 {
 	struct drm_device *device = output->device;
@@ -153,7 +153,7 @@ drm_output_init_cursor(struct drm_output *output, struct drm_backend *b)
 
 	/* No point creating cursors if we don't have a plane for them. */
 	if (!output->cursor_handle)
-		return 0;
+		return;
 
 	for (i = 0; i < ARRAY_LENGTH(output->gbm_cursor_fb); i++) {
 		struct gbm_bo *bo;
@@ -185,13 +185,12 @@ drm_output_init_cursor(struct drm_output *output, struct drm_backend *b)
 		}
 	}
 
-	return 0;
+	return;
 
 err:
 	weston_log("cursor buffers unavailable, using rendered cursors\n");
 	device->cursors_are_broken = true;
 	drm_output_fini_cursor(output);
-	return -1;
 }
 
 static void
