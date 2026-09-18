@@ -2965,6 +2965,8 @@ drm_output_enable(struct weston_output *base)
 	if (ret < 0)
 		goto err_crtc;
 
+	drm_output_init_cursor(output, b);
+
 	if (drm_output_init_legacy_gamma_size(output) < 0)
 		goto err_planes;
 
@@ -3059,6 +3061,7 @@ drm_output_deinit(struct weston_output *base)
 					   output->hdr_output_metadata_blob_id);
 		output->hdr_output_metadata_blob_id = 0;
 	}
+	drm_output_fini_cursor(output);
 }
 
 void

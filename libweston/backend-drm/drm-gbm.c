@@ -131,10 +131,15 @@ init_vulkan(struct drm_backend *b)
 	return 0;
 }
 
-static void
+void
 drm_output_fini_cursor(struct drm_output *output)
 {
+	struct drm_device *device = output->device;
+	struct drm_backend *b = device->backend;
 	unsigned int i;
+
+	if (!b->gbm)
+		return;
 
 	for (i = 0; i < ARRAY_LENGTH(output->gbm_cursor_fb); i++) {
 		/* This cursor does not have a GBM device */
@@ -145,7 +150,7 @@ drm_output_fini_cursor(struct drm_output *output)
 	}
 }
 
-static void
+void
 drm_output_init_cursor(struct drm_output *output, struct drm_backend *b)
 {
 	struct drm_device *device = output->device;
@@ -153,6 +158,10 @@ drm_output_init_cursor(struct drm_output *output, struct drm_backend *b)
 
 	/* No point creating cursors if we don't have a plane for them. */
 	if (!output->cursor_handle)
+		return;
+
+	/* If we don't have gbm, we can't make the buffers */
+	if (!b->gbm)
 		return;
 
 	for (i = 0; i < ARRAY_LENGTH(output->gbm_cursor_fb); i++) {
@@ -491,8 +500,6 @@ drm_output_init_egl(struct drm_output *output, struct drm_backend *b)
 		return -1;
 	}
 
-	drm_output_init_cursor(output, b);
-
 	return 0;
 }
 
@@ -693,8 +700,6 @@ drm_output_init_vulkan(struct drm_output *output, struct drm_backend *b)
 		return -1;
 	}
 
-	drm_output_init_cursor(output, b);
-
 	return 0;
 }
 
@@ -706,7 +711,6 @@ drm_output_fini_egl(struct drm_output *output)
 	renderer->gl->output_destroy(&output->base);
 	gbm_surface_destroy(output->gbm_surface);
 	output->gbm_surface = NULL;
-	drm_output_fini_cursor(output);
 }
 
 void
@@ -718,8 +722,6 @@ drm_output_fini_vulkan(struct drm_output *output)
 		renderer->destroy_renderbuffer(output->renderbuffer[i]);
 
 	renderer->vulkan->output_destroy(&output->base);
-
-	drm_output_fini_cursor(output);
 }
 
 struct drm_fb *
