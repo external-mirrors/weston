@@ -110,17 +110,11 @@ drm_backend_create_vulkan_renderer(struct drm_backend *b)
 int
 init_egl(struct drm_backend *b)
 {
-	struct drm_device *device = b->drm;
-
-	b->gbm = gbm_create_device(device->kms_device->fd);
 	if (!b->gbm)
 		return -1;
 
-	if (drm_backend_create_gl_renderer(b) < 0) {
-		gbm_device_destroy(b->gbm);
-		b->gbm = NULL;
+	if (drm_backend_create_gl_renderer(b) < 0)
 		return -1;
-	}
 
 	return 0;
 }
@@ -128,17 +122,11 @@ init_egl(struct drm_backend *b)
 int
 init_vulkan(struct drm_backend *b)
 {
-	struct drm_device *device = b->drm;
-
-	b->gbm = gbm_create_device(device->kms_device->fd);
 	if (!b->gbm)
 		return -1;
 
-	if (drm_backend_create_vulkan_renderer(b) < 0) {
-		gbm_device_destroy(b->gbm);
-		b->gbm = NULL;
+	if (drm_backend_create_vulkan_renderer(b) < 0)
 		return -1;
-	}
 
 	return 0;
 }
@@ -316,6 +304,22 @@ create_gbm_surface(struct gbm_device *gbm, struct drm_output *output)
 							 mode->width, mode->height,
 							 output->format->format,
 							 output->gbm_bo_flags);
+}
+
+void
+drm_init_gbm(struct drm_backend *b)
+{
+	struct drm_device *device = b->drm;
+
+	b->gbm = gbm_create_device(device->kms_device->fd);
+}
+
+void
+drm_fini_gbm(struct drm_backend *b)
+{
+	if (b->gbm)
+		gbm_device_destroy(b->gbm);
+	b->gbm = NULL;
 }
 
 enum format_alpha_required {

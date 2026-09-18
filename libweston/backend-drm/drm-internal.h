@@ -1081,6 +1081,12 @@ drm_plane_destroy_handle(struct drm_plane_handle *plane);
 int
 init_egl(struct drm_backend *b);
 
+void
+drm_init_gbm(struct drm_backend *b);
+
+void
+drm_fini_gbm(struct drm_backend *b);
+
 int
 drm_output_init_egl(struct drm_output *output, struct drm_backend *b);
 
@@ -1108,6 +1114,18 @@ init_egl(struct drm_backend *b)
 {
 	weston_log("Compiled without GBM/EGL support\n");
 	return -1;
+}
+
+inline static void
+drm_init_gbm(struct drm_backend *b)
+{
+	b->gbm = NULL;
+}
+
+inline static void
+drm_fini_gbm(struct drm_backend *b)
+{
+	b->gbm = NULL;
 }
 
 inline static int

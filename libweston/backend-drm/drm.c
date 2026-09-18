@@ -4373,10 +4373,7 @@ drm_destroy(struct weston_backend *backend)
 			drm_head_destroy(base);
 	}
 
-#ifdef BUILD_DRM_GBM
-	if (b->gbm)
-		gbm_device_destroy(b->gbm);
-#endif
+	drm_fini_gbm(b);
 
 	drm_backend_destroy_all_drm_devices(b);
 
@@ -4837,6 +4834,8 @@ drm_backend_create(struct weston_compositor *compositor,
 
 	if (config->additional_devices)
 		open_additional_devices(b, config->additional_devices);
+
+	drm_init_gbm(b);
 
 	/* GL renderer is the default whenever it is enabled.
 	 * Only on a build without GL but with Vulkan, Vulkan is picked
