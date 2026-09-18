@@ -412,50 +412,6 @@ done:
 	return ret;
 }
 
-/* Init output state that depends on gl or gbm */
-int
-drm_output_init_egl(struct drm_output *output, struct drm_backend *b)
-{
-	const struct weston_renderer *renderer = b->compositor->renderer;
-	const struct weston_mode *mode = output->base.current_mode;
-	const struct pixel_format_info *format[2] = { 0 };
-	struct gl_renderer_output_options options;
-
-	if (!output->format && !drm_output_pick_format_egl(output))
-		return -1;
-
-	format[0] = output->format;
-	if (!output->has_underlay)
-		format[1] = fallback_format_for(output->format);
-
-	options.formats = format;
-	options.formats_count = format[1] ? 2 : 1;
-	options.area.x = 0;
-	options.area.y = 0;
-	options.area.width = mode->width;
-	options.area.height = mode->height;
-	options.fb_size.width = mode->width;
-	options.fb_size.height = mode->height;
-
-	assert(output->gbm_surface == NULL);
-	create_gbm_surface(b->gbm, output);
-	if (!output->gbm_surface) {
-		weston_log("failed to create gbm surface\n");
-		return -1;
-	}
-
-	options.window_for_legacy = (EGLNativeWindowType) output->gbm_surface;
-	options.window_for_platform = output->gbm_surface;
-	if (renderer->gl->output_window_create(&output->base, &options) < 0) {
-		weston_log("failed to create gl renderer output state\n");
-		gbm_surface_destroy(output->gbm_surface);
-		output->gbm_surface = NULL;
-		return -1;
-	}
-
-	return 0;
-}
-
 static struct gbm_bo *
 drm_gbm_create_bo(struct gbm_device *gbm, struct drm_output *output)
 {
@@ -592,6 +548,50 @@ create_renderbuffers(struct gbm_device *gbm, struct drm_output *output, unsigned
 
 		output->linux_dmabuf_memory[i] = &drm_gbm_dmabuf->base;
 	}
+}
+
+/* Init output state that depends on gl or gbm */
+int
+drm_output_init_egl(struct drm_output *output, struct drm_backend *b)
+{
+	const struct weston_renderer *renderer = b->compositor->renderer;
+	const struct weston_mode *mode = output->base.current_mode;
+	const struct pixel_format_info *format[2] = { 0 };
+	struct gl_renderer_output_options options;
+
+	if (!output->format && !drm_output_pick_format_egl(output))
+		return -1;
+
+	format[0] = output->format;
+	if (!output->has_underlay)
+		format[1] = fallback_format_for(output->format);
+
+	options.formats = format;
+	options.formats_count = format[1] ? 2 : 1;
+	options.area.x = 0;
+	options.area.y = 0;
+	options.area.width = mode->width;
+	options.area.height = mode->height;
+	options.fb_size.width = mode->width;
+	options.fb_size.height = mode->height;
+
+	assert(output->gbm_surface == NULL);
+	create_gbm_surface(b->gbm, output);
+	if (!output->gbm_surface) {
+		weston_log("failed to create gbm surface\n");
+		return -1;
+	}
+
+	options.window_for_legacy = (EGLNativeWindowType) output->gbm_surface;
+	options.window_for_platform = output->gbm_surface;
+	if (renderer->gl->output_window_create(&output->base, &options) < 0) {
+		weston_log("failed to create gl renderer output state\n");
+		gbm_surface_destroy(output->gbm_surface);
+		output->gbm_surface = NULL;
+		return -1;
+	}
+
+	return 0;
 }
 
 static bool
