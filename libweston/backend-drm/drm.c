@@ -2910,12 +2910,7 @@ drm_writeback_complete_sync(struct drm_writeback_state *state);
 static void
 drm_output_fini_cursor(struct drm_output *output)
 {
-	struct drm_device *device = output->device;
-	struct drm_backend *b = device->backend;
 	unsigned int i;
-
-	if (!b->gbm)
-		return;
 
 	for (i = 0; i < ARRAY_LENGTH(output->gbm_cursor_fb); i++) {
 		/* This cursor does not have a GBM device */
@@ -2948,10 +2943,6 @@ drm_output_init_cursor(struct drm_output *output, struct drm_backend *b)
 
 	/* No point creating cursors if we don't have a plane for them. */
 	if (!output->cursor_handle)
-		return;
-
-	/* If we don't have gbm, we can't make the buffers */
-	if (!b->gbm)
 		return;
 
 	for (i = 0; i < ARRAY_LENGTH(output->gbm_cursor_fb); i++) {

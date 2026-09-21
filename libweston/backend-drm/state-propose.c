@@ -317,7 +317,6 @@ out:
 	return NULL;
 }
 
-#ifdef BUILD_DRM_GBM
 static struct drm_plane_state *
 drm_output_prepare_cursor_paint_node(struct drm_output_state *output_state,
 				     struct weston_paint_node *pnode,
@@ -343,9 +342,6 @@ drm_output_prepare_cursor_paint_node(struct drm_output_state *output_state,
 	       plane->state_cur->handle->output == output);
 
 	p_name = drm_output_get_handle_type_name(handle);
-
-	/* We use GBM to import SHM buffers. */
-	assert(b->gbm);
 
 	plane_state = drm_output_state_get_plane(output_state, plane);
 	assert(!plane_state->fb);
@@ -403,15 +399,6 @@ err:
 	drm_plane_state_put_back(plane_state);
 	return NULL;
 }
-#else
-static struct drm_plane_state *
-drm_output_prepare_cursor_paint_node(struct drm_output_state *output_state,
-				     struct weston_paint_node *node,
-				     uint64_t zpos)
-{
-	return NULL;
-}
-#endif
 
 static void
 drm_output_check_zpos_plane_states(struct drm_output_state *state)
@@ -1505,6 +1492,7 @@ drm_output_propose_state(struct weston_output *output_base,
 	/* Assign paint nodes to planes. */
 	wl_array_for_each(visible_pnode, &visible_pnodes) {
 		struct weston_paint_node *pnode = *visible_pnode;
+		struct weston_buffer *buffer = pnode->surface->buffer_ref.buffer;
 		struct drm_plane_state *ps = NULL;
 		bool need_underlay = false;
 		pixman_region32_t tmp;
@@ -1518,7 +1506,8 @@ drm_output_propose_state(struct weston_output *output_base,
 			  pnode->internal_name, output->base.name,
 			  (unsigned long) output->base.id);
 
-		if (!b->gbm)
+		/* We might be able to use a cursor plane without gbm. */
+		if (!b->gbm && !(buffer->type == WESTON_BUFFER_SHM))
 			pnode->try_view_on_plane_failure_reasons |=
 				FAILURE_REASONS_NO_GBM;
 
