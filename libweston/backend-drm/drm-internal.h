@@ -1114,6 +1114,9 @@ drm_output_init_cursor(struct drm_output *output, struct drm_backend *b);
 void
 drm_output_fini_cursor(struct drm_output *output);
 
+bool
+drm_gbm_alloc_cursor_fb(struct drm_output *output, struct drm_backend *b, int fb_index);
+
 #else
 inline static int
 init_egl(struct drm_backend *b)
@@ -1183,6 +1186,12 @@ drm_output_init_cursor(struct drm_output *output, struct drm_backend *b)
 inline static void
 drm_output_fini_cursor(struct drm_output *output)
 {
+}
+
+inline static bool
+drm_gbm_alloc_cursor_fb(struct drm_output *output, struct drm_backend *b, int fb_index)
+{
+	return false;
 }
 
 #endif

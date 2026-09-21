@@ -131,38 +131,7 @@ init_vulkan(struct drm_backend *b)
 	return 0;
 }
 
-void
-drm_output_fini_cursor(struct drm_output *output)
-{
-	struct drm_device *device = output->device;
-	struct drm_backend *b = device->backend;
-	unsigned int i;
-
-	if (!b->gbm)
-		return;
-
-	for (i = 0; i < ARRAY_LENGTH(output->gbm_cursor_fb); i++) {
-		/* This cursor does not have a GBM device */
-		if (output->gbm_cursor_fb[i] && !output->gbm_cursor_fb[i]->bo)
-			output->gbm_cursor_fb[i]->type = BUFFER_PIXMAN_DUMB;
-		drm_fb_unref(output->gbm_cursor_fb[i]);
-		output->gbm_cursor_fb[i] = NULL;
-	}
-}
-
-static bool
-dumb_cursors(struct drm_output *output, struct drm_backend *b)
-{
-	if (!b->gbm)
-		return true;
-
-	if (gbm_device_get_fd(b->gbm) != output->device->kms_device->fd)
-		return true;
-
-	return false;
-}
-
-static bool
+bool
 drm_gbm_alloc_cursor_fb(struct drm_output *output, struct drm_backend *b, int fb_index)
 {
 	struct drm_device *device = output->device;
@@ -183,45 +152,6 @@ drm_gbm_alloc_cursor_fb(struct drm_output *output, struct drm_backend *b, int fb
 	output->gbm_cursor_handle[fb_index] = gbm_bo_get_handle(bo).s32;
 
 	return true;
-}
-
-void
-drm_output_init_cursor(struct drm_output *output, struct drm_backend *b)
-{
-	struct drm_device *device = output->device;
-	unsigned int i;
-
-	/* No point creating cursors if we don't have a plane for them. */
-	if (!output->cursor_handle)
-		return;
-
-	/* If we don't have gbm, we can't make the buffers */
-	if (!b->gbm)
-		return;
-
-	for (i = 0; i < ARRAY_LENGTH(output->gbm_cursor_fb); i++) {
-		if (dumb_cursors(output, b)) {
-			output->gbm_cursor_fb[i] =
-				drm_fb_create_dumb(output->device,
-						   device->cursor_width,
-						   device->cursor_height,
-						   DRM_FORMAT_ARGB8888);
-			/* Override buffer type, since we know it is a cursor */
-			output->gbm_cursor_fb[i]->type = BUFFER_CURSOR;
-			output->gbm_cursor_handle[i] =
-				output->gbm_cursor_fb[i]->handles[0];
-		} else {
-			if (!drm_gbm_alloc_cursor_fb(output,  b, i))
-				goto err;
-		}
-	}
-
-	return;
-
-err:
-	weston_log("cursor buffers unavailable, using rendered cursors\n");
-	device->cursors_are_broken = true;
-	drm_output_fini_cursor(output);
 }
 
 static void
