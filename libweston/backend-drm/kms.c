@@ -1050,12 +1050,12 @@ crtc_add_prop_mode_id(drmModeAtomicReq *req, const struct drm_crtc *crtc,
 	const struct drm_property_info *info = &crtc->props_crtc[WDRM_CRTC_MODE_ID];
 	int ret;
 	uint64_t id = mode ? mode->blob_id : 0;
+	const char *desc = mode ? mode->base.desc : "off";
 
 	drm_debug(b, "\t\t\t[CRTC:%lu] %s (%lu) -> %s (0x%llx)\n",
 		  (unsigned long) crtc->crtc_id, info->name,
 		  (unsigned long) info->prop_id,
-		  mode ? mode->mode_info.name : "off",
-		  (long long unsigned) id);
+		  desc, (long long unsigned) id);
 
 	if (info->prop_id == 0)
 		return -1;

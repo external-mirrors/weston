@@ -159,6 +159,8 @@ enum weston_cvd_correction_type {
 	WESTON_CVD_CORRECTION_TYPE_TRITANOPIA,
 };
 
+#define WESTON_MODE_DISPLAY_MODE_LEN 64
+
 /** Possible mode of an output
  *
  * \ingroup output
@@ -170,6 +172,9 @@ struct weston_mode {
 	int32_t width;		/**< Width in pixels. */
 	int32_t height;		/**< Height in pixels. */
 	uint32_t refresh;	/**< Refresh rate in mHz. */
+	/** human-readable modeline in the
+	 * "drmModeModeInfo.name@RefreshHz" form */
+	char desc[WESTON_MODE_DISPLAY_MODE_LEN];
 	struct wl_list link;	/**< in weston_output::mode_list */
 };
 

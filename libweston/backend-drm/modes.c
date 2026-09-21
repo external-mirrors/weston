@@ -637,6 +637,9 @@ drm_output_add_mode(struct drm_output *output, const drmModeModeInfo *info)
 
 	mode->base.aspect_ratio = drm_to_weston_mode_aspect_ratio(info->flags);
 
+	snprintf(mode->base.desc, sizeof(mode->base.desc), "%s@%.3fHz",
+		 mode->mode_info.name, mode->base.refresh / 1000.f);
+
 	wl_list_insert(output->base.mode_list.prev, &mode->base.link);
 
 	return mode;
