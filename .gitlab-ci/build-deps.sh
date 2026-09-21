@@ -222,9 +222,10 @@ fdo_log_section_end install_aml_neatvnc
 
 # Build and install libdisplay-info, used by drm-backend
 fdo_log_section_start_collapsed install_libdisplay-info "install_libdisplay-info"
-git clone --branch 0.2.0 --depth=1 https://gitlab.freedesktop.org/emersion/libdisplay-info.git
+git clone --branch 0.3.0 --depth=1 https://gitlab.freedesktop.org/emersion/libdisplay-info.git
 cd libdisplay-info
-meson setup build --wrap-mode=nofallback
+# We need nodownload to prevent v4l-utils from being checked out, it breaks our 32-bit builds.
+meson setup build --wrap-mode=nodownload
 ninja ${NINJAFLAGS} -C build install
 cd ..
 rm -rf libdisplay-info
