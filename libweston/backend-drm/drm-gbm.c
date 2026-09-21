@@ -442,9 +442,10 @@ drm_gbm_create_bo(struct gbm_device *gbm, struct drm_output *output)
 
 	if (!weston_drm_format_has_modifier(fmt, DRM_FORMAT_MOD_INVALID)) {
 		modifiers = weston_drm_format_get_modifiers(fmt, &num_modifiers);
-		bo = gbm_bo_create_with_modifiers(gbm, mode->width, mode->height,
-						  output->format->format,
-						  modifiers, num_modifiers);
+		bo = gbm_bo_create_with_modifiers2(gbm, mode->width, mode->height,
+						   output->format->format,
+						   modifiers, num_modifiers,
+						   output->gbm_bo_flags);
 	}
 
 	/*
