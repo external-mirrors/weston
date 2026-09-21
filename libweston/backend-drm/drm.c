@@ -871,12 +871,6 @@ drm_output_fail_writeback(struct drm_output *output)
 }
 
 #ifdef BUILD_DRM_GBM
-/**
- * Update the image for the current cursor surface
- *
- * @param plane_state DRM cursor plane state
- * @param ev Source view for cursor
- */
 static void
 cursor_bo_update(struct drm_output *output, struct weston_paint_node *pnode)
 {
