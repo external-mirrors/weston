@@ -1108,12 +1108,6 @@ drm_output_fini_vulkan(struct drm_output *output);
 struct drm_fb *
 drm_output_render_vulkan(struct drm_output_state *state, pixman_region32_t *damage);
 
-void
-drm_output_init_cursor(struct drm_output *output, struct drm_backend *b);
-
-void
-drm_output_fini_cursor(struct drm_output *output);
-
 bool
 drm_gbm_alloc_cursor_fb(struct drm_output *output, struct drm_backend *b, int fb_index);
 
@@ -1176,16 +1170,6 @@ inline static struct drm_fb *
 drm_output_render_vulkan(struct drm_output_state *state, pixman_region32_t *damage)
 {
 	return NULL;
-}
-
-inline static void
-drm_output_init_cursor(struct drm_output *output, struct drm_backend *b)
-{
-}
-
-inline static void
-drm_output_fini_cursor(struct drm_output *output)
-{
 }
 
 inline static bool

@@ -2907,8 +2907,7 @@ should_wait_drm_events(struct drm_device *device)
 static void
 drm_writeback_complete_sync(struct drm_writeback_state *state);
 
-#ifdef BUILD_DRM_GBM
-void
+static void
 drm_output_fini_cursor(struct drm_output *output)
 {
 	struct drm_device *device = output->device;
@@ -2933,13 +2932,15 @@ dumb_cursors(struct drm_output *output, struct drm_backend *b)
 	if (!b->gbm)
 		return true;
 
+#ifdef BUILD_DRM_GBM
 	if (gbm_device_get_fd(b->gbm) != output->device->kms_device->fd)
 		return true;
+#endif
 
 	return false;
 }
 
-void
+static void
 drm_output_init_cursor(struct drm_output *output, struct drm_backend *b)
 {
 	struct drm_device *device = output->device;
@@ -2977,7 +2978,6 @@ err:
 	device->cursors_are_broken = true;
 	drm_output_fini_cursor(output);
 }
-#endif
 
 static int
 drm_output_enable(struct weston_output *base)
