@@ -870,13 +870,25 @@ drm_output_fail_writeback(struct drm_output *output)
 		weston_capture_task_retire_failed(ct, err_msg);
 }
 
+static void
+copy_cursor(struct drm_fb *dst_fb, uint32_t *src_buf, size_t src_size)
+{
 #ifdef BUILD_DRM_GBM
+	if (dst_fb->bo) {
+		if (gbm_bo_write(dst_fb->bo, src_buf, src_size) < 0)
+			weston_log("failed update cursor: %s\n", strerror(errno));
+		return;
+	}
+#endif
+	memcpy(dst_fb->map, src_buf, src_size);
+}
+
 static void
 cursor_bo_update(struct drm_output *output, struct weston_paint_node *pnode)
 {
 	WESTON_TRACE_FUNC();
 	struct drm_device *device = output->device;
-	struct gbm_bo *bo = output->gbm_cursor_fb[output->current_cursor]->bo;
+	struct drm_fb *fb = output->gbm_cursor_fb[output->current_cursor];
 	struct weston_buffer *buffer = pnode->surface->buffer_ref.buffer;
 	uint32_t buf[device->cursor_width * device->cursor_height];
 	uint8_t *s;
@@ -897,20 +909,8 @@ cursor_bo_update(struct drm_output *output, struct weston_paint_node *pnode)
 		       buffer->width * 4);
 	wl_shm_buffer_end_access(buffer->shm_buffer);
 
-	if (bo) {
-		if (gbm_bo_write(bo, buf, sizeof buf) < 0)
-			weston_log("failed update cursor: %s\n", strerror(errno));
-	} else {
-		memcpy(output->gbm_cursor_fb[output->current_cursor]->map,
-		       buf, sizeof buf);
-	}
+	copy_cursor(fb, buf, sizeof buf);
 }
-#else
-static void
-cursor_bo_update(struct drm_output *output, struct weston_paint_node *pnode)
-{
-}
-#endif
 
 static void
 drm_output_prepare_repaint(struct weston_output *output_base)
