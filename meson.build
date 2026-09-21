@@ -184,7 +184,7 @@ endif
 
 dep_libdisplay_info = dependency(
 	'libdisplay-info',
-	version: ['>= 0.2.0', '< 0.5.0'],
+	version: ['>= 0.3.0', '< 0.5.0'],
 	fallback: ['display-info', 'di_dep'],
 	default_options: [
 		'werror=false',
