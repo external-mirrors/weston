@@ -321,7 +321,6 @@ struct drm_mode {
 
 enum drm_fb_type {
 	BUFFER_INVALID = 0, /**< never used */
-	BUFFER_CLIENT, /**< directly sourced from client */
 	BUFFER_DMABUF, /**< imported from linux_dmabuf client */
 	BUFFER_DMABUF_BACKEND, /**< imported from dmabuf renderbuffer */
 	BUFFER_PIXMAN_DUMB, /**< internal Pixman rendering */

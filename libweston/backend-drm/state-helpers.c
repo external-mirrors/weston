@@ -173,8 +173,7 @@ drm_plane_state_duplicate(struct drm_output_state *state_output,
 		dst->fb = drm_fb_ref(src->fb);
 		memset(&dst->fb_ref, 0, sizeof(dst->fb_ref));
 
-		if (src->fb->type == BUFFER_CLIENT ||
-		    src->fb->type == BUFFER_DMABUF) {
+		if (src->fb->type == BUFFER_DMABUF) {
 			buffer = src->fb_ref.buffer.buffer;
 		} else {
 			buffer = NULL;

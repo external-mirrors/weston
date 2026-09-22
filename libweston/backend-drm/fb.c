@@ -374,8 +374,7 @@ drm_fb_destroy_gbm(struct gbm_bo *bo, void *data)
 {
 	struct drm_fb *fb = data;
 
-	assert(fb->type == BUFFER_GBM_SURFACE || fb->type == BUFFER_CLIENT ||
-	       fb->type == BUFFER_CURSOR);
+	assert(fb->type == BUFFER_GBM_SURFACE || fb->type == BUFFER_CURSOR);
 	drm_fb_destroy(fb);
 }
 
@@ -634,7 +633,6 @@ drm_fb_unref(struct drm_fb *fb)
 		break;
 #ifdef BUILD_DRM_GBM
 	case BUFFER_CURSOR:
-	case BUFFER_CLIENT:
 		gbm_bo_destroy(fb->bo);
 		break;
 	case BUFFER_GBM_SURFACE:
@@ -715,8 +713,7 @@ drm_fb_handle_buffer_destroy(struct wl_listener *listener, void *data)
 
 	wl_list_for_each_safe(buf_fb, tmp, &private->buffer_fb_list, link) {
 		if (buf_fb->fb) {
-			assert(buf_fb->fb->type == BUFFER_CLIENT ||
-			       buf_fb->fb->type == BUFFER_DMABUF);
+			assert(buf_fb->fb->type == BUFFER_DMABUF);
 			drm_fb_unref(buf_fb->fb);
 		}
 		wl_list_remove(&buf_fb->link);
