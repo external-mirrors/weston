@@ -4890,6 +4890,8 @@ idle_repaint(void *data)
 		ret = output->start_repaint_loop(output);
 		if (ret == -EBUSY)
 			weston_output_schedule_repaint_restart(output);
+		else if (ret == -EAGAIN)
+			output->repaint_status = REPAINT_NOT_SCHEDULED;
 		else if (ret != 0)
 			weston_output_schedule_repaint_reset(output);
 	}

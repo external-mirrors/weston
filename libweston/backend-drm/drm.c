@@ -1130,7 +1130,7 @@ drm_output_start_repaint_loop(struct weston_output *output_base)
 		 * outstanding operations complete.
 		 */
 		if (device->atomic_completes_pending)
-			return 0;
+			return -EAGAIN;
 
 		drm_device_recovery_schedule(device);
 	}
