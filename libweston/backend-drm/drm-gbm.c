@@ -73,19 +73,31 @@ drm_backend_create_gl_renderer(struct drm_backend *b)
 		fallback_format_for(b->format),
 	};
 	struct gl_renderer_display_options options = {
+		.egl_platform = EGL_PLATFORM_SURFACELESS_MESA,
+		.egl_native_display = NULL,
+		.formats = format,
+		.formats_count = format[1] ? 2 : 1,
+	};
+	struct gl_renderer_display_options legacy_options = {
 		.egl_platform = EGL_PLATFORM_GBM_KHR,
 		.egl_native_display = b->gbm,
 		.egl_surface_type = EGL_WINDOW_BIT,
 		.formats = format,
-		.formats_count = 1,
+		.formats_count = format[1] ? 2 : 1,
 	};
+	int ret;
 
-	if (format[1])
-		options.formats_count = 2;
+	b->platform_type = DRM_PLATFORM_SURFACELESS;
+	ret = weston_compositor_init_renderer(b->compositor,
+					      WESTON_RENDERER_GL,
+					      &options.base);
+	if (ret == 0)
+		return 0;
 
+	b->platform_type = DRM_PLATFORM_HAS_SURFACE;
 	return weston_compositor_init_renderer(b->compositor,
 					       WESTON_RENDERER_GL,
-					       &options.base);
+					       &legacy_options.base);
 }
 
 static int
@@ -103,6 +115,7 @@ drm_backend_create_vulkan_renderer(struct drm_backend *b)
 	if (format[1])
 		options.formats_count = 2;
 
+	b->platform_type = DRM_PLATFORM_SURFACELESS;
 	return weston_compositor_init_renderer(b->compositor,
 					       WESTON_RENDERER_VULKAN,
 					       &options.base);
@@ -579,17 +592,38 @@ err:
 	return -1;
 }
 
-/* Init output state that depends on gl or gbm */
-int
-drm_output_init_egl(struct drm_output *output, struct drm_backend *b)
+static int
+drm_output_init_egl_surfaceless(struct drm_output *output, struct drm_backend *b,
+				struct weston_geometry area, struct weston_size fb_size)
 {
 	const struct weston_renderer *renderer = b->compositor->renderer;
-	const struct weston_mode *mode = output->base.current_mode;
-	const struct pixel_format_info *format[2] = { 0 };
-	struct gl_renderer_output_options options;
+	struct gl_renderer_fbo_options options = {
+		.area = area,
+		.fb_size = fb_size,
+	};
 
-	if (!output->format && !drm_output_pick_format_egl(output))
+	if (renderer->gl->output_fbo_create(&output->base, &options) < 0) {
 		return -1;
+	}
+
+	if (create_renderbuffers(b->gbm, output) < 0) {
+		weston_log("failed to create dmabufs\n");
+		return -1;
+	}
+
+	return 0;
+}
+
+static int
+drm_output_init_egl_legacy(struct drm_output *output, struct drm_backend *b,
+			   struct weston_geometry area, struct weston_size fb_size)
+{
+	const struct weston_renderer *renderer = b->compositor->renderer;
+	const struct pixel_format_info *format[2] = { 0 };
+	struct gl_renderer_output_options options = {
+		.area = area,
+		.fb_size = fb_size,
+	};
 
 	format[0] = output->format;
 	if (!output->has_underlay)
@@ -597,12 +631,6 @@ drm_output_init_egl(struct drm_output *output, struct drm_backend *b)
 
 	options.formats = format;
 	options.formats_count = format[1] ? 2 : 1;
-	options.area.x = 0;
-	options.area.y = 0;
-	options.area.width = mode->width;
-	options.area.height = mode->height;
-	options.fb_size.width = mode->width;
-	options.fb_size.height = mode->height;
 
 	assert(output->gbm_surface == NULL);
 	if (create_gbm_surface(b->gbm, output) < 0) {
@@ -620,6 +648,33 @@ drm_output_init_egl(struct drm_output *output, struct drm_backend *b)
 	}
 
 	return 0;
+}
+
+/* Init output state that depends on gl or gbm */
+int
+drm_output_init_egl(struct drm_output *output, struct drm_backend *b)
+{
+	struct weston_mode *mode = output->base.current_mode;
+	struct weston_geometry area;
+	struct weston_size fb_size;
+
+	if (!output->format && !drm_output_pick_format_egl(output))
+		return -1;
+
+	area.x = 0;
+	area.y = 0;
+	area.width = mode->width;
+	area.height = mode->height;
+	fb_size.width = mode->width;
+	fb_size.height = mode->height;
+
+	switch (b->platform_type) {
+	case DRM_PLATFORM_HAS_SURFACE:
+		return drm_output_init_egl_legacy(output, b, area, fb_size);
+	case DRM_PLATFORM_SURFACELESS:
+		return drm_output_init_egl_surfaceless(output, b, area, fb_size);
+	}
+	weston_assert_not_reached(b->compositor, "Invalid platform type");
 }
 
 static bool
@@ -689,8 +744,14 @@ drm_output_fini_egl(struct drm_output *output)
 	const struct weston_renderer *renderer = output->base.compositor->renderer;
 
 	renderer->gl->output_destroy(&output->base);
-	gbm_surface_destroy(output->gbm_surface);
-	output->gbm_surface = NULL;
+	if (output->backend->platform_type == DRM_PLATFORM_HAS_SURFACE) {
+		gbm_surface_destroy(output->gbm_surface);
+		output->gbm_surface = NULL;
+		return;
+	}
+
+	for (unsigned int i = 0; i < ARRAY_LENGTH(output->renderbuffer); i++)
+		drm_fb_unref(output->renderbuffer_fb[i]);
 }
 
 void
@@ -706,8 +767,28 @@ drm_output_fini_vulkan(struct drm_output *output)
 	renderer->vulkan->output_destroy(&output->base);
 }
 
-struct drm_fb *
-drm_output_render_gl(struct drm_output_state *state, pixman_region32_t *damage)
+static struct drm_fb *
+drm_output_render_gl_surfaceless(struct drm_output_state *state, pixman_region32_t *damage)
+{
+	WESTON_TRACE_FUNC();
+	struct drm_output *output = state->output;
+	struct weston_renderbuffer *renderbuffer;
+	struct drm_fb *ret;
+
+	renderbuffer = output->renderbuffer[output->current_image];
+	output->base.compositor->renderer->repaint_output(&output->base,
+							  damage,
+							  renderbuffer);
+
+	ret = drm_fb_ref(output->renderbuffer_fb[output->current_image]);
+
+	output->current_image = (output->current_image + 1) % ARRAY_LENGTH(output->renderbuffer);
+
+	return ret;
+}
+
+static struct drm_fb *
+drm_output_render_gl_legacy(struct drm_output_state *state, pixman_region32_t *damage)
 {
 	WESTON_TRACE_FUNC();
 	struct drm_output *output = state->output;
@@ -736,6 +817,20 @@ drm_output_render_gl(struct drm_output_state *state, pixman_region32_t *damage)
 	ret->gbm_surface = output->gbm_surface;
 
 	return ret;
+}
+
+struct drm_fb *
+drm_output_render_gl(struct drm_output_state *state, pixman_region32_t *damage)
+{
+	struct drm_backend *b = state->output->backend;
+
+	switch (b->platform_type) {
+	case DRM_PLATFORM_HAS_SURFACE:
+		return drm_output_render_gl_legacy(state, damage);
+	case DRM_PLATFORM_SURFACELESS:
+		return drm_output_render_gl_surfaceless(state, damage);
+	}
+	weston_assert_not_reached(b->compositor, "Invalid platform type");
 }
 
 struct drm_fb *

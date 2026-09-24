@@ -275,6 +275,11 @@ struct drm_device {
 	int reused_state_failures;
 };
 
+enum drm_platform_type {
+	DRM_PLATFORM_SURFACELESS,
+	DRM_PLATFORM_HAS_SURFACE,
+};
+
 struct drm_backend {
 	struct weston_backend base;
 	struct weston_compositor *compositor;
@@ -311,6 +316,8 @@ struct drm_backend {
 	bool stale_timestamp_workaround;
 
 	bool disable_drm_state_reuse;
+
+	enum drm_platform_type platform_type;
 };
 
 struct drm_mode {
