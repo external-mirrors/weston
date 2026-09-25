@@ -539,6 +539,32 @@ drm_output_render_pixman(struct drm_output_state *state,
 	return drm_fb_ref(output->dumb[output->current_image]);
 }
 
+struct drm_fb *
+drm_output_get_test_fb(struct drm_output_state *state)
+{
+	struct drm_output *output = state->output;
+	struct weston_compositor *c = output->base.compositor;
+
+	switch (c->renderer->type) {
+	case WESTON_RENDERER_PIXMAN:
+		return drm_fb_ref(output->dumb[output->current_image]);
+#ifdef BUILD_DRM_GBM
+	case WESTON_RENDERER_GL:
+		if (output->backend->platform_type == DRM_PLATFORM_HAS_SURFACE)
+			return drm_fb_ref(output->legacy_test_fb);
+
+		/* fall through */ /* gl surfaceless path is the same as vulkan */
+	case WESTON_RENDERER_VULKAN: {
+		int current = output->current_image;
+
+		return drm_fb_ref(output->renderbuffer_fb[current]);
+	}
+#endif
+	default:
+		weston_assert_not_reached(c, "Invalid renderer type");
+	}
+}
+
 void
 drm_output_render(struct drm_output_state *state)
 {

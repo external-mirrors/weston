@@ -1358,36 +1358,32 @@ drm_output_propose_state(struct weston_output *output_base,
 	 * incremental states, of scanout + overlay + cursor. Since we
 	 * walk our views top to bottom, the scanout plane is last, however
 	 * we always need it in our scene for the test modeset to be
-	 * meaningful. To do this, we steal a reference to the last
-	 * renderer framebuffer we have, if we think it's basically
-	 * compatible. If we don't have that, then we conservatively fall
-	 * back to only using the renderer for this repaint. */
+	 * meaningful. To do this, we grab a "test buffer" that will be
+	 * the same size and modifiers as the buffer we will eventually
+	 * commit with. This could be a buffer from the swapchain, or
+	 * a separate allocation with the same parameters.
+	 */
 	if (mode == DRM_OUTPUT_PROPOSE_STATE_MIXED) {
 		struct drm_plane *plane = output->scanout_handle->plane;
-		struct drm_fb *scanout_fb = plane->state_cur->fb;
+		struct drm_fb *scanout_fb = drm_output_get_test_fb(state);
 
-		if (!scanout_fb ||
-		    (scanout_fb->type != BUFFER_GBM_SURFACE &&
-		     scanout_fb->type != BUFFER_PIXMAN_DUMB &&
-		     scanout_fb->type != BUFFER_DMABUF_BACKEND)) {
-			debug_propose_fail(output, mode,
-					   "no previous renderer fb");
-			drm_output_state_free(state);
-			return NULL;
-		}
+		scanout_state = drm_output_state_get_plane(state, plane);
 
-		if (scanout_fb->width != output_base->current_mode->width ||
-		    scanout_fb->height != output_base->current_mode->height) {
-			debug_propose_fail(output, mode,
-					   "previous fb has different size");
-			drm_output_state_free(state);
-			return NULL;
-		}
-
-		scanout_state = drm_plane_state_duplicate(state,
-							  plane->state_cur);
 		/* assign the primary the lowest zpos value */
 		scanout_state->zpos = plane->zpos_min;
+
+		scanout_state->fb = scanout_fb;
+		scanout_state->src_x = 0;
+		scanout_state->src_y = 0;
+		scanout_state->src_w = scanout_fb->width << 16;
+		scanout_state->src_h = scanout_fb->height << 16;
+
+		scanout_state->dest_x = 0;
+		scanout_state->dest_y = 0;
+		scanout_state->dest_w = output->base.current_mode->width;
+		scanout_state->dest_h = output->base.current_mode->height;
+
+
 		/* Set the initial lowest zpos used for the underlay plane
 		 * (assuming a capable platform) to the zpos of the primary
 		 * plane, matching the lowest possible value. As we parse views
@@ -1650,6 +1646,7 @@ drm_output_propose_state(struct weston_output *output_base,
 	 * remove it now. */
 	if (mode == DRM_OUTPUT_PROPOSE_STATE_MIXED) {
 		assert(scanout_state->fb->type == BUFFER_GBM_SURFACE ||
+		       scanout_state->fb->type == BUFFER_GBM_TEST ||
 		       scanout_state->fb->type == BUFFER_PIXMAN_DUMB ||
 		       scanout_state->fb->type == BUFFER_DMABUF_BACKEND);
 		drm_plane_state_put_back(scanout_state);

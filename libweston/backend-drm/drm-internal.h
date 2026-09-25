@@ -332,6 +332,7 @@ enum drm_fb_type {
 	BUFFER_DMABUF_BACKEND, /**< imported from dmabuf renderbuffer */
 	BUFFER_PIXMAN_DUMB, /**< internal Pixman rendering */
 	BUFFER_GBM_SURFACE, /**< internal EGL rendering */
+	BUFFER_GBM_TEST, /**< dummy EGL buffer for test commits */
 	BUFFER_CURSOR, /**< internal cursor buffer */
 };
 
@@ -694,6 +695,7 @@ struct drm_output {
 
 	struct gbm_surface *gbm_surface;
 	struct drm_fb *renderbuffer_fb[2];
+	struct drm_fb *legacy_test_fb;
 	const struct pixel_format_info *format;
 	uint32_t gbm_bo_flags;
 
@@ -1078,6 +1080,9 @@ drm_plane_supports_blend_mode(struct drm_plane *plane,
 
 void
 drm_output_render(struct drm_output_state *state);
+
+struct drm_fb *
+drm_output_get_test_fb(struct drm_output_state *state);
 
 int
 parse_gbm_format(const char *s, const struct pixel_format_info *default_format,

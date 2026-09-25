@@ -173,7 +173,9 @@ create_gbm_surface(struct gbm_device *gbm, struct drm_output *output)
 {
 	struct weston_mode *mode = output->base.current_mode;
 	struct drm_plane *plane = output->scanout_handle->plane;
+	struct drm_device *device = output->device;
 	struct weston_drm_format *fmt;
+	struct gbm_bo *legacy_test_bo = NULL;
 	const uint64_t *modifiers;
 	unsigned int num_modifiers;
 
@@ -194,6 +196,30 @@ create_gbm_surface(struct gbm_device *gbm, struct drm_output *output)
 							   output->format->format,
 							   modifiers, num_modifiers,
 							   output->gbm_bo_flags);
+		/* We allocate a dummy buffer as something we can use for
+		 * drm test commits. We can't just lock the front buffer,
+		 * because you can't do that before any rendering takes
+		 * place.
+		 *
+		 * We create an fb from it to get a reference, so the
+		 * plane state code won't free it later.
+		 */
+		if (output->gbm_surface) {
+			legacy_test_bo =
+				gbm_bo_create_with_modifiers2(gbm, mode->width, mode->height,
+							      output->format->format,
+							      modifiers, num_modifiers,
+							      output->gbm_bo_flags);
+			if (!legacy_test_bo)
+				goto err;
+
+			output->legacy_test_fb = drm_fb_get_from_bo(legacy_test_bo,
+								    device, BUFFER_GBM_TEST);
+			if (!output->legacy_test_fb)
+				goto err;
+
+			return 0;
+		}
 	}
 
 	/*
@@ -217,10 +243,33 @@ create_gbm_surface(struct gbm_device *gbm, struct drm_output *output)
 							 mode->width, mode->height,
 							 output->format->format,
 							 output->gbm_bo_flags);
-	if (!output->gbm_surface)
-		return -1;
+
+	if (output->gbm_surface) {
+		legacy_test_bo =
+			gbm_bo_create(gbm, mode->width, mode->height,
+				      output->format->format,
+				      output->gbm_bo_flags);
+
+		if (!legacy_test_bo)
+			goto err;
+
+		output->legacy_test_fb = drm_fb_get_from_bo(legacy_test_bo,
+							    device, BUFFER_GBM_TEST);
+		if (!output->legacy_test_fb)
+			goto err;
+	}
 
 	return 0;
+
+err:
+	if (legacy_test_bo)
+		gbm_bo_destroy(legacy_test_bo);
+
+	if (output->gbm_surface) {
+		gbm_surface_destroy(output->gbm_surface);
+		output->gbm_surface = NULL;
+	}
+	return -1;
 }
 
 void
@@ -643,6 +692,7 @@ drm_output_init_egl_legacy(struct drm_output *output, struct drm_backend *b,
 	if (renderer->gl->output_window_create(&output->base, &options) < 0) {
 		weston_log("failed to create gl renderer output state\n");
 		gbm_surface_destroy(output->gbm_surface);
+		drm_fb_unref(output->legacy_test_fb);
 		output->gbm_surface = NULL;
 		return -1;
 	}
@@ -746,6 +796,7 @@ drm_output_fini_egl(struct drm_output *output)
 	renderer->gl->output_destroy(&output->base);
 	if (output->backend->platform_type == DRM_PLATFORM_HAS_SURFACE) {
 		gbm_surface_destroy(output->gbm_surface);
+		drm_fb_unref(output->legacy_test_fb);
 		output->gbm_surface = NULL;
 		return;
 	}

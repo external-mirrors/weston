@@ -374,7 +374,8 @@ drm_fb_destroy_gbm(struct gbm_bo *bo, void *data)
 {
 	struct drm_fb *fb = data;
 
-	assert(fb->type == BUFFER_GBM_SURFACE || fb->type == BUFFER_CURSOR);
+	assert(fb->type == BUFFER_GBM_SURFACE || fb->type == BUFFER_GBM_TEST ||
+	       fb->type == BUFFER_CURSOR);
 	drm_fb_destroy(fb);
 }
 
@@ -594,7 +595,7 @@ drm_fb_get_from_bo(struct gbm_bo *bo, struct drm_device *device,
 	}
 
 	if (drm_fb_addfb(device, fb) != 0) {
-		if (type == BUFFER_GBM_SURFACE)
+		if (type == BUFFER_GBM_SURFACE || type == BUFFER_GBM_TEST)
 			weston_log("failed to create kms fb: %s\n",
 				   strerror(errno));
 		goto err_free;
@@ -625,6 +626,7 @@ drm_fb_unref(struct drm_fb *fb)
 		drm_fb_destroy_dumb(fb);
 		break;
 #ifdef BUILD_DRM_GBM
+	case BUFFER_GBM_TEST:
 	case BUFFER_CURSOR:
 		gbm_bo_destroy(fb->bo);
 		break;
