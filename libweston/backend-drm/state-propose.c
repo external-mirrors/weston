@@ -370,7 +370,7 @@ drm_output_prepare_cursor_paint_node(struct drm_output_state *output_state,
 	 * Later when we determine if the cursor needs an update, we'll
 	 * select the correct fb to use.
 	 */
-	plane_state->fb = drm_fb_ref(output->gbm_cursor_fb[0]);
+	plane_state->fb = drm_fb_ref(output->cursor[0].fb);
 
 	if (!select_plane_blend_mode(plane_state, plane_state->fb, &err_blend_mode)) {
 		const char *err_msg =

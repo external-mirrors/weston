@@ -888,7 +888,7 @@ cursor_bo_update(struct drm_output *output, struct weston_paint_node *pnode)
 {
 	WESTON_TRACE_FUNC();
 	struct drm_device *device = output->device;
-	struct drm_fb *fb = output->gbm_cursor_fb[output->current_cursor];
+	struct drm_fb *fb = output->cursor[output->current_cursor].fb;
 	struct weston_buffer *buffer = pnode->surface->buffer_ref.buffer;
 	uint32_t buf[device->cursor_width * device->cursor_height];
 	uint8_t *s;
@@ -973,13 +973,13 @@ drm_output_repaint(struct weston_output *output_base)
 			output->current_cursor++;
 			output->current_cursor =
 				output->current_cursor %
-					ARRAY_LENGTH(output->gbm_cursor_fb);
+					ARRAY_LENGTH(output->cursor);
 			cursor_bo_update(output, cursor_node);
 		}
 		pixman_region32_fini(&damage);
 
 		cursor_state->fb =
-			drm_fb_ref(output->gbm_cursor_fb[output->current_cursor]);
+			drm_fb_ref(output->cursor[output->current_cursor].fb);
 		drm_fb_unref(old_fb);
 	}
 
@@ -2912,12 +2912,12 @@ drm_output_fini_cursor(struct drm_output *output)
 {
 	unsigned int i;
 
-	for (i = 0; i < ARRAY_LENGTH(output->gbm_cursor_fb); i++) {
+	for (i = 0; i < ARRAY_LENGTH(output->cursor); i++) {
 		/* This cursor does not have a GBM device */
-		if (output->gbm_cursor_fb[i] && !output->gbm_cursor_fb[i]->bo)
-			output->gbm_cursor_fb[i]->type = BUFFER_PIXMAN_DUMB;
-		drm_fb_unref(output->gbm_cursor_fb[i]);
-		output->gbm_cursor_fb[i] = NULL;
+		if (output->cursor[i].fb && !output->cursor[i].fb->bo)
+			output->cursor[i].fb->type = BUFFER_PIXMAN_DUMB;
+		drm_fb_unref(output->cursor[i].fb);
+		output->cursor[i].fb = NULL;
 	}
 }
 
@@ -2945,19 +2945,19 @@ drm_output_init_cursor(struct drm_output *output, struct drm_backend *b)
 	if (!output->cursor_handle)
 		return;
 
-	for (i = 0; i < ARRAY_LENGTH(output->gbm_cursor_fb); i++) {
+	for (i = 0; i < ARRAY_LENGTH(output->cursor); i++) {
 		if (dumb_cursors(output, b)) {
-			output->gbm_cursor_fb[i] =
+			output->cursor[i].fb =
 				drm_fb_create_dumb(output->device,
 						   device->cursor_width,
 						   device->cursor_height,
 						   DRM_FORMAT_ARGB8888);
 			/* Override buffer type, since we know it is a cursor */
-			output->gbm_cursor_fb[i]->type = BUFFER_CURSOR;
-			output->gbm_cursor_handle[i] =
-				output->gbm_cursor_fb[i]->handles[0];
+			output->cursor[i].fb->type = BUFFER_CURSOR;
+			output->cursor[i].handle =
+				output->cursor[i].fb->handles[0];
 		} else {
-			if (!drm_gbm_alloc_cursor_fb(output, b, i))
+			if (!drm_gbm_alloc_cursor_fb(output, b, &output->cursor[i]))
 				goto err;
 		}
 	}

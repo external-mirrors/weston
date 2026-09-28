@@ -132,7 +132,8 @@ init_vulkan(struct drm_backend *b)
 }
 
 bool
-drm_gbm_alloc_cursor_fb(struct drm_output *output, struct drm_backend *b, int fb_index)
+drm_gbm_alloc_cursor_fb(struct drm_output *output, struct drm_backend *b,
+			struct drm_cursor *cursor)
 {
 	struct drm_device *device = output->device;
 	struct gbm_bo *bo;
@@ -143,13 +144,12 @@ drm_gbm_alloc_cursor_fb(struct drm_output *output, struct drm_backend *b, int fb
 	if (!bo)
 		return false;
 
-	output->gbm_cursor_fb[fb_index] =
-		drm_fb_get_from_bo(bo, device, BUFFER_CURSOR);
-	if (!output->gbm_cursor_fb[fb_index]) {
+	cursor->fb = drm_fb_get_from_bo(bo, device, BUFFER_CURSOR);
+	if (!cursor->fb) {
 		gbm_bo_destroy(bo);
 		return false;
 	}
-	output->gbm_cursor_handle[fb_index] = gbm_bo_get_handle(bo).s32;
+	cursor->handle = gbm_bo_get_handle(bo).s32;
 
 	return true;
 }

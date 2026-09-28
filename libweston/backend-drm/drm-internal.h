@@ -653,6 +653,11 @@ struct drm_crtc {
 	struct weston_drm_format_array writeback_formats;
 };
 
+struct drm_cursor {
+	struct drm_fb *fb;
+	uint32_t handle;
+};
+
 struct drm_output {
 	struct weston_output base;
 	struct drm_backend *backend;
@@ -675,8 +680,7 @@ struct drm_output {
 	/* True, if underlay planes exist. */
 	bool has_underlay;
 
-	uint32_t gbm_cursor_handle[2];
-	struct drm_fb *gbm_cursor_fb[2];
+	struct drm_cursor cursor[2];
 	struct drm_plane_handle *cursor_handle;
 	int current_cursor;
 
@@ -1109,7 +1113,8 @@ struct drm_fb *
 drm_output_render_vulkan(struct drm_output_state *state, pixman_region32_t *damage);
 
 bool
-drm_gbm_alloc_cursor_fb(struct drm_output *output, struct drm_backend *b, int fb_index);
+drm_gbm_alloc_cursor_fb(struct drm_output *output, struct drm_backend *b,
+			struct drm_cursor *cursor);
 
 #else
 inline static int
@@ -1173,7 +1178,8 @@ drm_output_render_vulkan(struct drm_output_state *state, pixman_region32_t *dama
 }
 
 inline static bool
-drm_gbm_alloc_cursor_fb(struct drm_output *output, struct drm_backend *b, int fb_index)
+drm_gbm_alloc_cursor_fb(struct drm_output *output, struct drm_backend *b,
+			struct drm_cursor *cursor)
 {
 	return false;
 }
