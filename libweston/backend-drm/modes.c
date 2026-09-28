@@ -371,6 +371,7 @@ drm_head_info_from_edid(struct drm_head_info *dhi,
 		memset(dhi, 0, sizeof(*dhi));
 		dhi->eotf_mask = WESTON_EOTF_MODE_SDR;
 		dhi->colorimetry_mask = WESTON_COLORIMETRY_MODE_DEFAULT;
+		dhi->color_format_mask = WESTON_COLOR_FORMAT_AUTO;
 		return NULL;
 	}
 
