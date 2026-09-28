@@ -150,6 +150,41 @@ drm_output_fini_cursor(struct drm_output *output)
 	}
 }
 
+static bool
+dumb_cursors(struct drm_output *output, struct drm_backend *b)
+{
+	if (!b->gbm)
+		return true;
+
+	if (gbm_device_get_fd(b->gbm) != output->device->kms_device->fd)
+		return true;
+
+	return false;
+}
+
+static bool
+drm_gbm_alloc_cursor_fb(struct drm_output *output, struct drm_backend *b, int fb_index)
+{
+	struct drm_device *device = output->device;
+	struct gbm_bo *bo;
+
+	bo = gbm_bo_create(b->gbm, device->cursor_width, device->cursor_height,
+			   GBM_FORMAT_ARGB8888,
+			   GBM_BO_USE_CURSOR | GBM_BO_USE_WRITE);
+	if (!bo)
+		return false;
+
+	output->gbm_cursor_fb[fb_index] =
+		drm_fb_get_from_bo(bo, device, BUFFER_CURSOR);
+	if (!output->gbm_cursor_fb[fb_index]) {
+		gbm_bo_destroy(bo);
+		return false;
+	}
+	output->gbm_cursor_handle[fb_index] = gbm_bo_get_handle(bo).s32;
+
+	return true;
+}
+
 void
 drm_output_init_cursor(struct drm_output *output, struct drm_backend *b)
 {
@@ -165,9 +200,7 @@ drm_output_init_cursor(struct drm_output *output, struct drm_backend *b)
 		return;
 
 	for (i = 0; i < ARRAY_LENGTH(output->gbm_cursor_fb); i++) {
-		struct gbm_bo *bo;
-
-		if (gbm_device_get_fd(b->gbm) != output->device->kms_device->fd) {
+		if (dumb_cursors(output, b)) {
 			output->gbm_cursor_fb[i] =
 				drm_fb_create_dumb(output->device,
 						   device->cursor_width,
@@ -178,19 +211,8 @@ drm_output_init_cursor(struct drm_output *output, struct drm_backend *b)
 			output->gbm_cursor_handle[i] =
 				output->gbm_cursor_fb[i]->handles[0];
 		} else {
-			bo = gbm_bo_create(b->gbm, device->cursor_width, device->cursor_height,
-					   GBM_FORMAT_ARGB8888,
-					   GBM_BO_USE_CURSOR | GBM_BO_USE_WRITE);
-			if (!bo)
+			if (!drm_gbm_alloc_cursor_fb(output,  b, i))
 				goto err;
-
-			output->gbm_cursor_fb[i] =
-				drm_fb_get_from_bo(bo, device, BUFFER_CURSOR);
-			if (!output->gbm_cursor_fb[i]) {
-				gbm_bo_destroy(bo);
-				goto err;
-			}
-			output->gbm_cursor_handle[i] = gbm_bo_get_handle(bo).s32;
 		}
 	}
 
