@@ -565,7 +565,7 @@ drm_output_get_test_fb(struct drm_output_state *state)
 	}
 }
 
-void
+static void
 drm_output_render(struct drm_output_state *state)
 {
 	WESTON_TRACE_FUNC();

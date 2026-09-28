@@ -1078,9 +1078,6 @@ bool
 drm_plane_supports_blend_mode(struct drm_plane *plane,
 			      enum wdrm_plane_blend blend_mode);
 
-void
-drm_output_render(struct drm_output_state *state);
-
 struct drm_fb *
 drm_output_get_test_fb(struct drm_output_state *state);
 
