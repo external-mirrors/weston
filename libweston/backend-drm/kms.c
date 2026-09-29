@@ -2422,15 +2422,12 @@ init_kms_caps(struct drm_device *device)
 		    device->tearing_supported ? "supports" : "does not support");
 
 	/*
-	 * KMS support for hardware planes cannot properly synchronize
-	 * without nuclear page flip. Without nuclear/atomic, hw plane
-	 * and cursor plane updates would either tear or cause extra
-	 * waits for vblanks which means dropping the compositor framerate
-	 * to a fraction. For cursors, it's not so bad, so they are
-	 * enabled.
+	 * Force use of the renderer for all client content, including cursors.
 	 */
-	if (getenv("WESTON_FORCE_RENDERER"))
+	if (getenv("WESTON_FORCE_RENDERER")) {
 		device->disable_client_buffer_scanout = true;
+		device->cursors_are_broken = true;
+	}
 
 	ret = drmSetClientCap(device->kms_device->fd, DRM_CLIENT_CAP_ASPECT_RATIO, 1);
 	device->aspect_ratio_supported = (ret == 0);
