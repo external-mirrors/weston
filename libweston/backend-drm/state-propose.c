@@ -1624,12 +1624,6 @@ drm_output_propose_state(struct weston_output *output_base,
 	pixman_region32_fini(&background_region);
 	wl_array_release(&visible_pnodes);
 
-	/* In renderer-only and renderer-and-cursor modes, we can't test the
-	 * state as we don't have a renderer buffer yet. */
-	if (mode == DRM_OUTPUT_PROPOSE_STATE_RENDERER_ONLY ||
-	    mode == DRM_OUTPUT_PROPOSE_STATE_RENDERER_AND_CURSOR)
-		return state;
-
 	/* check if we have invalid zpos values, like duplicate(s) */
 	drm_output_check_zpos_plane_states(state);
 
