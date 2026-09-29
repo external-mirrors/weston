@@ -54,16 +54,12 @@
 static const char *const drm_output_propose_state_mode_as_string[] = {
 	[DRM_OUTPUT_PROPOSE_STATE_INVALID] = "invalid(uninitialized) state",
 	[DRM_OUTPUT_PROPOSE_STATE_MIXED] = "mixed state",
-	[DRM_OUTPUT_PROPOSE_STATE_RENDERER_AND_CURSOR] = "renderer-and-cursor state",
-	[DRM_OUTPUT_PROPOSE_STATE_RENDERER_ONLY] = "renderer-only state",
 	[DRM_OUTPUT_PROPOSE_STATE_PLANES_ONLY]	= "plane-only state"
 };
 
 static const char *const drm_output_propose_reused_state_mode_as_string[] = {
 	[DRM_OUTPUT_PROPOSE_STATE_INVALID] = "reused invalid(uninitialized) state",
 	[DRM_OUTPUT_PROPOSE_STATE_MIXED] = "reused mixed state",
-	[DRM_OUTPUT_PROPOSE_STATE_RENDERER_AND_CURSOR] = "reused renderer-and-cursor state",
-	[DRM_OUTPUT_PROPOSE_STATE_RENDERER_ONLY] = "reused renderer-only state",
 	[DRM_OUTPUT_PROPOSE_STATE_PLANES_ONLY]	= "reused plane-only state",
 };
 
@@ -740,15 +736,17 @@ drm_output_find_plane_for_paint_node(struct drm_output_state *state,
 	uint32_t possible_plane_mask = 0;
 	bool any_candidate_picked = false;
 
-	/* renderer-only mode, so no view assignments to planes */
-	if (mode == DRM_OUTPUT_PROPOSE_STATE_RENDERER_ONLY) {
+	if (output->base.disable_planes) {
 		pnode->vopf_mask |= VOPF_FORCE_RENDERER;
 		return NULL;
 	}
 
-	/* filter out non-cursor views in renderer-and-cursor mode */
-	if (mode == DRM_OUTPUT_PROPOSE_STATE_RENDERER_AND_CURSOR &&
-	    !pnode->on_cursor_layer) {
+	if (device->disable_client_buffer_scanout && !pnode->on_cursor_layer) {
+		pnode->vopf_mask |= VOPF_FORCE_RENDERER;
+		return NULL;
+	}
+
+	if (device->cursors_are_broken && pnode->on_cursor_layer) {
 		pnode->vopf_mask |= VOPF_FORCE_RENDERER;
 		return NULL;
 	}
@@ -792,13 +790,6 @@ drm_output_find_plane_for_paint_node(struct drm_output_state *state,
 	} else {
 		struct drm_plane *scanout_plane = output->scanout_handle->plane;
 		uint32_t vopf_mask = VOPF_NONE;
-
-		if (mode == DRM_OUTPUT_PROPOSE_STATE_RENDERER_AND_CURSOR) {
-			drm_debug(b, "\t\t\t\t[paint node] not assigning paint node %s "
-				     "to plane: renderer-and-cursor mode\n",
-				     pnode->internal_name);
-			return NULL;
-		}
 
 		if (drm_paint_node_transform_supported(pnode, scanout_plane))
 			possible_plane_mask |= 1 << scanout_plane->plane_idx;
@@ -903,9 +894,6 @@ drm_output_find_plane_for_paint_node(struct drm_output_state *state,
 		possible_plane_mask &= ~(1 << plane->plane_idx);
 		mm_underlay_only =
 			drm_mixed_mode_check_underlay(mode, scanout_state, plane->zpos_max);
-
-		weston_assert_false(b->compositor,
-				    mode == DRM_OUTPUT_PROPOSE_STATE_RENDERER_AND_CURSOR);
 
 		/* for alpha views, avoid placing them on the hardware
 		 * planes that are below the primary plane. */
@@ -1157,21 +1145,6 @@ drm_output_propose_state_try_reuse(struct weston_output *output_base,
 
 	if (output->force_rebuild_state) {
 		debug_propose_fail(output, mode, "previous state failed");
-		return NULL;
-	}
-
-	/* These states are where we end up when we can't use planes
-	 * at all, sometimes simply because we don't have a renderer
-	 * fb yet. In that case we'd immediately get into a better
-	 * state on the next repaint, even with no scene graph
-	 * changes. But if we allow reuse we're stuck in a bad state
-	 * waiting for a scene graph change to move us out of it.
-	 *
-	 * Just disable this optimization for these suboptimal states.
-	 */
-	if (output->state_cur->mode == DRM_OUTPUT_PROPOSE_STATE_RENDERER_ONLY ||
-	    output->state_cur->mode == DRM_OUTPUT_PROPOSE_STATE_RENDERER_AND_CURSOR) {
-		debug_propose_fail(output, mode, "probable fallback state");
 		return NULL;
 	}
 
@@ -1687,51 +1660,33 @@ drm_assign_planes(struct weston_output *output_base)
 			drm_debug(b, "\t[repaint] could not reuse prior state\n");
 	}
 
-	if (!state && !device->disable_client_buffer_scanout &&
-	    !output_base->disable_planes && b->gbm) {
+	if (!state && !device->disable_client_buffer_scanout && b->gbm) {
 		drm_debug(b, "\t[repaint] trying planes-only build state\n");
 		mode = DRM_OUTPUT_PROPOSE_STATE_PLANES_ONLY;
 		state = drm_output_propose_state(output_base, pending_state, mode);
-		if (!state) {
-			drm_debug(b, "\t[repaint] could not build planes-only "
-				     "state, trying mixed\n");
-			mode = DRM_OUTPUT_PROPOSE_STATE_MIXED;
-			state = drm_output_propose_state(output_base,
-							 pending_state,
-							 mode);
-		}
-	} else if (!state) {
-		drm_debug(b, "\t[state] no hardware plane support\n");
+		if (!state)
+			drm_debug(b, "\t[repaint] could not build planes-only\n");
+	} else {
+		drm_debug(b, "\t[repaint] no hardware plane support\n");
 	}
 
-	/* We can enter this block in two situations:
-	 * 1. If we didn't enter the last block (for some reason we can't use planes)
-	 * 2. If we entered but both the planes-only and the mixed modes didn't work */
 	if (!state) {
-		if (output_base->disable_planes)
-			mode = DRM_OUTPUT_PROPOSE_STATE_RENDERER_ONLY;
-		else
-			mode = DRM_OUTPUT_PROPOSE_STATE_RENDERER_AND_CURSOR;
+		drm_debug(b, "\t[repaint] trying mixed state\n");
+		mode = DRM_OUTPUT_PROPOSE_STATE_MIXED;
+		state = drm_output_propose_state(output_base,
+						 pending_state,
+						 mode);
+	}
 
-		drm_debug(b, "\t[repaint] could not build state with planes, "
-			     "trying %s\n",
-			     (mode == DRM_OUTPUT_PROPOSE_STATE_RENDERER_ONLY) ?
-			     "renderer-only" : "renderer-and-cursor");
-
+	/* If mixed state proposal failed and we are in a writeback screenshot,
+	 * let's abort the writeback screenshot and try again.
+	 */
+	if (!state && drm_output_get_writeback_state(output) != DRM_OUTPUT_WB_SCREENSHOT_OFF) {
+		drm_debug(b, "\t[repaint] could not build mixed state, "
+			     "trying without writeback setup\n");
+		drm_writeback_fail_screenshot(wb_state, "drm: failed to propose state");
 		state = drm_output_propose_state(output_base, pending_state,
 						 mode);
-		/* If renderer/renderer-and-cursor mode failed and we are in a
-		 * writeback screenshot, let's abort the writeback screenshot
-		 * and try again. */
-		if (!state && drm_output_get_writeback_state(output) != DRM_OUTPUT_WB_SCREENSHOT_OFF) {
-			drm_debug(b, "\t[repaint] could not build %s "
-				     "state, trying without writeback setup\n",
-				     (mode == DRM_OUTPUT_PROPOSE_STATE_RENDERER_ONLY) ?
-				     "renderer-only" : "renderer-and-cursor");
-			drm_writeback_fail_screenshot(wb_state, "drm: failed to propose state");
-			state = drm_output_propose_state(output_base, pending_state,
-							 mode);
-		}
 	}
 
 	assert(state);
