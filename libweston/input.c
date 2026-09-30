@@ -5745,6 +5745,9 @@ maybe_warp_confined_pointer(struct weston_pointer_constraint *constraint)
 	struct weston_coord_global cg;
 	struct weston_coord_surface cs;
 
+	if (!constraint->view)
+		return;
+
 	cs = weston_coord_global_to_surface(constraint->view,
 					    constraint->pointer->pos);
 
