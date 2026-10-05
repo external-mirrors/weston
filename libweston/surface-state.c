@@ -886,17 +886,21 @@ weston_surface_state_ready(struct weston_surface *surface,
 			   struct weston_surface_state *state)
 {
 	WESTON_TRACE_FUNC(("surface state flow", &state->flow));
+	bool ready = true;
 
 	if (surface->fast_forwarding)
-		return true;
+		return ready;
 
-	if (!weston_fifo_surface_state_ready(surface, state))
-		return false;
+	/* Always check all constraints - they'll clear themselves from the
+	 * state when they're ready as a side effect.
+	 *
+	 * This can have an impact on frame scheduling later for commit
+	 * timing.
+	 */
+	ready &= weston_fifo_surface_state_ready(surface, state);
+	ready &= weston_commit_timing_surface_state_ready(surface, state);
 
-	if (!weston_commit_timing_surface_state_ready(surface, state))
-		return false;
-
-	return true;
+	return ready;
 }
 
 void
