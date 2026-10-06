@@ -440,7 +440,7 @@ rgba5551_create_buffer(struct client *client,
 	/* Store alpha as 0x0 to ensure the compositor correctly replaces it
 	 * with 0x1. */
 	a = drm_format == DRM_FORMAT_RGBX5551 ||
-		drm_format == DRM_FORMAT_RGBX5551 ? 0x0 : 0x1;
+		drm_format == DRM_FORMAT_BGRX5551 ? 0x0 : 0x1;
 
 	client_buffer_util_maybe_sync_dmabuf_start(buf);
 	for (y = 0; y < src.height; y++) {
