@@ -2652,13 +2652,12 @@ clear_region(struct gl_renderer *gr, struct weston_paint_node *pnode,
 {
 	WESTON_TRACE_FUNC(("paint node", pnode));
 	struct weston_output *output = pnode->output;
-	struct gl_output_state *go = get_output_state(pnode->output);
 	EGLint *rects;
 	EGLint nrects;
 	float r, g, b, a;
 	int i;
 
-	pixman_region_to_egl(output, repaint, go->border_status,
+	pixman_region_to_egl(output, repaint, BORDER_STATUS_CLEAN,
 			     &rects, &nrects);
 	assert(nrects > 0);
 
