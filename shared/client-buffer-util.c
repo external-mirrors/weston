@@ -75,6 +75,10 @@ client_buffer_util_fill_buffer_args(struct client_buffer *buf,
 	case DRM_FORMAT_RGBA5551:
 	case DRM_FORMAT_BGRX5551:
 	case DRM_FORMAT_BGRA5551:
+	case DRM_FORMAT_XRGB1555:
+	case DRM_FORMAT_ARGB1555:
+	case DRM_FORMAT_XBGR1555:
+	case DRM_FORMAT_ABGR1555:
 	case DRM_FORMAT_RGB565:
 	case DRM_FORMAT_BGR565:
 	case DRM_FORMAT_YUYV:

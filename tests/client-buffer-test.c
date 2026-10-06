@@ -66,6 +66,66 @@ struct setup_args {
 	bool use_restricted_buffer;
 };
 
+/* Every format but the 1555 ones, which GL ES cannot upload. */
+static const uint32_t gl_shm_format_must_pass[] = {
+	DRM_FORMAT_RGBX4444,
+	DRM_FORMAT_RGBA4444,
+	DRM_FORMAT_BGRX4444,
+	DRM_FORMAT_BGRA4444,
+	DRM_FORMAT_XRGB4444,
+	DRM_FORMAT_ARGB4444,
+	DRM_FORMAT_XBGR4444,
+	DRM_FORMAT_ABGR4444,
+	DRM_FORMAT_RGBX5551,
+	DRM_FORMAT_RGBA5551,
+	DRM_FORMAT_BGRX5551,
+	DRM_FORMAT_BGRA5551,
+	DRM_FORMAT_RGB565,
+	DRM_FORMAT_BGR565,
+	DRM_FORMAT_RGB888,
+	DRM_FORMAT_BGR888,
+	DRM_FORMAT_RGBX8888,
+	DRM_FORMAT_RGBA8888,
+	DRM_FORMAT_BGRX8888,
+	DRM_FORMAT_BGRA8888,
+	DRM_FORMAT_XRGB8888,
+	DRM_FORMAT_ARGB8888,
+	DRM_FORMAT_XBGR8888,
+	DRM_FORMAT_ABGR8888,
+	DRM_FORMAT_XRGB2101010,
+	DRM_FORMAT_ARGB2101010,
+	DRM_FORMAT_XBGR2101010,
+	DRM_FORMAT_ABGR2101010,
+	DRM_FORMAT_XRGB16161616,
+	DRM_FORMAT_ARGB16161616,
+	DRM_FORMAT_XBGR16161616,
+	DRM_FORMAT_ABGR16161616,
+	DRM_FORMAT_XRGB16161616F,
+	DRM_FORMAT_ARGB16161616F,
+	DRM_FORMAT_XBGR16161616F,
+	DRM_FORMAT_ABGR16161616F,
+	DRM_FORMAT_YUV420,
+	DRM_FORMAT_YVU420,
+	DRM_FORMAT_YUV422,
+	DRM_FORMAT_YVU422,
+	DRM_FORMAT_YUV444,
+	DRM_FORMAT_YVU444,
+	DRM_FORMAT_NV12,
+	DRM_FORMAT_NV21,
+	DRM_FORMAT_NV16,
+	DRM_FORMAT_NV61,
+	DRM_FORMAT_NV24,
+	DRM_FORMAT_NV42,
+	DRM_FORMAT_YUYV,
+	DRM_FORMAT_YVYU,
+	DRM_FORMAT_UYVY,
+	DRM_FORMAT_VYUY,
+	DRM_FORMAT_XYUV8888,
+	DRM_FORMAT_P010,
+	DRM_FORMAT_P012,
+	DRM_FORMAT_P016,
+};
+
 /* Formats supported by llvmpipe as of Mesa 25.0.4 */
 static const uint32_t gl_dmabuf_format_must_pass[] = {
 	DRM_FORMAT_RGB565,
@@ -159,6 +219,8 @@ static const struct setup_args my_setup_args[] = {
 		.meta.name = "GL",
 		.renderer = WESTON_RENDERER_GL,
 		.logging_scopes = "log,gl-renderer-paint-nodes,gl-shader-generator",
+		.shm_format_must_pass = gl_shm_format_must_pass,
+		.shm_format_num = ARRAY_LENGTH(gl_shm_format_must_pass),
 		.dmabuf_format_must_pass = gl_dmabuf_format_must_pass,
 		.dmabuf_format_num = ARRAY_LENGTH(gl_dmabuf_format_must_pass),
 		.gl_force_import_yuv_fallback = false,
@@ -168,6 +230,8 @@ static const struct setup_args my_setup_args[] = {
 		.meta.name = "GL force-import-yuv-fallback",
 		.renderer = WESTON_RENDERER_GL,
 		.logging_scopes = "log,gl-renderer-paint-nodes,gl-shader-generator",
+		.shm_format_must_pass = gl_shm_format_must_pass,
+		.shm_format_num = ARRAY_LENGTH(gl_shm_format_must_pass),
 		.dmabuf_format_must_pass = gl_dmabuf_format_must_pass,
 		.dmabuf_format_num = ARRAY_LENGTH(gl_dmabuf_format_must_pass),
 		.gl_force_import_yuv_fallback = true,
@@ -187,6 +251,8 @@ static const struct setup_args my_setup_args[] = {
 		.meta.name = "GL restricted buffer",
 		.renderer = WESTON_RENDERER_GL,
 		.logging_scopes = "log,gl-renderer-paint-nodes,gl-shader-generator",
+		.shm_format_must_pass = gl_shm_format_must_pass,
+		.shm_format_num = ARRAY_LENGTH(gl_shm_format_must_pass),
 		.dmabuf_format_must_pass = gl_dmabuf_format_must_pass,
 		.dmabuf_format_num = ARRAY_LENGTH(gl_dmabuf_format_must_pass),
 		.gl_force_import_yuv_fallback = false,
@@ -412,6 +478,12 @@ rgba4444_create_buffer(struct client *client,
  *
  * BGRX5551: [15:0] B:G:R:x 5:5:5:1 little endian
  * BGRA5551: [15:0] B:G:R:A 5:5:5:1 little endian
+ *
+ * XRGB1555: [15:0] x:R:G:B 1:5:5:5 little endian
+ * ARGB1555: [15:0] A:R:G:B 1:5:5:5 little endian
+ *
+ * XBGR1555: [15:0] x:B:G:R 1:5:5:5 little endian
+ * ABGR1555: [15:0] A:B:G:R 1:5:5:5 little endian
  */
 static struct client_buffer *
 rgba5551_create_buffer(struct client *client,
@@ -420,18 +492,57 @@ rgba5551_create_buffer(struct client *client,
 		       enum weston_buffer_restriction restriction,
 		       pixman_image_t *rgb_image)
 {
+	static const int shifts[][4] = {
+		{ 11, 6, 1, 0 }, /* RGBX5551, RGBA5551 */
+		{ 1, 6, 11, 0 }, /* BGRX5551, BGRA5551 */
+		{ 10, 5, 0, 15 }, /* XRGB1555, ARGB1555 */
+		{ 0, 5, 10, 15 }, /* XBGR1555, ABGR1555 */
+	};
+
 	struct image_header src = image_header_from(rgb_image);
 	struct client_buffer_create_data args = create_init(drm_format, type, &src,
 							    restriction);
 	struct client_buffer *buf;
-
-	int x, y;
+	bool is_opaque;
+	int idx, x, y;
 	uint16_t a;
 
-	test_assert_true(drm_format == DRM_FORMAT_RGBX5551 ||
-			 drm_format == DRM_FORMAT_RGBA5551 ||
-			 drm_format == DRM_FORMAT_BGRX5551 ||
-			 drm_format == DRM_FORMAT_BGRA5551);
+	switch (drm_format) {
+	case DRM_FORMAT_RGBX5551:
+		is_opaque = true;
+		idx = 0;
+		break;
+	case DRM_FORMAT_RGBA5551:
+		is_opaque = false;
+		idx = 0;
+		break;
+	case DRM_FORMAT_BGRX5551:
+		is_opaque = true;
+		idx = 1;
+		break;
+	case DRM_FORMAT_BGRA5551:
+		is_opaque = false;
+		idx = 1;
+		break;
+	case DRM_FORMAT_XRGB1555:
+		is_opaque = true;
+		idx = 2;
+		break;
+	case DRM_FORMAT_ARGB1555:
+		is_opaque = false;
+		idx = 2;
+		break;
+	case DRM_FORMAT_XBGR1555:
+		is_opaque = true;
+		idx = 3;
+		break;
+	case DRM_FORMAT_ABGR1555:
+		is_opaque = false;
+		idx = 3;
+		break;
+	default:
+		test_assert_not_reached("Invalid format!");
+	};
 
 	buf = client_buffer_create(client, &args);
 	if (!buf)
@@ -439,8 +550,7 @@ rgba5551_create_buffer(struct client *client,
 
 	/* Store alpha as 0x0 to ensure the compositor correctly replaces it
 	 * with 0x1. */
-	a = drm_format == DRM_FORMAT_RGBX5551 ||
-		drm_format == DRM_FORMAT_BGRX5551 ? 0x0 : 0x1;
+	a = is_opaque ? 0x0 : 0x1;
 
 	client_buffer_util_maybe_sync_dmabuf_start(buf);
 	for (y = 0; y < src.height; y++) {
@@ -453,11 +563,11 @@ rgba5551_create_buffer(struct client *client,
 			uint16_t g = (src_row[x] >> 11) & 0x1f;
 			uint16_t b = (src_row[x] >> 3) & 0x1f;
 
-			if (drm_format == DRM_FORMAT_RGBX5551 ||
-			    drm_format == DRM_FORMAT_RGBA5551)
-				dst_row[x] = htole16(r << 11 | g << 6 | b << 1 | a);
-			else
-				dst_row[x] = htole16(b << 11 | g << 6 | r << 1 | a);
+			dst_row[x] = htole16(
+				r << shifts[idx][0] |
+				g << shifts[idx][1] |
+				b << shifts[idx][2] |
+				a << shifts[idx][3]);
 		}
 	}
 	client_buffer_util_maybe_sync_dmabuf_end(buf);
@@ -1627,6 +1737,10 @@ static const struct client_buffer_case client_buffer_cases[] = {
 	{ FMT(RGBA5551), 1, rgba5551_create_buffer },
 	{ FMT(BGRX5551), 1, rgba5551_create_buffer },
 	{ FMT(BGRA5551), 1, rgba5551_create_buffer },
+	{ FMT(XRGB1555), 1, rgba5551_create_buffer },
+	{ FMT(ARGB1555), 1, rgba5551_create_buffer },
+	{ FMT(XBGR1555), 1, rgba5551_create_buffer },
+	{ FMT(ABGR1555), 1, rgba5551_create_buffer },
 	{ FMT(RGB565), 2, rgb565_create_buffer },
 	{ FMT(BGR565), 2, rgb565_create_buffer },
 	{ FMT(RGB888), 3, rgb888_create_buffer },
