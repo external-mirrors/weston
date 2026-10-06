@@ -508,7 +508,7 @@ paint_node_update_view_visibility_mask(struct weston_paint_node *pnode)
 			WESTON_TRACE_BEGIN_ANNOTATION();
 			WESTON_TRACE_ANNOTATE(("surface track", &pnode->surface->trace.damage_track),
 					      ("Enter output", output->name));
-			WESTON_TRACE_COMMIT_ANNOTATION("visbility change");
+			WESTON_TRACE_COMMIT_ANNOTATION("visibility change");
 		}
 	} else
 		view->output_visibility_mask &= ~(1u << output->id);
