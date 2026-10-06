@@ -773,7 +773,7 @@ drm_fb_get_from_paint_node(struct drm_output_state *state,
 
 	/* GBM is used for dmabuf import as well as from client wl_buffer. */
 	if (!b->gbm) {
-		*try_view_on_plane_failure_reasons |= FAILURE_REASONS_NO_GBM;
+		buf_fb->failure_reasons |= FAILURE_REASONS_NO_GBM;
 		goto unsuitable;
 	}
 
@@ -783,7 +783,7 @@ drm_fb_get_from_paint_node(struct drm_output_state *state,
 		if (!fb)
 			goto unsuitable;
 	} else {
-		*try_view_on_plane_failure_reasons |= FAILURE_REASONS_BUFFER_TYPE;
+		buf_fb->failure_reasons |= FAILURE_REASONS_BUFFER_TYPE;
 		goto unsuitable;
 	}
 
