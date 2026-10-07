@@ -964,10 +964,7 @@ pipewire_submit_buffer(struct pipewire_output *output,
 
 	if ((h = spa_buffer_find_meta_data(spa_buffer, SPA_META_Header,
 				     sizeof(struct spa_meta_header)))) {
-		struct timespec ts;
-
-		clock_gettime(CLOCK_MONOTONIC, &ts);
-		h->pts = SPA_TIMESPEC_TO_NSEC(&ts);
+		h->pts = SPA_TIMESPEC_TO_NSEC(&output->base.next_present);
 		h->flags = 0;
 		h->seq = output->seq;
 		h->dts_offset = 0;
