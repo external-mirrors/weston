@@ -981,6 +981,66 @@ pipewire_submit_buffer(struct pipewire_output *output,
 	output->seq++;
 }
 
+static void
+pipewire_submit_broken_buffer(struct pipewire_output *output,
+			      struct pw_buffer *buffer)
+{
+	struct spa_buffer *spa_buffer;
+	struct spa_meta_header *h;
+
+	spa_buffer = buffer->buffer;
+
+	if ((h = spa_buffer_find_meta_data(spa_buffer, SPA_META_Header,
+				     sizeof(struct spa_meta_header)))) {
+		h->pts = SPA_TIMESPEC_TO_NSEC(&output->base.next_present);
+		h->flags = SPA_META_HEADER_FLAG_CORRUPTED;
+		h->seq = output->seq;
+		h->dts_offset = 0;
+	}
+
+	buffer->buffer->datas[0].chunk->size = 0;
+	buffer->buffer->datas[0].chunk->offset = 0;
+	buffer->buffer->datas[0].chunk->stride = 0;
+
+	pipewire_output_debug(output, "queue broken buffer: %p (seq %d)",
+			      buffer, output->seq);
+	pw_stream_queue_buffer(output->stream, buffer);
+
+	output->seq++;
+}
+
+static void
+pipewire_return_buffer(struct pipewire_output *output,
+		       struct pw_buffer *buffer)
+{
+#ifdef HAVE_PIPEWIRE_RETURN_BUFFER
+	pw_stream_return_buffer(output->stream, buffer);
+#else
+	struct spa_buffer *spa_buffer;
+	struct spa_meta_header *h;
+
+	spa_buffer = buffer->buffer;
+
+	if ((h = spa_buffer_find_meta_data(spa_buffer, SPA_META_Header,
+				     sizeof(struct spa_meta_header)))) {
+		h->pts = SPA_TIMESPEC_TO_NSEC(&output->base.next_present);
+		h->flags = SPA_META_HEADER_FLAG_GAP;
+		h->seq = output->seq;
+		h->dts_offset = 0;
+	}
+
+	buffer->buffer->datas[0].chunk->size = 0;
+	buffer->buffer->datas[0].chunk->offset = 0;
+	buffer->buffer->datas[0].chunk->stride = 0;
+
+	pipewire_output_debug(output, "queue empty buffer: %p (seq %d)",
+			      buffer, output->seq);
+	pw_stream_queue_buffer(output->stream, buffer);
+
+	output->seq++;
+#endif
+}
+
 static int
 pipewire_output_fence_sync_handler(int fd, uint32_t mask, void *data)
 {
@@ -1048,7 +1108,8 @@ pipewire_output_repaint(struct weston_output *base)
 {
 	struct pipewire_output *output = to_pipewire_output(base);
 	struct weston_compositor *ec = output->base.compositor;
-	struct pw_buffer *buffer;
+	struct weston_renderbuffer *renderbuffer;
+	struct pw_buffer *buffer = NULL;
 	struct pipewire_frame_data *frame_data;
 	pixman_region32_t damage;
 	bool submit_scheduled = false;
@@ -1061,12 +1122,6 @@ pipewire_output_repaint(struct weston_output *base)
 	if (pw_stream_get_state(output->stream, NULL) != PW_STREAM_STATE_STREAMING)
 		goto out;
 
-	weston_output_flush_damage_for_primary_plane(base, &damage);
-
-	if (!pixman_region32_not_empty(&damage) &&
-	    !weston_output_has_renderer_capture_tasks(base))
-		goto out;
-
 	buffer = pw_stream_dequeue_buffer(output->stream);
 	if (!buffer) {
 		weston_log("Failed to dequeue PipeWire buffer\n");
@@ -1075,11 +1130,26 @@ pipewire_output_repaint(struct weston_output *base)
 	pipewire_output_debug(output, "dequeued buffer: %p", buffer);
 
 	frame_data = buffer->user_data;
-	if (frame_data->renderbuffer) {
-		ec->renderer->repaint_output(&output->base, &damage, frame_data->renderbuffer);
-		rendered = true;
-	} else
-		output->base.full_repaint_needed = true;
+	renderbuffer = frame_data->renderbuffer;
+	if (!renderbuffer) {
+		/* We failed to create a renderbuffer during the add
+		 * callback for this buffer, so it's in the queue and
+		 * useless. Send it back empty and hope for a working
+		 * buffer next time.
+		 */
+		pipewire_submit_broken_buffer(output, buffer);
+		goto out;
+	}
+
+	weston_output_flush_damage_for_primary_plane(base, &damage);
+	if (!pixman_region32_not_empty(&damage) &&
+	    !weston_output_has_renderer_capture_tasks(base)) {
+		pipewire_return_buffer(output, buffer);
+		goto out;
+	}
+
+	ec->renderer->repaint_output(&output->base, &damage, renderbuffer);
+	rendered = true;
 
 	if (buffer->buffer->datas[0].type == SPA_DATA_DmaBuf) {
 		if (pipewire_schedule_submit_buffer(output, buffer) == 0)
