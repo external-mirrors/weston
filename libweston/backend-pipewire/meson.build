@@ -7,7 +7,9 @@ config_h.set('BUILD_PIPEWIRE_COMPOSITOR', '1')
 
 dep_libpipewire = dependency('libpipewire-0.3', required: false)
 if not dep_libpipewire.found()
-	error('PipeWire backend requires libpipewire 0.3 which was not found. ' + user_hint)
+	error('PipeWire backend requires libpipewire-0.3 which was not found. ' + user_hint)
+elif dep_libpipewire.version().version_compare('>= 1.4')
+	config_h.set('HAVE_PIPEWIRE_RETURN_BUFFER', 1)
 endif
 
 dep_libspa = dependency('libspa-0.2', required: false)
