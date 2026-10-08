@@ -2439,6 +2439,76 @@ set_blend_state(struct gl_renderer *gr, struct weston_paint_node *pnode, bool st
 	gr->blend_state = state;
 }
 
+static struct weston_coord
+transform_clipper_vertex_to_output(struct weston_paint_node *pnode,
+				   const struct clipper_vertex *clipper_pos)
+{
+	struct weston_output *output = pnode->output;
+	struct gl_output_state *go = get_output_state(output);
+	struct weston_coord_surface surf_pos;
+	struct weston_coord_global global_pos;
+	struct weston_coord output_coord;
+
+	surf_pos = weston_coord_surface(clipper_pos->x,
+					clipper_pos->y,
+					pnode->surface);
+	global_pos = weston_coord_surface_to_global(pnode->view, surf_pos);
+
+	output_coord = weston_matrix_transform_coord(&output->matrix, global_pos.c);
+	if (!shadow_exists(go)) {
+		output_coord.x += go->area.x;
+		output_coord.y += go->area.y;
+	}
+	return output_coord;
+}
+
+static void
+set_scissor(struct weston_paint_node *pnode,
+	    const struct clipper_vertex *positions,
+	    int nvtx)
+{
+	WESTON_TRACE_FUNC(("paint node", pnode));
+
+	struct weston_output *output = pnode->output;
+	struct gl_output_state *go = get_output_state(output);
+	int a_x, a_y, b_x, b_y;
+	int y, width, height, i;
+	struct weston_coord output_coord;
+
+	output_coord = transform_clipper_vertex_to_output(pnode, &positions[0]);
+	b_x = a_x = output_coord.x;
+	b_y = a_y = output_coord.y;
+
+	for (i = 1; i < nvtx; i++) {
+		output_coord = transform_clipper_vertex_to_output(pnode, &positions[i]);
+
+		if (output_coord.x < a_x)
+			a_x = output_coord.x;
+		if (output_coord.y < a_y)
+			a_y = output_coord.y;
+		if (output_coord.x > b_x)
+			b_x = output_coord.x;
+		if (output_coord.y > b_y)
+			b_y = output_coord.y;
+	}
+
+	width = b_x - a_x;
+	height = b_y - a_y;
+	if (is_y_flipped(go)) {
+		int flip_height = shadow_exists(go) ? go->area.height : go->fb_size.height;
+
+		y = flip_height - b_y;
+	} else
+		y = a_y;
+	WESTON_TRACE_ANNOTATE(("paint node", pnode),
+			      ("x", a_x),
+			      ("y", y),
+			      ("width", width),
+			      ("height", height));
+	WESTON_TRACE_COMMIT_ANNOTATION("glScissor");
+	glScissor(a_x, y, width, height);
+}
+
 static void
 draw_mesh(struct gl_renderer *gr,
 	  struct weston_paint_node *pnode,
@@ -2447,6 +2517,7 @@ draw_mesh(struct gl_renderer *gr,
 	  const uint32_t *barycentrics,
 	  const uint16_t *indices,
 	  int nidx,
+	  int nvtx,
 	  bool opaque)
 {
 	WESTON_TRACE_FUNC(("paint node", pnode));
@@ -2476,12 +2547,17 @@ draw_mesh(struct gl_renderer *gr,
 	if (!gl_renderer_use_program(gr, pnode, sconf))
 		gl_renderer_send_shader_error(pnode); /* Use fallback shader. */
 
+	glEnable(GL_SCISSOR_TEST);
+	set_scissor(pnode, positions, nvtx);
+
 	glVertexAttribPointer(SHADER_ATTRIB_LOC_POSITION, 2, GL_FLOAT, GL_FALSE,
 			      0, positions);
 	glDrawElements(GL_TRIANGLE_STRIP, nidx, GL_UNSIGNED_SHORT, indices);
 
 	if (gr->debug_mode == DEBUG_MODE_WIREFRAME)
 		glDisableVertexAttribArray(SHADER_ATTRIB_LOC_BARYCENTRIC);
+
+	glDisable(GL_SCISSOR_TEST);
 }
 
 static void
@@ -2554,7 +2630,7 @@ repaint_region(struct gl_renderer *gr,
 			if ((nvtx + nvtx_max) > UINT16_MAX) {
 				draw_mesh(gr, pnode, sconf, positions,
 					  barycentrics, indices, nidx - 2,
-					  opaque);
+					  nvtx, opaque);
 				nvtx = nidx = 0;
 			}
 		}
@@ -2562,7 +2638,7 @@ repaint_region(struct gl_renderer *gr,
 
 	if (nvtx)
 		draw_mesh(gr, pnode, sconf, positions, barycentrics, indices,
-			  nidx - 2, opaque);
+			  nidx - 2, nvtx, opaque);
 
 	gr->position_stream.size = 0;
 	gr->indices.size = 0;
