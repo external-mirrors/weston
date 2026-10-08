@@ -82,6 +82,7 @@ apt-get -y --no-install-recommends install \
 	libpam0g-dev \
 	libpango1.0-dev \
 	libpciaccess-dev \
+	libpipewire-0.3-dev \
 	libpixman-1-dev \
 	libpng-dev \
 	libpulse-dev \

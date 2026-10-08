@@ -177,21 +177,6 @@ cd ..
 rm -rf mesa
 fdo_log_section_end install_mesa
 
-# PipeWire support our pipewire-backend. Unlike our other dependencies its
-# behaviour will be stable, however as a pre-1.0 project its API is not yet
-# stable, so again we lock it to a fixed version.
-#
-# ... the version chosen is 0.3.32 with a small Clang-specific build fix.
-fdo_log_section_start_collapsed install_pipewire "install_pipewire"
-git clone --single-branch --branch master https://gitlab.freedesktop.org/pipewire/pipewire.git pipewire-src
-cd pipewire-src
-git checkout -b snapshot bf112940d0bf8f526dd6229a619c1283835b49c2
-meson setup build --wrap-mode=nofallback
-ninja ${NINJAFLAGS} -C build install
-cd ..
-rm -rf pipewire-src
-fdo_log_section_end install_pipewire
-
 # seatd lets us avoid the pain of open-coding TTY assignment within Weston.
 # We use this for our tests using the DRM backend.
 fdo_log_section_start_collapsed install_seatd "install_seatd"
