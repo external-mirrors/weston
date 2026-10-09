@@ -1776,19 +1776,24 @@ static void
 weston_surface_update_preferences(struct weston_surface *surface)
 {
 	struct weston_output *output = surface->output;
+	struct wl_resource *resource = surface->resource;
+	int version;
 
 	weston_surface_update_preferred_color_profile(surface);
 
-	if (!output || !surface->resource)
+	if (!output || !resource)
 		return;
 
-	if (surface->preferred_buffer_transform != output->transform) {
+	version = wl_resource_get_version(resource);
+	if (version >= WL_SURFACE_PREFERRED_BUFFER_TRANSFORM_SINCE_VERSION &&
+	    surface->preferred_buffer_transform != output->transform) {
 		surface->preferred_buffer_transform = output->transform;
 		wl_surface_send_preferred_buffer_transform(surface->resource,
 							   surface->preferred_buffer_transform);
 	}
 
-	if (surface->preferred_buffer_scale != output->current_scale) {
+	if (version >= WL_SURFACE_PREFERRED_BUFFER_SCALE_SINCE_VERSION &&
+	    surface->preferred_buffer_scale != output->current_scale) {
 		surface->preferred_buffer_scale = output->current_scale;
 		wl_surface_send_preferred_buffer_scale(surface->resource,
 						       surface->preferred_buffer_scale);
