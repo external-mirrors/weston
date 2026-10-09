@@ -463,10 +463,13 @@ drm_output_update_complete(struct drm_output *output, uint32_t flags,
 	if (output->pageflip_timer)
 		wl_event_source_timer_update(output->pageflip_timer, 0);
 
-	char *flags_str = weston_presentation_mask_to_str(flags);
-	drm_debug(device->backend, "output %s update complete at %u.%06u s, flags %#x, %s\n",
-		  output->base.name, sec, usec, flags, flags_str);
-	free(flags_str);
+	if (weston_log_scope_is_enabled(device->backend->debug)) {
+		char *flags_str = weston_presentation_mask_to_str(flags);
+
+		drm_debug(device->backend, "output %s update complete at %u.%06u s, flags %#x, %s\n",
+			  output->base.name, sec, usec, flags, flags_str);
+		free(flags_str);
+	}
 
 	wl_list_for_each(ps, &output->state_cur->plane_list, link)
 		ps->complete = true;
