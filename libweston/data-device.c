@@ -1144,7 +1144,10 @@ weston_seat_set_selection(struct weston_seat *seat,
 	struct weston_keyboard *keyboard = weston_seat_get_keyboard(seat);
 
 	if (seat->selection_data_source &&
-	    seat->selection_serial - serial < UINT32_MAX / 2)
+	    serial - seat->selection_serial > UINT32_MAX / 2)
+		return;
+
+	if (seat->selection_data_source == source)
 		return;
 
 	if (seat->selection_data_source) {
