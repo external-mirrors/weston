@@ -521,8 +521,10 @@ DECLARE_TEST_LIST(
 	TESTFN(drop_inverse_curves),
 	TESTFN(drop_identity_and_inverse_curves),
 	TESTFN(drop_identity_and_inverse_curves_another_order),
+#if HAVE_CMS_GET_TONE_CURVE_SEGMENT
 	TESTFN(keep_regular_curve),
 	TESTFN(do_not_merge_identity_with_parametric),
 	TESTFN(merge_power_law_curves_with_itself),
 	TESTFN(merge_power_law_curves_with_another),
+#endif
 );

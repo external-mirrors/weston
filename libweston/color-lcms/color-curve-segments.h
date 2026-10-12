@@ -67,7 +67,7 @@ get_parametric_curveset_params(struct weston_compositor *compositor,
 	return false;
 }
 
-cmsStage *
+static cmsStage *
 lcms_matrix_stage_from_curve(cmsContext ContextID, cmsStage *stage)
 {
 	return NULL;
