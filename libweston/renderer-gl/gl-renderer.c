@@ -343,6 +343,7 @@ static const struct gl_extension_table extension_table[] = {
 	EXT("GL_EXT_EGL_image_storage", EXTENSION_EXT_EGL_IMAGE_STORAGE),
 	EXT("GL_EXT_map_buffer_range", EXTENSION_EXT_MAP_BUFFER_RANGE),
 	EXT("GL_EXT_read_format_bgra", EXTENSION_EXT_READ_FORMAT_BGRA),
+	EXT("GL_EXT_shader_framebuffer_fetch", EXTENSION_EXT_SHADER_FB_FETCH),
 	EXT("GL_EXT_shader_framebuffer_fetch_non_coherent", EXTENSION_EXT_SHADER_FB_FETCH_NC),
 	EXT("GL_EXT_texture_format_BGRA8888", EXTENSION_EXT_TEXTURE_FORMAT_BGRA8888),
 	EXT("GL_EXT_texture_norm16", EXTENSION_EXT_TEXTURE_NORM16),
@@ -2800,7 +2801,7 @@ maybe_framebuffer_fetch_barrier(struct weston_output *output)
 	struct gl_renderer *gr = get_renderer(output->compositor);
 	struct gl_output_state *go = get_output_state(output);
 
-	if (go->shader_blender)
+	if (go->shader_blender && gr->framebuffer_fetch_barrier)
 		gr->framebuffer_fetch_barrier();
 }
 
@@ -5712,10 +5713,14 @@ gl_renderer_setup(struct weston_compositor *ec)
 		gr->features |= FEATURE_SIZED_BGRA8_RENDERBUFFER;
 
 	/* Shader blending feature. */
-	if (gl_extensions_has(gr, EXTENSION_EXT_SHADER_FB_FETCH_NC) &&
+	if ((gl_extensions_has(gr, EXTENSION_EXT_SHADER_FB_FETCH) ||
+	     gl_extensions_has(gr, EXTENSION_EXT_SHADER_FB_FETCH_NC)) &&
 	    gr->max_texture_image_units >= TEX_UNIT_COUNT_OPTIONAL &&
 	    gr->max_combined_texture_image_units >= TEX_UNIT_COUNT_OPTIONAL) {
-		GET_PROC_ADDRESS(gr->framebuffer_fetch_barrier, "glFramebufferFetchBarrierEXT");
+		if (!gl_extensions_has(gr, EXTENSION_EXT_SHADER_FB_FETCH)) {
+			GET_PROC_ADDRESS(gr->framebuffer_fetch_barrier,
+					 "glFramebufferFetchBarrierEXT");
+		}
 		gr->features |= FEATURE_SHADER_BLENDING;
 	}
 

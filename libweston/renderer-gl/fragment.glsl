@@ -73,6 +73,7 @@
 #endif
 
 #if DEF_SHADER_BLENDING
+#extension GL_EXT_shader_framebuffer_fetch : enable
 #extension GL_EXT_shader_framebuffer_fetch_non_coherent : require
 #endif
 
@@ -582,7 +583,11 @@ fragment_input_color_premult()
 
 #if DEF_SHADER_BLENDING
 
+#ifdef GL_EXT_shader_framebuffer_fetch
+mediump vec4 gl_LastFragData[gl_MaxDrawBuffers];
+#else
 layout(noncoherent) mediump vec4 gl_LastFragData[gl_MaxDrawBuffers];
+#endif
 
 void
 main()
