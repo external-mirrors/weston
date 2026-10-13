@@ -41,6 +41,7 @@
 #include "pixel-formats.h"
 #include "renderer-gl/gl-renderer.h"
 #include "renderer-vulkan/vulkan-renderer.h"
+#include "shared/string-helpers.h"
 #include "shared/weston-assert.h"
 #include "shared/weston-egl-ext.h"
 #include "linux-dmabuf.h"
@@ -718,6 +719,7 @@ drm_output_render_vulkan(struct drm_output_state *state, pixman_region32_t *dama
 	struct drm_device *device = output->device;
 	struct linux_dmabuf_memory *dmabuf;
 	struct drm_fb *ret;
+	uint32_t failure_reasons = FAILURE_REASONS_NONE;
 	int fence_fd;
 
 	renderer->repaint_output(&output->base, damage,
@@ -732,9 +734,13 @@ drm_output_render_vulkan(struct drm_output_state *state, pixman_region32_t *dama
 	/* Output transparent/opaque image according to the format required by
 	 * the client. */
 	ret = drm_fb_get_from_dmabuf_attributes(dmabuf->attributes, device,
-						false, true, NULL);
+						false, true, &failure_reasons);
 	if (!ret) {
-		weston_log("failed to get drm_fb for dmabuf\n");
+		char *fr_str = bits_to_str(failure_reasons,
+					   weston_plane_failure_reasons_to_str);
+
+		weston_log("failed to get drm_fb for dmabuf: %s\n", fr_str);
+		free(fr_str);
 		return NULL;
 	}
 
