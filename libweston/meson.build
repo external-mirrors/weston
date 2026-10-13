@@ -108,7 +108,7 @@ srcs_libweston = [
 subdir('desktop')
 subdir('shell-utils')
 
-dep_gbm = dependency('gbm', required: false, version: '>= 21.1.1')
+dep_gbm = dependency('gbm', required: false, version: gbm_min_version)
 if dep_gbm.found()
 	config_h.set('HAVE_GBM', '1')
 endif

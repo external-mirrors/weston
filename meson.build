@@ -12,6 +12,8 @@ project('weston',
 
 libweston_major = 17
 
+gbm_min_version = '>= 21.3'
+
 # libweston_revision is manufactured to follow the autotools build's
 # library file naming, thanks to libtool
 version_weston = meson.project_version()

@@ -42,7 +42,6 @@ dep_toytoolkit = declare_dependency(
 	link_with: lib_toytoolkit,
 	dependencies: deps_toytoolkit,
 )
-dep_gbm = dependency('gbm', required: false, version: '>= 21.3')
 
 simple_clients_enabled = get_option('simple-clients')
 simple_build_all = simple_clients_enabled.contains('all')
@@ -76,14 +75,10 @@ simple_clients = [
 			dep_libshared,
 			dep_pixman,
 			dep_libdrm,
+			dep_gbm,
 			dependency('libudev', version: '>= 136'),
-			# gbm_bo_get_fd_for_plane() from 21.1.0
-			dependency('gbm', version: '>= 21.1.1',
-				required: simple_build_all or simple_clients_enabled.contains('dmabuf-feedback'),
-				not_found_message: 'dmabuf-feedback requires gbm which was not found. If you rather not build this, drop "dmabuf-feedback" from simple-clients option.',
-				disabler: true)
 		],
-		'deps': [ 'egl', 'glesv2', 'gbm' ],
+		'deps': [ 'egl', 'glesv2' ],
 		'options': [ 'renderer-gl' ]
 	},
 	{
@@ -102,12 +97,13 @@ simple_clients = [
 			weston_restricted_buffer_protocol_c,
 		],
 		'dep_objs': [
+			dep_gbm,
 			dep_wayland_client,
 			dep_libdrm,
 			dep_libm,
 			dep_matrix_c,
 		],
-		'deps': [ 'egl', 'glesv2', 'gbm' ],
+		'deps': [ 'egl', 'glesv2' ],
 		'options': [ 'renderer-gl' ]
 	},
 	{
@@ -263,6 +259,7 @@ if dep_vulkan.found() and prog_glslang.found()
 			weston_direct_display_protocol_c,
 		],
 		'dep_objs': [
+			dep_gbm,
 			dep_vulkan,
                         dep_libdrm_headers,
 			dep_libm,
@@ -272,7 +269,7 @@ if dep_vulkan.found() and prog_glslang.found()
 			dep_wayland_client,
 			dep_libweston_private, # for pixel-formats.h
 		],
-		'deps': [ 'vulkan', 'wayland-cursor', 'gbm' ],
+		'deps': [ 'vulkan', 'wayland-cursor' ],
 		'options': [ 'renderer-gl' ]
 	}
 endif
@@ -281,6 +278,13 @@ foreach t : simple_clients
 	if simple_build_all or simple_clients_enabled.contains(t.get('name'))
 		t_name = 'weston-simple-' + t.get('name')
 		t_deps = t.get('dep_objs', [])
+
+		foreach check_gbm_dep : t.get('dep_objs', [])
+			if not check_gbm_dep.found() and check_gbm_dep.name() == 'gbm'
+				error('@0@ requires gbm version @1@, which was not found. If you would rather not build this drop "@0@" from the simple-clients option.'.format(t_name, gbm_min_version))
+			endif
+		endforeach
+
 		foreach depname : t.get('deps', [])
 			dep = dependency(depname, required: false)
 			if not dep.found()
