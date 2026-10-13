@@ -706,29 +706,29 @@ weston_compositor_destroy_touch_calibrator(struct weston_compositor *compositor)
 
 
 /**
- * Reasons why placing a view on a plane failed. Needed by the dma-buf feedback.
+ * Reasons why placing a view on a plane failed.
  */
-enum try_view_on_plane_failure_reasons {
-	FAILURE_REASONS_NONE = 0,
-	FAILURE_REASONS_FORCE_RENDERER = 1 << 0,
-	FAILURE_REASONS_FB_FORMAT_INCOMPATIBLE = 1 << 1,
-	FAILURE_REASONS_DMABUF_MODIFIER_INVALID = 1 << 2,
-	FAILURE_REASONS_ADD_FB_FAILED = 1 << 3,
-	FAILURE_REASONS_NO_PLANES_AVAILABLE = 1 << 4,
-	FAILURE_REASONS_PLANES_REJECTED = 1 << 5,
-	FAILURE_REASONS_INADEQUATE_CONTENT_PROTECTION = 1 << 6,
-	FAILURE_REASONS_INCOMPATIBLE_TRANSFORM = 1 << 7,
-	FAILURE_REASONS_NO_BUFFER = 1 << 8,
-	FAILURE_REASONS_BUFFER_TOO_BIG = 1 << 9,
-	FAILURE_REASONS_BUFFER_TYPE = 1 << 10,
-	FAILURE_REASONS_GLOBAL_ALPHA = 1 << 11,
-	FAILURE_REASONS_NO_GBM = 1 << 12,
-	FAILURE_REASONS_GBM_BO_IMPORT_FAILED = 1 << 13,
-	FAILURE_REASONS_GBM_BO_GET_HANDLE_FAILED = 1 << 14,
-	FAILURE_REASONS_NO_COLOR_TRANSFORM = 1 << 15,
-	FAILURE_REASONS_SOLID_SURFACE = 1 << 16,
-	FAILURE_REASONS_OCCLUDED_BY_RENDERER = 1 << 17,
-	FAILURE_REASONS_OUTPUT_COLOR_EFFECT = 1 << 18,
+enum view_on_plane_fault {
+	VOPF_NONE = 0,
+	VOPF_FORCE_RENDERER = 1 << 0,
+	VOPF_FB_FORMAT_INCOMPATIBLE = 1 << 1,
+	VOPF_DMABUF_MODIFIER_INVALID = 1 << 2,
+	VOPF_ADD_FB_FAILED = 1 << 3,
+	VOPF_NO_PLANES_AVAILABLE = 1 << 4,
+	VOPF_PLANES_REJECTED = 1 << 5,
+	VOPF_INADEQUATE_CONTENT_PROTECTION = 1 << 6,
+	VOPF_INCOMPATIBLE_TRANSFORM = 1 << 7,
+	VOPF_NO_BUFFER = 1 << 8,
+	VOPF_BUFFER_TOO_BIG = 1 << 9,
+	VOPF_BUFFER_TYPE = 1 << 10,
+	VOPF_GLOBAL_ALPHA = 1 << 11,
+	VOPF_NO_GBM = 1 << 12,
+	VOPF_GBM_BO_IMPORT_FAILED = 1 << 13,
+	VOPF_GBM_BO_GET_HANDLE_FAILED = 1 << 14,
+	VOPF_NO_COLOR_TRANSFORM = 1 << 15,
+	VOPF_SOLID_SURFACE = 1 << 16,
+	VOPF_OCCLUDED_BY_RENDERER = 1 << 17,
+	VOPF_OUTPUT_COLOR_EFFECT = 1 << 18,
 };
 
 /**
@@ -802,7 +802,8 @@ struct weston_paint_node {
 	struct weston_surface_color_transform surf_xform;
 	bool surf_xform_valid;
 
-	uint32_t try_view_on_plane_failure_reasons;
+	/* Bitmask of enum view_on_plane_fault. */
+	uint32_t vopf_mask;
 	bool is_fully_opaque;
 	bool is_fully_blended;
 	bool on_cursor_layer;
@@ -965,7 +966,7 @@ void
 weston_surface_state_fini(struct weston_surface_state *state);
 
 const char *
-weston_plane_failure_reasons_to_str(enum try_view_on_plane_failure_reasons failure_reasons);
+weston_vopf_to_str(enum view_on_plane_fault vopf);
 
 uint32_t
 weston_surface_visibility_mask(struct weston_surface *surface);

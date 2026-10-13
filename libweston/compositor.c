@@ -10107,29 +10107,29 @@ weston_transform_to_string(uint32_t output_transform)
 }
 
 WL_EXPORT const char *
-weston_plane_failure_reasons_to_str(enum try_view_on_plane_failure_reasons failure_reasons)
+weston_vopf_to_str(enum view_on_plane_fault vopf)
 {
-	switch(failure_reasons) {
-	case FAILURE_REASONS_NONE:			    return "none";
-	case FAILURE_REASONS_FORCE_RENDERER:		    return "force renderer";
-	case FAILURE_REASONS_FB_FORMAT_INCOMPATIBLE:	    return "fb format incompatible";
-	case FAILURE_REASONS_DMABUF_MODIFIER_INVALID:	    return "dmabuf modifier invalid";
-	case FAILURE_REASONS_ADD_FB_FAILED:		    return "add fb failed";
-	case FAILURE_REASONS_NO_PLANES_AVAILABLE:	    return "no planes available";
-	case FAILURE_REASONS_PLANES_REJECTED:		    return "planes rejected";
-	case FAILURE_REASONS_INADEQUATE_CONTENT_PROTECTION: return "inadequate content protection";
-	case FAILURE_REASONS_INCOMPATIBLE_TRANSFORM:	    return "incompatible transform";
-	case FAILURE_REASONS_NO_BUFFER:			    return "no buffer";
-	case FAILURE_REASONS_BUFFER_TOO_BIG:		    return "buffer too big";
-	case FAILURE_REASONS_BUFFER_TYPE:		    return "buffer type";
-	case FAILURE_REASONS_GLOBAL_ALPHA:		    return "global alpha";
-	case FAILURE_REASONS_NO_GBM:			    return "no gbm";
-	case FAILURE_REASONS_GBM_BO_IMPORT_FAILED:	    return "gbm bo import failed";
-	case FAILURE_REASONS_GBM_BO_GET_HANDLE_FAILED:	    return "gbm bo get handle failed";
-	case FAILURE_REASONS_NO_COLOR_TRANSFORM:	    return "cannot off-load color transform";
-	case FAILURE_REASONS_SOLID_SURFACE:		    return "solid surface";
-	case FAILURE_REASONS_OCCLUDED_BY_RENDERER:	    return "occluded by renderer";
-	case FAILURE_REASONS_OUTPUT_COLOR_EFFECT:	    return "output contains color effect";
+	switch (vopf) {
+	case VOPF_NONE:				 return "none";
+	case VOPF_FORCE_RENDERER:		 return "force renderer";
+	case VOPF_FB_FORMAT_INCOMPATIBLE:	 return "fb format incompatible";
+	case VOPF_DMABUF_MODIFIER_INVALID:	 return "dmabuf modifier invalid";
+	case VOPF_ADD_FB_FAILED:		 return "add fb failed";
+	case VOPF_NO_PLANES_AVAILABLE:		 return "no planes available";
+	case VOPF_PLANES_REJECTED:		 return "planes rejected";
+	case VOPF_INADEQUATE_CONTENT_PROTECTION: return "inadequate content protection";
+	case VOPF_INCOMPATIBLE_TRANSFORM:	 return "incompatible transform";
+	case VOPF_NO_BUFFER:			 return "no buffer";
+	case VOPF_BUFFER_TOO_BIG:		 return "buffer too big";
+	case VOPF_BUFFER_TYPE:			 return "buffer type";
+	case VOPF_GLOBAL_ALPHA:			 return "global alpha";
+	case VOPF_NO_GBM:			 return "no gbm";
+	case VOPF_GBM_BO_IMPORT_FAILED:		 return "gbm bo import failed";
+	case VOPF_GBM_BO_GET_HANDLE_FAILED:	 return "gbm bo get handle failed";
+	case VOPF_NO_COLOR_TRANSFORM:		 return "cannot off-load color transform";
+	case VOPF_SOLID_SURFACE:		 return "solid surface";
+	case VOPF_OCCLUDED_BY_RENDERER:		 return "occluded by renderer";
+	case VOPF_OUTPUT_COLOR_EFFECT:		 return "output contains color effect";
 	}
 	return "???";
 }
@@ -10259,10 +10259,9 @@ debug_scene_view_print_paint_node(FILE *fp,
 	if (pnode->alpha < 1.0f)
 		fprintf(fp, "\t\t\t\tAlpha: %f\n", pnode->alpha);
 
-	if (pnode->try_view_on_plane_failure_reasons) {
-		fputs("\t\t\t\tPlane failure reasons: ", fp);
-		bits_to_str_stream(pnode->try_view_on_plane_failure_reasons,
-				   weston_plane_failure_reasons_to_str, fp);
+	if (pnode->vopf_mask) {
+		fputs("\t\t\t\tPlacing view on plane failures (vopf_mask): ", fp);
+		bits_to_str_stream(pnode->vopf_mask, weston_vopf_to_str, fp);
 		fputs("\n", fp);
 	}
 

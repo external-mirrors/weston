@@ -365,7 +365,8 @@ struct drm_fb {
 
 struct drm_buffer_fb {
 	struct drm_fb *fb;
-	uint32_t failure_reasons;
+	/* Bitmask of enum view_on_plane_fault. */
+	uint32_t vopf_mask;
 	struct drm_device *device;
 	struct wl_list link;
 };
@@ -953,7 +954,7 @@ drm_fb_create_dumb(struct drm_device *device, int width, int height,
 struct drm_fb *
 drm_fb_get_from_dmabuf(struct linux_dmabuf_buffer *dmabuf,
 		       struct drm_device *device,
-		       uint32_t *try_view_on_plane_failure_reasons);
+		       uint32_t *vopf_mask);
 struct drm_fb *
 drm_fb_get_from_bo(struct gbm_bo *bo, struct drm_device *device,
 		   enum drm_fb_type type);
@@ -971,7 +972,7 @@ wdrm_color_format_from_output(struct weston_output *output);
 extern struct drm_fb *
 drm_fb_get_from_paint_node(struct drm_output_state *state,
 			   struct weston_paint_node *pnode,
-			   uint32_t *try_view_on_plane_failure_reasons);
+			   uint32_t *vopf_mask);
 
 extern bool
 drm_can_scanout_dmabuf(struct weston_backend *backend,
@@ -981,12 +982,12 @@ struct drm_fb *
 drm_fb_get_from_dmabuf_attributes(struct dmabuf_attributes *attributes,
 				  struct drm_device *device,
 				  bool direct_display, bool is_internal,
-				  uint32_t *try_view_on_plane_failure_reasons);
+				  uint32_t *vopf_mask);
 #else
 static inline struct drm_fb *
 drm_fb_get_from_paint_node(struct drm_output_state *state,
 			   struct weston_paint_node *pnode,
-			   uint32_t *try_view_on_plane_failure_reasons)
+			   uint32_t *vopf_mask)
 {
 	return NULL;
 }

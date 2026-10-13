@@ -410,7 +410,7 @@ struct drm_fb *
 drm_fb_get_from_dmabuf_attributes(struct dmabuf_attributes *attributes,
 				  struct drm_device *device,
 				  bool direct_display, bool is_internal,
-				  uint32_t *try_view_on_plane_failure_reasons)
+				  uint32_t *vopf_mask)
 {
 	struct drm_backend *backend = device->backend;
 	struct drm_fb *fb;
@@ -431,8 +431,7 @@ drm_fb_get_from_dmabuf_attributes(struct dmabuf_attributes *attributes,
 	 * not knowing its layout can result in garbage being displayed. In
 	 * short, importing a buffer to KMS requires explicit modifiers. */
 	if (attributes->modifier == DRM_FORMAT_MOD_INVALID) {
-		*try_view_on_plane_failure_reasons |=
-			FAILURE_REASONS_DMABUF_MODIFIER_INVALID;
+		*vopf_mask |= VOPF_DMABUF_MODIFIER_INVALID;
 		return NULL;
 	}
 
@@ -478,8 +477,7 @@ drm_fb_get_from_dmabuf_attributes(struct dmabuf_attributes *attributes,
 		fb->bo = gbm_bo_import(backend->gbm, GBM_BO_IMPORT_FD_MODIFIER,
 				       &import_mod, GBM_BO_USE_SCANOUT);
 		if (!fb->bo) {
-			*try_view_on_plane_failure_reasons |=
-				FAILURE_REASONS_GBM_BO_IMPORT_FAILED;
+			*vopf_mask |= VOPF_GBM_BO_IMPORT_FAILED;
 			goto err_free;
 		}
 	}
@@ -515,16 +513,14 @@ drm_fb_get_from_dmabuf_attributes(struct dmabuf_attributes *attributes,
 
 	        handle = gbm_bo_get_handle_for_plane(fb->bo, i);
 		if (handle.s32 == -1) {
-			*try_view_on_plane_failure_reasons |=
-				FAILURE_REASONS_GBM_BO_GET_HANDLE_FAILED;
+			*vopf_mask |= VOPF_GBM_BO_GET_HANDLE_FAILED;
 			goto err_free;
 		}
 		fb->handles[i] = handle.u32;
 	}
 
 	if (drm_fb_addfb(device, fb) != 0) {
-		*try_view_on_plane_failure_reasons |=
-			FAILURE_REASONS_ADD_FB_FAILED;
+		*vopf_mask |= VOPF_ADD_FB_FAILED;
 		goto err_free;
 	}
 
@@ -538,12 +534,12 @@ err_free:
 struct drm_fb *
 drm_fb_get_from_dmabuf(struct linux_dmabuf_buffer *dmabuf,
 		       struct drm_device *device,
-		       uint32_t *try_view_on_plane_failure_reasons)
+		       uint32_t *vopf_mask)
 {
 	return drm_fb_get_from_dmabuf_attributes(&dmabuf->attributes,
 						 device,
 						 dmabuf->direct_display, false,
-						 try_view_on_plane_failure_reasons);
+						 vopf_mask);
 }
 
 struct drm_fb *
@@ -723,7 +719,7 @@ drm_fb_handle_buffer_destroy(struct wl_listener *listener, void *data)
 struct drm_fb *
 drm_fb_get_from_paint_node(struct drm_output_state *state,
 			   struct weston_paint_node *pnode,
-			   uint32_t *try_view_on_plane_failure_reasons)
+			   uint32_t *vopf_mask)
 {
 	struct drm_output *output = state->output;
 	struct drm_backend *b = output->backend;
@@ -737,13 +733,12 @@ drm_fb_get_from_paint_node(struct drm_output_state *state,
 
 	if (pnode->protection_mode == WESTON_SURFACE_PROTECTION_MODE_ENFORCED &&
 	    pnode->desired_protection > output->base.current_protection) {
-		*try_view_on_plane_failure_reasons |=
-			FAILURE_REASONS_INADEQUATE_CONTENT_PROTECTION;
+		*vopf_mask |= VOPF_INADEQUATE_CONTENT_PROTECTION;
 		return NULL;
 	}
 
 	if (!buffer) {
-		*try_view_on_plane_failure_reasons |= FAILURE_REASONS_NO_BUFFER;
+		*vopf_mask |= VOPF_NO_BUFFER;
 		return NULL;
 	}
 
@@ -759,7 +754,7 @@ drm_fb_get_from_paint_node(struct drm_output_state *state,
 
 	wl_list_for_each(buf_fb, &private->buffer_fb_list, link) {
 		if (buf_fb->device == device) {
-			*try_view_on_plane_failure_reasons |= buf_fb->failure_reasons;
+			*vopf_mask |= buf_fb->vopf_mask;
 			return buf_fb->fb ? drm_fb_ref(buf_fb->fb) : NULL;
 		}
 	}
@@ -770,17 +765,17 @@ drm_fb_get_from_paint_node(struct drm_output_state *state,
 
 	/* GBM is used for dmabuf import as well as from client wl_buffer. */
 	if (!b->gbm) {
-		buf_fb->failure_reasons |= FAILURE_REASONS_NO_GBM;
+		buf_fb->vopf_mask |= VOPF_NO_GBM;
 		goto unsuitable;
 	}
 
 	if (buffer->type == WESTON_BUFFER_DMABUF) {
 		fb = drm_fb_get_from_dmabuf(buffer->dmabuf, device,
-					    &buf_fb->failure_reasons);
+					    &buf_fb->vopf_mask);
 		if (!fb)
 			goto unsuitable;
 	} else {
-		buf_fb->failure_reasons |= FAILURE_REASONS_BUFFER_TYPE;
+		buf_fb->vopf_mask |= VOPF_BUFFER_TYPE;
 		goto unsuitable;
 	}
 
@@ -796,7 +791,7 @@ drm_fb_get_from_paint_node(struct drm_output_state *state,
 	}
 	if (fb->plane_mask == 0) {
 		drm_fb_unref(fb);
-		buf_fb->failure_reasons |= FAILURE_REASONS_FB_FORMAT_INCOMPATIBLE;
+		buf_fb->vopf_mask |= VOPF_FB_FORMAT_INCOMPATIBLE;
 		goto unsuitable;
 	}
 
@@ -809,7 +804,7 @@ drm_fb_get_from_paint_node(struct drm_output_state *state,
 	return fb;
 
 unsuitable:
-	*try_view_on_plane_failure_reasons |= buf_fb->failure_reasons;
+	*vopf_mask |= buf_fb->vopf_mask;
 	return NULL;
 }
 #endif

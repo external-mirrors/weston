@@ -506,7 +506,6 @@ dmabuf_feedback_maybe_update(struct drm_device *device,
 	enum actions_needed_dmabuf_feedback action_needed = ACTION_NEEDED_NONE;
 	struct timespec current_time, delta_time;
 	const time_t MAX_TIME_SECONDS = 2;
-	uint32_t try_view_on_plane_failure_reasons = pnode->try_view_on_plane_failure_reasons;
 
 	WESTON_TRACE_FUNC(("paint node", pnode));
 
@@ -524,31 +523,31 @@ dmabuf_feedback_maybe_update(struct drm_device *device,
 		scanout_tranche->active = false;
 	}
 
-	if (try_view_on_plane_failure_reasons & (FAILURE_REASONS_FORCE_RENDERER |
-						 FAILURE_REASONS_NO_PLANES_AVAILABLE |
-						 FAILURE_REASONS_INADEQUATE_CONTENT_PROTECTION |
-						 FAILURE_REASONS_INCOMPATIBLE_TRANSFORM |
-						 FAILURE_REASONS_NO_BUFFER |
-						 FAILURE_REASONS_BUFFER_TOO_BIG |
-						 FAILURE_REASONS_BUFFER_TYPE |
-						 FAILURE_REASONS_GLOBAL_ALPHA |
-						 FAILURE_REASONS_NO_GBM |
-						 FAILURE_REASONS_NO_COLOR_TRANSFORM |
-						 FAILURE_REASONS_SOLID_SURFACE |
-						 FAILURE_REASONS_OCCLUDED_BY_RENDERER |
-						 FAILURE_REASONS_OUTPUT_COLOR_EFFECT)) {
+	if (pnode->vopf_mask & (VOPF_FORCE_RENDERER |
+				VOPF_NO_PLANES_AVAILABLE |
+				VOPF_INADEQUATE_CONTENT_PROTECTION |
+				VOPF_INCOMPATIBLE_TRANSFORM |
+				VOPF_NO_BUFFER |
+				VOPF_BUFFER_TOO_BIG |
+				VOPF_BUFFER_TYPE |
+				VOPF_GLOBAL_ALPHA |
+				VOPF_NO_GBM |
+				VOPF_NO_COLOR_TRANSFORM |
+				VOPF_SOLID_SURFACE |
+				VOPF_OCCLUDED_BY_RENDERER |
+				VOPF_OUTPUT_COLOR_EFFECT)) {
 		/* Direct scanout won't happen even if client re-allocates using
 		 * params from the scanout tranche, so keep only the renderer tranche. */
 		action_needed = ACTION_NEEDED_REMOVE_SCANOUT_TRANCHE;
-	} else if (try_view_on_plane_failure_reasons & (FAILURE_REASONS_ADD_FB_FAILED |
-							FAILURE_REASONS_FB_FORMAT_INCOMPATIBLE |
-							FAILURE_REASONS_DMABUF_MODIFIER_INVALID |
-							FAILURE_REASONS_GBM_BO_IMPORT_FAILED |
-							FAILURE_REASONS_GBM_BO_GET_HANDLE_FAILED)) {
+	} else if (pnode->vopf_mask & (VOPF_ADD_FB_FAILED |
+				       VOPF_FB_FORMAT_INCOMPATIBLE |
+				       VOPF_DMABUF_MODIFIER_INVALID |
+				       VOPF_GBM_BO_IMPORT_FAILED |
+				       VOPF_GBM_BO_GET_HANDLE_FAILED)) {
 		/* Direct scanout may be possible if client re-allocates using
 		 * the params from the scanout tranche. */
 		action_needed = ACTION_NEEDED_ADD_SCANOUT_TRANCHE;
-	} else if (try_view_on_plane_failure_reasons == FAILURE_REASONS_NONE) {
+	} else if (pnode->vopf_mask == VOPF_NONE) {
 		/* Direct scanout is already possible, so include the scanout
 		 * tranche. */
 		action_needed = ACTION_NEEDED_ADD_SCANOUT_TRANCHE;
@@ -602,8 +601,7 @@ try_pnode_on_cursor_plane(struct drm_output *output, struct weston_paint_node *p
 		cursor_plane = output->cursor_handle->plane;
 
 	if (!cursor_plane || device->cursors_are_broken) {
-		pnode->try_view_on_plane_failure_reasons |=
-			FAILURE_REASONS_BUFFER_TYPE;
+		pnode->vopf_mask |= VOPF_BUFFER_TYPE;
 		/* SHM buffers can only be placed on a cursor plane, so if
 		 * cursors aren't available skip all the following tests,
 		 * we already have the only failure reason that matters.
@@ -617,8 +615,7 @@ try_pnode_on_cursor_plane(struct drm_output *output, struct weston_paint_node *p
 		drm_debug(b, "\t\t\t\t[paint node] not placing paint node %s on "
 			     "plane; SHM buffers must be ARGB8888 for "
 			     "cursor\n", pnode->internal_name);
-		pnode->try_view_on_plane_failure_reasons |=
-			FAILURE_REASONS_FB_FORMAT_INCOMPATIBLE;
+		pnode->vopf_mask |= VOPF_FB_FORMAT_INCOMPATIBLE;
 	}
 
 	if (buffer->width > device->cursor_width ||
@@ -626,13 +623,11 @@ try_pnode_on_cursor_plane(struct drm_output *output, struct weston_paint_node *p
 		drm_debug(b, "\t\t\t\t[paint node] not assigning paint node %s to plane "
 			     "(buffer (%dx%d) too large for cursor plane)\n",
 			     pnode->internal_name, buffer->width, buffer->height);
-		pnode->try_view_on_plane_failure_reasons |=
-			FAILURE_REASONS_BUFFER_TOO_BIG;
+		pnode->vopf_mask |= VOPF_BUFFER_TOO_BIG;
 	}
 
 	if (!drm_paint_node_transform_supported(pnode, cursor_plane))
-		pnode->try_view_on_plane_failure_reasons |=
-			FAILURE_REASONS_INCOMPATIBLE_TRANSFORM;
+		pnode->vopf_mask |= VOPF_INCOMPATIBLE_TRANSFORM;
 }
 
 static bool
@@ -747,38 +742,33 @@ drm_output_find_plane_for_paint_node(struct drm_output_state *state,
 
 	/* renderer-only mode, so no view assignments to planes */
 	if (mode == DRM_OUTPUT_PROPOSE_STATE_RENDERER_ONLY) {
-		pnode->try_view_on_plane_failure_reasons |=
-			FAILURE_REASONS_FORCE_RENDERER;
+		pnode->vopf_mask |= VOPF_FORCE_RENDERER;
 		return NULL;
 	}
 
 	/* filter out non-cursor views in renderer-and-cursor mode */
 	if (mode == DRM_OUTPUT_PROPOSE_STATE_RENDERER_AND_CURSOR &&
 	    !pnode->on_cursor_layer) {
-		pnode->try_view_on_plane_failure_reasons |=
-			FAILURE_REASONS_FORCE_RENDERER;
+		pnode->vopf_mask |= VOPF_FORCE_RENDERER;
 		return NULL;
 	}
 
 	/* check view for valid buffer, doesn't make sense to even try */
 	if (!weston_paint_node_has_valid_buffer(pnode)) {
-		pnode->try_view_on_plane_failure_reasons |=
-			FAILURE_REASONS_NO_BUFFER;
+		pnode->vopf_mask |= VOPF_NO_BUFFER;
 		return NULL;
 	}
 
 	buffer = pnode->surface->buffer_ref.buffer;
 	if (pnode->draw_solid) {
-		pnode->try_view_on_plane_failure_reasons |=
-			FAILURE_REASONS_SOLID_SURFACE;
+		pnode->vopf_mask |= VOPF_SOLID_SURFACE;
 	} else if (buffer->type == WESTON_BUFFER_SHM) {
 		struct drm_plane_handle *cursor_handle = output->cursor_handle;
 		struct drm_plane *cursor_plane = NULL;
 		uint64_t zpos;
 
 		if (!output->cursor_handle) {
-			pnode->try_view_on_plane_failure_reasons |=
-				FAILURE_REASONS_PLANES_REJECTED;
+			pnode->vopf_mask |= VOPF_PLANES_REJECTED;
 			return NULL;
 		}
 
@@ -786,7 +776,7 @@ drm_output_find_plane_for_paint_node(struct drm_output_state *state,
 
 		try_pnode_on_cursor_plane(output, pnode);
 
-		if (pnode->try_view_on_plane_failure_reasons == FAILURE_REASONS_NONE &&
+		if (pnode->vopf_mask == VOPF_NONE &&
 		    pnode_can_use_plane(state, cursor_handle, pnode)) {
 			if (current_lowest_zpos == DRM_PLANE_ZPOS_INVALID_PLANE)
 				zpos = cursor_plane->zpos_max;
@@ -796,12 +786,12 @@ drm_output_find_plane_for_paint_node(struct drm_output_state *state,
 			ps = drm_output_prepare_cursor_paint_node(state, pnode, zpos);
 		}
 		if (!ps)
-			pnode->try_view_on_plane_failure_reasons |=
-				FAILURE_REASONS_PLANES_REJECTED;
+			pnode->vopf_mask |= VOPF_PLANES_REJECTED;
+
 		return ps;
 	} else {
 		struct drm_plane *scanout_plane = output->scanout_handle->plane;
-		uint32_t fb_failure_reasons = 0;
+		uint32_t vopf_mask = VOPF_NONE;
 
 		if (mode == DRM_OUTPUT_PROPOSE_STATE_RENDERER_AND_CURSOR) {
 			drm_debug(b, "\t\t\t\t[paint node] not assigning paint node %s "
@@ -821,10 +811,9 @@ drm_output_find_plane_for_paint_node(struct drm_output_state *state,
 		}
 
 		if (!possible_plane_mask)
-			pnode->try_view_on_plane_failure_reasons |=
-				FAILURE_REASONS_INCOMPATIBLE_TRANSFORM;
+			pnode->vopf_mask |= VOPF_INCOMPATIBLE_TRANSFORM;
 
-		fb = drm_fb_get_from_paint_node(state, pnode, &fb_failure_reasons);
+		fb = drm_fb_get_from_paint_node(state, pnode, &vopf_mask);
 		if (fb) {
 			possible_plane_mask &= fb->plane_mask;
 		} else {
@@ -832,11 +821,11 @@ drm_output_find_plane_for_paint_node(struct drm_output_state *state,
 
 			if (dbg) {
 				fputs("\t\t\t[paint node] couldn't get FB for paint node: ", dbg);
-				bits_to_str_stream(fb_failure_reasons,
-						   weston_plane_failure_reasons_to_str, dbg);
+				bits_to_str_stream(vopf_mask,
+						   weston_vopf_to_str, dbg);
 				fputs("\n", dbg);
 			}
-			pnode->try_view_on_plane_failure_reasons |= fb_failure_reasons;
+			pnode->vopf_mask |= vopf_mask;
 		}
 	}
 
@@ -998,13 +987,11 @@ drm_output_find_plane_for_paint_node(struct drm_output_state *state,
 			break;
 		}
 
-		pnode->try_view_on_plane_failure_reasons |=
-			FAILURE_REASONS_PLANES_REJECTED;
+		pnode->vopf_mask |= VOPF_PLANES_REJECTED;
 	}
 
 	if (!any_candidate_picked)
-		pnode->try_view_on_plane_failure_reasons |=
-			FAILURE_REASONS_NO_PLANES_AVAILABLE;
+		pnode->vopf_mask |= VOPF_NO_PLANES_AVAILABLE;
 
 	WESTON_TRACE_COMMIT_ANNOTATION(ps ? "assign plane" : "plane failure");
 	/* if we have a plane state, it has its own ref to the fb; if not then
@@ -1213,7 +1200,7 @@ drm_output_propose_state_try_reuse(struct weston_output *output_base,
 
 	wl_list_for_each(pnode, &output_base->paint_node_z_order_list,
 			 z_order_link) {
-		uint32_t reasons = FAILURE_REASONS_NONE;
+		uint32_t vopf_mask = VOPF_NONE;
 		struct drm_plane_state *pstate;
 		struct drm_plane *plane;
 		struct drm_fb *fb;
@@ -1253,16 +1240,15 @@ drm_output_propose_state_try_reuse(struct weston_output *output_base,
 			return NULL;
 		}
 
-		fb = drm_fb_get_from_paint_node(state, pnode, &reasons);
+		fb = drm_fb_get_from_paint_node(state, pnode, &vopf_mask);
 		if (!fb) {
-			char *fr_str = bits_to_str(reasons,
-						   weston_plane_failure_reasons_to_str);
+			char *vopf_mask_str = bits_to_str(vopf_mask, weston_vopf_to_str);
 			char *msg;
 
-			str_printf(&msg, "couldn't get new FB: %s", fr_str);
+			str_printf(&msg, "couldn't get new FB: %s", vopf_mask_str);
 			debug_propose_fail(output, mode, msg);
 			free(msg);
-			free(fr_str);
+			free(vopf_mask_str);
 			drm_output_state_free(state);
 			return NULL;
 		}
@@ -1422,7 +1408,7 @@ drm_output_propose_state(struct weston_output *output_base,
 	wl_array_init(&visible_pnodes);
 	wl_list_for_each(pnode, &output->base.paint_node_z_order_list,
 			 z_order_link) {
-		pnode->try_view_on_plane_failure_reasons = FAILURE_REASONS_NONE;
+		pnode->vopf_mask = VOPF_NONE;
 
 		drm_debug(b, "\t\t\t[paint node] evaluating paint node %s for scene-graph "
 		             "building on output %s (%lu)\n",
@@ -1508,25 +1494,20 @@ drm_output_propose_state(struct weston_output *output_base,
 
 		/* We might be able to use a cursor plane without gbm. */
 		if (!b->gbm && !(buffer->type == WESTON_BUFFER_SHM))
-			pnode->try_view_on_plane_failure_reasons |=
-				FAILURE_REASONS_NO_GBM;
+			pnode->vopf_mask |= VOPF_NO_GBM;
 
 		if (!weston_paint_node_has_valid_buffer(pnode))
-			pnode->try_view_on_plane_failure_reasons |=
-				FAILURE_REASONS_NO_BUFFER;
+			pnode->vopf_mask |= VOPF_NO_BUFFER;
 
 		if (pnode->draw_solid)
-			pnode->try_view_on_plane_failure_reasons |=
-				FAILURE_REASONS_SOLID_SURFACE;
+			pnode->vopf_mask |= VOPF_SOLID_SURFACE;
 
 		if (pnode->output->color_effect)
-			pnode->try_view_on_plane_failure_reasons |=
-				FAILURE_REASONS_OUTPUT_COLOR_EFFECT;
+			pnode->vopf_mask |= VOPF_OUTPUT_COLOR_EFFECT;
 
 		if (pnode->surf_xform.transform && (!device->plane_color_pipeline_supported ||
 						    !pnode->output->from_blend_to_output_by_backend))
-			pnode->try_view_on_plane_failure_reasons |=
-				FAILURE_REASONS_NO_COLOR_TRANSFORM;
+			pnode->vopf_mask |= VOPF_NO_COLOR_TRANSFORM;
 
 		/* Since we process views from top to bottom, we know that if
 		 * the view intersects the calculated renderer region, it must
@@ -1539,8 +1520,7 @@ drm_output_propose_state(struct weston_output *output_base,
 			if (output->has_underlay) {
 				need_underlay = true;
 			} else {
-				pnode->try_view_on_plane_failure_reasons |=
-					FAILURE_REASONS_OCCLUDED_BY_RENDERER;
+				pnode->vopf_mask |= VOPF_OCCLUDED_BY_RENDERER;
 				drm_debug(b, "\t\t\t\t[paint node] not assigning paint node %s to a "
 					     "plane (occluded by renderer views), current lowest "
 					     "zpos change to %"PRIu64"\n", pnode->internal_name,
@@ -1553,20 +1533,18 @@ drm_output_propose_state(struct weston_output *output_base,
 		 * be rendered. Only fully-opaque views can go on an underlay.
 		 */
 		if (need_underlay && !pnode->is_fully_opaque)
-			pnode->try_view_on_plane_failure_reasons |=
-				FAILURE_REASONS_OCCLUDED_BY_RENDERER;
+			pnode->vopf_mask |= VOPF_OCCLUDED_BY_RENDERER;
 
 		/* In case of enforced mode of content-protection do not
 		 * assign planes for a protected surface on an unsecured output.
 		 */
 		if (pnode->censored)
-			pnode->try_view_on_plane_failure_reasons |=
-				FAILURE_REASONS_INADEQUATE_CONTENT_PROTECTION;
+			pnode->vopf_mask |= VOPF_INADEQUATE_CONTENT_PROTECTION;
 
 		state->tear &= pnode->surface->may_tear;
 
 		/* Now try to place it on a plane if we can. */
-		if (!pnode->try_view_on_plane_failure_reasons) {
+		if (!pnode->vopf_mask) {
 			pixman_region32_t obscured_or_background_region;
 
 			drm_debug(b, "\t\t\t[plane] started with zpos %"PRIu64"\n",
@@ -1595,10 +1573,10 @@ drm_output_propose_state(struct weston_output *output_base,
 			pixman_region32_fini(&obscured_or_background_region);
 		}
 
-		WESTON_TRACE_ANNOTATE(("try_view_on_plane_failure_reasons",
+		WESTON_TRACE_ANNOTATE(("view_on_plane_faults",
 				       (&(struct weston_trace_bitflags) {
-						.bitflags = pnode->try_view_on_plane_failure_reasons,
-						.map = weston_plane_failure_reasons_to_str
+						.bitflags = pnode->vopf_mask,
+						.map = weston_vopf_to_str
 					})));
 
 		if (ps) {
@@ -1629,8 +1607,7 @@ drm_output_propose_state(struct weston_output *output_base,
 			if (dbg) {
 				fprintf(dbg, "\t\t\t\t[paint node] paint node %s will be placed on the renderer: ",
 					pnode->internal_name);
-				bits_to_str_stream(pnode->try_view_on_plane_failure_reasons,
-						   weston_plane_failure_reasons_to_str, dbg);
+				bits_to_str_stream(pnode->vopf_mask, weston_vopf_to_str, dbg);
 				fputs("\n", dbg);
 			}
 		}

@@ -719,7 +719,7 @@ drm_output_render_vulkan(struct drm_output_state *state, pixman_region32_t *dama
 	struct drm_device *device = output->device;
 	struct linux_dmabuf_memory *dmabuf;
 	struct drm_fb *ret;
-	uint32_t failure_reasons = FAILURE_REASONS_NONE;
+	uint32_t vopf_mask = VOPF_NONE;
 	int fence_fd;
 
 	renderer->repaint_output(&output->base, damage,
@@ -734,13 +734,12 @@ drm_output_render_vulkan(struct drm_output_state *state, pixman_region32_t *dama
 	/* Output transparent/opaque image according to the format required by
 	 * the client. */
 	ret = drm_fb_get_from_dmabuf_attributes(dmabuf->attributes, device,
-						false, true, &failure_reasons);
+						false, true, &vopf_mask);
 	if (!ret) {
-		char *fr_str = bits_to_str(failure_reasons,
-					   weston_plane_failure_reasons_to_str);
+		char *vopf_mask_str = bits_to_str(vopf_mask, weston_vopf_to_str);
 
-		weston_log("failed to get drm_fb for dmabuf: %s\n", fr_str);
-		free(fr_str);
+		weston_log("failed to get drm_fb for dmabuf: %s\n", vopf_mask_str);
+		free(vopf_mask_str);
 		return NULL;
 	}
 
