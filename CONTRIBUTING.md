@@ -110,7 +110,7 @@ cope with the way git log presents them.
 See [notes on commit messages] for a recommended reading on writing commit
 messages.
 
-Your patches must also include a Signed-off-by line with your name
+Your commit messages must also include a Signed-off-by line with your name
 (or pseudonym) and email address which indicates that you agree to the
 [Developer's Certificate of Origin 1.1](DCO-1.1.txt).
 If you're not the patch's original author, you should
@@ -124,13 +124,6 @@ responsibility for the copyright status of the code.
 **Agreeing to DCO 1.1 is mandatory.** Patches without a Signed-off-by cannot
 be accepted, but using a pseudonym is fine as long as the email address is
 yours personally.
-
-When you re-send patches, revised or not, it would be very good to document the
-changes compared to the previous revision in the commit message and/or the
-merge request. If you have already received Reviewed-by or Acked-by tags, you
-should evaluate whether they still apply and include them in the respective
-commit messages. Otherwise the tags may be lost, reviewers miss the credit they
-deserve, and the patches may cause redundant review effort.
 
 
 Tracking patches and following up
