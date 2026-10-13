@@ -10157,6 +10157,15 @@ debug_scene_view_print_paint_node(FILE *fp,
 	else {
 		fputs(weston_transform_to_string(pnode->transform), fp);
 		fputs("\n", fp);
+
+		fprintf(fp, "\t\t\t\tOutput destination: (%d, %d) -> (%d, %d)\n",
+			pnode->output_dest.x, pnode->output_dest.y,
+			pnode->output_dest.x + pnode->output_dest.width,
+			pnode->output_dest.y + pnode->output_dest.height);
+		fprintf(fp, "\t\t\t\tBuffer source: (%.2f, %.2f) -> (%.2f, %.2f)\n",
+			pnode->buffer_source_x, pnode->buffer_source_y,
+			pnode->buffer_source_x + pnode->buffer_source_width,
+			pnode->buffer_source_y + pnode->buffer_source_height);
 	}
 
 	if (pnode->alpha < 1.0f)
