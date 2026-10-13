@@ -524,8 +524,6 @@ dmabuf_feedback_maybe_update(struct drm_device *device,
 		scanout_tranche->active = false;
 	}
 
-	/* Direct scanout won't happen even if client re-allocates using params
-	 * from the scanout tranche, so keep only the renderer tranche. */
 	if (try_view_on_plane_failure_reasons & (FAILURE_REASONS_FORCE_RENDERER |
 						 FAILURE_REASONS_NO_PLANES_AVAILABLE |
 						 FAILURE_REASONS_INADEQUATE_CONTENT_PROTECTION |
@@ -539,14 +537,16 @@ dmabuf_feedback_maybe_update(struct drm_device *device,
 						 FAILURE_REASONS_SOLID_SURFACE |
 						 FAILURE_REASONS_OCCLUDED_BY_RENDERER |
 						 FAILURE_REASONS_OUTPUT_COLOR_EFFECT)) {
+		/* Direct scanout won't happen even if client re-allocates using
+		 * params from the scanout tranche, so keep only the renderer tranche. */
 		action_needed = ACTION_NEEDED_REMOVE_SCANOUT_TRANCHE;
 	} else if (try_view_on_plane_failure_reasons & (FAILURE_REASONS_ADD_FB_FAILED |
-		/* Direct scanout may be possible if client re-allocates using
-		 * the params from the scanout tranche. */
 							FAILURE_REASONS_FB_FORMAT_INCOMPATIBLE |
 							FAILURE_REASONS_DMABUF_MODIFIER_INVALID |
 							FAILURE_REASONS_GBM_BO_IMPORT_FAILED |
 							FAILURE_REASONS_GBM_BO_GET_HANDLE_FAILED)) {
+		/* Direct scanout may be possible if client re-allocates using
+		 * the params from the scanout tranche. */
 		action_needed = ACTION_NEEDED_ADD_SCANOUT_TRANCHE;
 	} else if (try_view_on_plane_failure_reasons == FAILURE_REASONS_NONE) {
 		/* Direct scanout is already possible, so include the scanout
