@@ -431,9 +431,8 @@ drm_fb_get_from_dmabuf_attributes(struct dmabuf_attributes *attributes,
 	 * not knowing its layout can result in garbage being displayed. In
 	 * short, importing a buffer to KMS requires explicit modifiers. */
 	if (attributes->modifier == DRM_FORMAT_MOD_INVALID) {
-		if (try_view_on_plane_failure_reasons)
-			*try_view_on_plane_failure_reasons |=
-				FAILURE_REASONS_DMABUF_MODIFIER_INVALID;
+		*try_view_on_plane_failure_reasons |=
+			FAILURE_REASONS_DMABUF_MODIFIER_INVALID;
 		return NULL;
 	}
 
@@ -479,9 +478,8 @@ drm_fb_get_from_dmabuf_attributes(struct dmabuf_attributes *attributes,
 		fb->bo = gbm_bo_import(backend->gbm, GBM_BO_IMPORT_FD_MODIFIER,
 				       &import_mod, GBM_BO_USE_SCANOUT);
 		if (!fb->bo) {
-			if (try_view_on_plane_failure_reasons)
-				*try_view_on_plane_failure_reasons |=
-					FAILURE_REASONS_GBM_BO_IMPORT_FAILED;
+			*try_view_on_plane_failure_reasons |=
+				FAILURE_REASONS_GBM_BO_IMPORT_FAILED;
 			goto err_free;
 		}
 	}
@@ -525,9 +523,8 @@ drm_fb_get_from_dmabuf_attributes(struct dmabuf_attributes *attributes,
 	}
 
 	if (drm_fb_addfb(device, fb) != 0) {
-		if (try_view_on_plane_failure_reasons)
-			*try_view_on_plane_failure_reasons |=
-				FAILURE_REASONS_ADD_FB_FAILED;
+		*try_view_on_plane_failure_reasons |=
+			FAILURE_REASONS_ADD_FB_FAILED;
 		goto err_free;
 	}
 
