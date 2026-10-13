@@ -34,6 +34,7 @@
 #include <cairo.h>
 #include <libweston/linalg-4.h>
 #include "image-file-lib/png-writer.h"
+#include "shared/xalloc.h"
 
 #define max(a, b) (((a) > (b)) ? (a) : (b))
 #define min(a, b) (((a) > (b)) ? (b) : (a))
@@ -354,7 +355,7 @@ destroy_cairo_surface(pixman_image_t *image, void *data)
  * @returns Pixman image, or NULL in case of error.
  */
 pixman_image_t *
-load_image_from_png(const char *fname)
+load_image_from_png_no_cache(const char *fname)
 {
 	pixman_image_t *image;
 	pixman_image_t *converted;
@@ -397,6 +398,106 @@ load_image_from_png(const char *fname)
 	pixman_image_unref(image);
 
 	return converted;
+}
+
+struct image_cache_entry {
+	char *fname;
+	pixman_image_t *img;
+};
+
+struct image_cache {
+	/** Array of struct image_cache_entry */
+	struct wl_array entries;
+};
+
+static struct image_cache *png_loader_cache;
+
+static void
+image_cache_destroy(void)
+{
+	struct image_cache_entry *e;
+
+	wl_array_for_each(e, &png_loader_cache->entries) {
+		free(e->fname);
+		pixman_image_unref(e->img);
+	}
+	wl_array_release(&png_loader_cache->entries);
+	free(png_loader_cache);
+	png_loader_cache = NULL;
+}
+
+static void
+image_cache_ensure(void)
+{
+	struct image_cache *c;
+
+	if (png_loader_cache)
+		return;
+
+	c = xzalloc(sizeof *c);
+	wl_array_init(&c->entries);
+
+	png_loader_cache = c;
+	atexit(image_cache_destroy);
+}
+
+static pixman_image_t *
+image_cache_search(const char *fname)
+{
+	struct image_cache_entry *e;
+
+	image_cache_ensure();
+
+	wl_array_for_each(e, &png_loader_cache->entries) {
+		if (strcmp(fname, e->fname) == 0)
+			return pixman_image_ref(e->img);
+	}
+
+	return NULL;
+}
+
+static void
+image_cache_add(const char *fname, pixman_image_t *img)
+{
+	struct image_cache_entry *e;
+
+	image_cache_ensure();
+
+	e = wl_array_add(&png_loader_cache->entries, sizeof *e);
+	e->fname = xstrdup(fname);
+	e->img = pixman_image_ref(img);
+}
+
+/**
+ * Load an image from a PNG file (cached)
+ *
+ * If the image with the file name is already in memory, returns a new
+ * reference to that image. Otherwise Reads a PNG image from disk using
+ * the given filename (and path) and returns it as a Pixman image. The image
+ * is retained in the cache until process exit.
+ *
+ * Use pixman_image_unref() to free it.
+ *
+ * The returned image is always in PIXMAN_a8r8g8b8 format.
+ *
+ * @returns Pixman image, or NULL in case of error.
+ */
+pixman_image_t *
+load_image_from_png(const char *fname)
+{
+	pixman_image_t *img;
+
+	img = image_cache_search(fname);
+	if (img)
+		return img;
+
+	img = load_image_from_png_no_cache(fname);
+	if (!img)
+		return NULL;
+
+	image_cache_add(fname, img);
+
+	return img;
 }
 
 /**

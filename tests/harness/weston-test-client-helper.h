@@ -352,6 +352,9 @@ write_image_as_png(pixman_image_t *image, const char *fname);
 pixman_image_t *
 load_image_from_png(const char *fname);
 
+pixman_image_t *
+load_image_from_png_no_cache(const char *fname);
+
 struct buffer *
 capture_screenshot_of_output(struct client *client, const char *output_name,
 			     enum screenshot_decoration_mode include_decorations);
