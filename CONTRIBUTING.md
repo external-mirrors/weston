@@ -219,6 +219,57 @@ my_function(void)
   `x*alloc()` wrappers from `shared/xalloc.h` instead or use
   `abort_oom_if_null()`
 
+Increasing requirements
+-----------------------
+
+Weston depends on several external packages and libraries. Some are mandatory,
+some are optional, and some are mandatory for certain features chosen at build
+time. The project has these principles for the convenience of downstreams:
+
+- No increments in stable branches, except the equivalent of a minor version
+bump in semantic versioning for mandating a significant bug fix in the
+dependency.
+
+- The LTS distribution jobs in CI must remain working. Only the following
+components can be required to be more recent than what the LTS distribution
+provides:
+  - libdrm
+  - libdisplay-info
+  - Mesa
+  - wayland-protocols
+
+- Kernel requirements go by stable UAPI features. Making new kernel features
+mandatory must be avoided, but there is no reason to maintain compability
+with kernel versions that no longer receive security updates.
+
+- Mandatory EGL, OpenGL ES, and Vulkan requirements for the respective renderers
+must be satisfied by the following driver suites if applicable:
+  - Mesa as required by the build
+  - the proprietary Mali driver, see the [list provided by MTK for Mali-G57](https://genio.mediatek.com/doc/iot-yocto/latest/sw/yocto/app-dev/gpu/gpu-common.html)
+
+- If bumping a requirement can be avoided by a few `#if` directives without
+causing a significant maintenance burden, the bump should be avoided.
+
+- If the new or upgraded dependency is easy for distributions to pick up or is
+already packaged, the upgrade may be preferred. Consider:
+  - The current [Debian stable](https://packages.debian.org/stable/)
+  - The latest [Yocto](https://www.yoctoproject.org/development/releases/#current) LTS
+  - The latest [buildroot](https://gitlab.com/buildroot.org/buildroot/-/tree/master/package?ref_type=heads) stable
+  - The latest [Ubuntu](https://packages.ubuntu.com/) LTS
+
+- All the above principles apply for the foundational Weston components:
+  - libweston
+  - the frontend
+  - GL-renderer
+  - DRM-backend
+  - headless-backend
+  - desktop-shell
+  - kiosk-shell
+
+- Non-foundational Weston components can discount the above principles if
+there is a good reason to.
+
+
 Conduct
 =======
 
