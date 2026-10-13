@@ -250,15 +250,14 @@ boilerplate, as part of the copyright statement.
 Review
 ======
 
-All patches, even trivial ones, require at least one positive review
-(Reviewed-by). Additionally, if no Reviewed-by's have been given by
-people with commit access, there needs to be at least one Acked-by from
-someone with commit access. A person with commit access is expected to be
-able to evaluate the patch with respect to the project scope and architecture.
+All merge requests, even trivial ones, require a positive review from at least
+one other person with merge access than the submitter. A person with merge
+access is expected to be able to evaluate the merge request with respect to
+the project scope and architecture.
 
 The below review guidelines are intended to be interpreted in spirit, not by
 the letter. There may be circumstances where some guidelines are better
-ignored. We rely very much on the judgement of reviewers and commit rights
+ignored. We rely very much on the judgement of reviewers and merge access
 holders.
 
 During review, the following matters should be checked:
