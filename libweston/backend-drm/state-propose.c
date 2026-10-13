@@ -743,7 +743,6 @@ drm_output_find_plane_for_paint_node(struct drm_output_state *state,
 	                               current_lowest_zpos_overlay;
 
 	uint32_t possible_plane_mask = 0;
-	uint32_t fb_failure_reasons = 0;
 	bool any_candidate_picked = false;
 
 	/* renderer-only mode, so no view assignments to planes */
@@ -802,6 +801,7 @@ drm_output_find_plane_for_paint_node(struct drm_output_state *state,
 		return ps;
 	} else {
 		struct drm_plane *scanout_plane = output->scanout_handle->plane;
+		uint32_t fb_failure_reasons = 0;
 
 		if (mode == DRM_OUTPUT_PROPOSE_STATE_RENDERER_AND_CURSOR) {
 			drm_debug(b, "\t\t\t\t[paint node] not assigning paint node %s "
