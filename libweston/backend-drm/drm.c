@@ -817,15 +817,18 @@ drm_output_consume_writeback_capture_task(struct drm_output *output,
 	}
 #ifdef BUILD_DRM_GBM
 	else if (buffer->type == WESTON_BUFFER_DMABUF) {
-		uint32_t failure_reasons = 0;
+		uint32_t failure_reasons = FAILURE_REASONS_NONE;
 		output->wb_state->fb = drm_fb_get_from_dmabuf(buffer->dmabuf,
 							      output->device,
 							      &failure_reasons);
 		if (!output->wb_state->fb) {
+			char *fr_str = bits_to_str(failure_reasons,
+						   weston_plane_failure_reasons_to_str);
 			str_printf(&msg,
 				   "drm: failed to attach dma buffer from " \
 				   "client for writeback state: %s",
-				   weston_plane_failure_reasons_to_str(failure_reasons));
+				   fr_str);
+			free(fr_str);
 			goto err_fb;
 		}
 	}
