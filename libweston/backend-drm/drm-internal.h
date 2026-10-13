@@ -365,7 +365,7 @@ struct drm_fb {
 
 struct drm_buffer_fb {
 	struct drm_fb *fb;
-	enum try_view_on_plane_failure_reasons failure_reasons;
+	uint32_t failure_reasons;
 	struct drm_device *device;
 	struct wl_list link;
 };
