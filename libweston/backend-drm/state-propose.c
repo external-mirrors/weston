@@ -1213,7 +1213,7 @@ drm_output_propose_state_try_reuse(struct weston_output *output_base,
 
 	wl_list_for_each(pnode, &output_base->paint_node_z_order_list,
 			 z_order_link) {
-		enum try_view_on_plane_failure_reasons reasons;
+		uint32_t reasons = FAILURE_REASONS_NONE;
 		struct drm_plane_state *pstate;
 		struct drm_plane *plane;
 		struct drm_fb *fb;
@@ -1255,7 +1255,7 @@ drm_output_propose_state_try_reuse(struct weston_output *output_base,
 
 		fb = drm_fb_get_from_paint_node(state, pnode, &reasons);
 		if (!fb) {
-			char *fr_str = bits_to_str(pnode->try_view_on_plane_failure_reasons,
+			char *fr_str = bits_to_str(reasons,
 						   weston_plane_failure_reasons_to_str);
 			char *msg;
 
