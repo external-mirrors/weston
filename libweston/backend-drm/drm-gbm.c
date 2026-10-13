@@ -155,7 +155,7 @@ drm_gbm_alloc_cursor_fb(struct drm_output *output, struct drm_backend *b,
 	return true;
 }
 
-static void
+static int
 create_gbm_surface(struct gbm_device *gbm, struct drm_output *output)
 {
 	struct weston_mode *mode = output->base.current_mode;
@@ -170,7 +170,7 @@ create_gbm_surface(struct gbm_device *gbm, struct drm_output *output)
 		weston_log("format %s not supported by output %s\n",
 			   output->format->drm_format_name,
 			   output->base.name);
-		return;
+		return -1;
 	}
 
 	if (!weston_drm_format_has_modifier(fmt, DRM_FORMAT_MOD_INVALID)) {
@@ -204,6 +204,10 @@ create_gbm_surface(struct gbm_device *gbm, struct drm_output *output)
 							 mode->width, mode->height,
 							 output->format->format,
 							 output->gbm_bo_flags);
+	if (!output->gbm_surface)
+		return -1;
+
+	return 0;
 }
 
 void
@@ -577,8 +581,7 @@ drm_output_init_egl(struct drm_output *output, struct drm_backend *b)
 	options.fb_size.height = mode->height;
 
 	assert(output->gbm_surface == NULL);
-	create_gbm_surface(b->gbm, output);
-	if (!output->gbm_surface) {
+	if (create_gbm_surface(b->gbm, output) < 0) {
 		weston_log("failed to create gbm surface\n");
 		return -1;
 	}
