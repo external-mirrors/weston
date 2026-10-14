@@ -521,38 +521,54 @@ drm_gbm_bo_get_dmabuf(struct gbm_device *gbm, struct drm_output *output, struct 
 	return drm_gbm_dmabuf;
 }
 
-static void
+static int
 create_renderbuffers(struct gbm_device *gbm, struct drm_output *output, unsigned int n)
 {
-	struct weston_renderer *renderer = output->base.compositor->renderer;
+	struct weston_compositor *compositor = output->base.compositor;
+	struct weston_renderer *renderer = compositor->renderer;
 
 	for (unsigned int i = 0; i < n; i++) {
 		struct drm_gbm_dmabuf *drm_gbm_dmabuf;
 		struct gbm_bo *bo;
 
+		/* To clean up on failure, we need to start from a clean state */
+		weston_assert_ptr_null(compositor, output->renderbuffer[i]);
+		weston_assert_ptr_null(compositor, output->linux_dmabuf_memory[i]);
+
 		bo = drm_gbm_create_bo(gbm, output);
 		if (!bo) {
 			weston_log("failed to allocate bo\n");
-			return;
+			goto err;
 		}
 
+		/* This one can't fail, so needs no check. */
 		drm_gbm_dmabuf = drm_gbm_bo_get_dmabuf(gbm, output, bo);
-		if (!drm_gbm_dmabuf) {
-			weston_log("failed to allocate dmabuf\n");
-			return;
-		}
 
 		output->renderbuffer[i] =
 			renderer->create_renderbuffer_dmabuf(&output->base,
 							     &drm_gbm_dmabuf->base,
 							     NULL, NULL);
 		if (!output->renderbuffer[i]) {
+			/* This would be owned by the renderbuffer, but we didn't
+			 * get that far.
+			 */
+			drm_gbm_dmabuf->base.destroy(&drm_gbm_dmabuf->base);
 			weston_log("failed to allocate renderbuffer\n");
-			return;
+			goto err;
 		}
 
 		output->linux_dmabuf_memory[i] = &drm_gbm_dmabuf->base;
 	}
+	return 0;
+err:
+	for (unsigned int i = 0; i < n; i++) {
+		if (output->renderbuffer[i]) {
+			renderer->destroy_renderbuffer(output->renderbuffer[i]);
+			output->renderbuffer[i] = NULL;
+			output->linux_dmabuf_memory[i] = NULL;
+		}
+	}
+	return -1;
 }
 
 /* Init output state that depends on gl or gbm */
@@ -651,8 +667,7 @@ drm_output_init_vulkan(struct drm_output *output, struct drm_backend *b)
 		return -1;
 	}
 
-	create_renderbuffers(b->gbm, output, ARRAY_LENGTH(output->renderbuffer));
-	if (!output->linux_dmabuf_memory[0]) {
+	if (create_renderbuffers(b->gbm, output, ARRAY_LENGTH(output->renderbuffer)) < 0) {
 		weston_log("failed to create dmabufs\n");
 		return -1;
 	}
