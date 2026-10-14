@@ -10063,6 +10063,9 @@ debug_scene_view_print_buffer(FILE *fp, struct weston_view *view)
 
 	if (buffer->direct_display)
 		fputs("\t\t\tdirect-display buffer (no renderer access)\n", fp);
+
+	if (buffer->restriction != WESTON_BUFFER_RESTRICTION_NO)
+		fputs("\t\t\trestricted buffer\n", fp);
 }
 
 static const struct weston_enum_map transforms[] = {
@@ -10131,6 +10134,91 @@ weston_plane_failure_reasons_to_str(enum try_view_on_plane_failure_reasons failu
 	return "???";
 }
 
+static const char *
+weston_hdcp_protection_to_string(enum weston_hdcp_protection protection)
+{
+	switch(protection) {
+	case WESTON_HDCP_DISABLE:	return "disabled";
+	case WESTON_HDCP_ENABLE_TYPE_0:	return "type-0";
+	case WESTON_HDCP_ENABLE_TYPE_1:	return "type-1";
+	}
+	return "???";
+}
+
+static const char *
+weston_surface_protection_mode_to_string(enum weston_surface_protection_mode mode)
+{
+	switch(mode) {
+	case WESTON_SURFACE_PROTECTION_MODE_RELAXED:	return "relaxed";
+	case WESTON_SURFACE_PROTECTION_MODE_ENFORCED:	return "enforced";
+	case WESTON_SURFACE_PROTECTION_MODE_CENSORED:	return "censored";
+	}
+	return "???";
+}
+
+static const char *
+weston_output_restriction_policy_to_string(enum weston_output_restriction_policy policy)
+{
+	switch (policy) {
+	case WESTON_OUTPUT_RESTRICTION_POLICY_CENSOR:	return "censor";
+	case WESTON_OUTPUT_RESTRICTION_POLICY_DISPLAY:	return "display";
+	case WESTON_OUTPUT_RESTRICTION_POLICY_HDCP1:	return "hdcp1";
+	case WESTON_OUTPUT_RESTRICTION_POLICY_HDCP2:	return "hdcp2";
+	}
+	return "???";
+}
+
+static void
+debug_scene_view_print_paint_node_warnings(FILE *fp,
+					   struct weston_paint_node *pnode)
+{
+	struct weston_surface *surface = pnode->surface;
+	struct weston_output *output = pnode->output;
+	struct weston_buffer *buffer = surface->buffer_ref.buffer;
+	struct weston_compositor *comp = surface->compositor;
+	bool recording_censor, unprotected_censor;
+
+	if (pnode->plane != &pnode->output->primary_plane)
+		return;
+
+	if (!pnode->censored && !buffer->direct_display)
+		return;
+
+	fputs("\t\t\t\tWarning: Renderer placeholder\n", fp);
+	if (pnode->censored) {
+		recording_censor = (output->disable_planes > 0) &&
+				   (pnode->desired_protection > WESTON_HDCP_DISABLE);
+		unprotected_censor = (pnode->desired_protection > output->current_protection) ||
+				     (pnode->protection_mode == WESTON_SURFACE_PROTECTION_MODE_CENSORED);
+		if (recording_censor) {
+			fputs("\t\t\t\t\t\tCensored (Screen shot prohibited)\n", fp);
+		}
+		if (unprotected_censor) {
+			fputs("\t\t\t\t\tCensored (Policy)\n", fp);
+			fputs("\t\t\t\t\t\tOutput protection: ", fp);
+			fputs(weston_hdcp_protection_to_string(output->current_protection), fp);
+			fputs("\n", fp);
+			fputs("\t\t\t\t\t\tOutput policy: ", fp);
+			fputs(weston_output_restriction_policy_to_string(output->restriction_policy), fp);
+			fputs("\n", fp);
+			fputs("\t\t\t\t\t\tPaint node protection: ", fp);
+			fputs(weston_hdcp_protection_to_string(pnode->desired_protection), fp);
+			fputs("\n", fp);
+			fputs("\t\t\t\t\t\tPaint node protection mode: ", fp);
+			fputs(weston_surface_protection_mode_to_string(pnode->protection_mode), fp);
+			fputs("\n", fp);
+		}
+	}
+
+	if (buffer->direct_display) {
+                if (buffer->restriction != WESTON_BUFFER_RESTRICTION_NO &&
+                    !comp->renderer_restricted_context)
+			fputs("\t\t\t\t\tRenderer context can't import protected buffer\n", fp);
+		else
+			fputs("\t\t\t\t\tweston_direct_display_v1 (prevents GPU import)\n", fp);
+	}
+}
+
 static void
 debug_scene_view_print_paint_node(FILE *fp,
 				  struct weston_view *view,
@@ -10177,6 +10265,8 @@ debug_scene_view_print_paint_node(FILE *fp,
 				   weston_plane_failure_reasons_to_str, fp);
 		fputs("\n", fp);
 	}
+
+	debug_scene_view_print_paint_node_warnings(fp, pnode);
 }
 
 static void
