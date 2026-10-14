@@ -527,6 +527,7 @@ create_renderbuffers(struct gbm_device *gbm, struct drm_output *output)
 	struct weston_compositor *compositor = output->base.compositor;
 	struct weston_renderer *renderer = compositor->renderer;
 	unsigned int num_buffers = ARRAY_LENGTH(output->renderbuffer);
+	struct drm_device *device = output->device;
 
 	for (unsigned int i = 0; i < num_buffers; i++) {
 		struct drm_gbm_dmabuf *drm_gbm_dmabuf;
@@ -534,7 +535,7 @@ create_renderbuffers(struct gbm_device *gbm, struct drm_output *output)
 
 		/* To clean up on failure, we need to start from a clean state */
 		weston_assert_ptr_null(compositor, output->renderbuffer[i]);
-		weston_assert_ptr_null(compositor, output->linux_dmabuf_memory[i]);
+		weston_assert_ptr_null(compositor, output->renderbuffer_fb[i]);
 
 		bo = drm_gbm_create_bo(gbm, output);
 		if (!bo) {
@@ -558,15 +559,21 @@ create_renderbuffers(struct gbm_device *gbm, struct drm_output *output)
 			goto err;
 		}
 
-		output->linux_dmabuf_memory[i] = &drm_gbm_dmabuf->base;
+		output->renderbuffer_fb[i] =
+			drm_fb_get_from_dmabuf_attributes(drm_gbm_dmabuf->base.attributes, device,
+							  false, true, NULL);
+		if (!output->renderbuffer_fb[i]) {
+			weston_log("failed to create renderbuffer fb\n");
+			goto err;
+		}
 	}
 	return 0;
 err:
 	for (unsigned int i = 0; i < num_buffers; i++) {
 		if (output->renderbuffer[i]) {
+			drm_fb_unref(output->renderbuffer_fb[i]);
 			renderer->destroy_renderbuffer(output->renderbuffer[i]);
 			output->renderbuffer[i] = NULL;
-			output->linux_dmabuf_memory[i] = NULL;
 		}
 	}
 	return -1;
@@ -691,8 +698,10 @@ drm_output_fini_vulkan(struct drm_output *output)
 {
 	const struct weston_renderer *renderer = output->base.compositor->renderer;
 
-	for (unsigned int i = 0; i < ARRAY_LENGTH(output->renderbuffer); i++)
+	for (unsigned int i = 0; i < ARRAY_LENGTH(output->renderbuffer); i++) {
+		drm_fb_unref(output->renderbuffer_fb[i]);
 		renderer->destroy_renderbuffer(output->renderbuffer[i]);
+	}
 
 	renderer->vulkan->output_destroy(&output->base);
 }
@@ -736,32 +745,13 @@ drm_output_render_vulkan(struct drm_output_state *state, pixman_region32_t *dama
 	struct drm_plane_state *pstate =
 		drm_output_state_get_plane(state, output->scanout_handle->plane);
 	struct weston_renderer *renderer = output->base.compositor->renderer;
-	struct drm_device *device = output->device;
-	struct linux_dmabuf_memory *dmabuf;
 	struct drm_fb *ret;
-	uint32_t vopf_mask = VOPF_NONE;
 	int fence_fd;
 
 	renderer->repaint_output(&output->base, damage,
 				 output->renderbuffer[output->current_image]);
 
-	dmabuf = output->linux_dmabuf_memory[output->current_image];
-	if (!dmabuf) {
-		weston_log("failed to get dmabuf\n");
-		return NULL;
-	}
-
-	/* Output transparent/opaque image according to the format required by
-	 * the client. */
-	ret = drm_fb_get_from_dmabuf_attributes(dmabuf->attributes, device,
-						false, true, &vopf_mask);
-	if (!ret) {
-		char *vopf_mask_str = bits_to_str(vopf_mask, weston_vopf_to_str);
-
-		weston_log("failed to get drm_fb for dmabuf: %s\n", vopf_mask_str);
-		free(vopf_mask_str);
-		return NULL;
-	}
+	ret = drm_fb_ref(output->renderbuffer_fb[output->current_image]);
 
 	fence_fd = renderer->vulkan->create_fence_fd(&output->base);
 	if (fence_fd < 0) {
