@@ -1415,6 +1415,7 @@ main(int argc, char **argv)
 	window.buffer_size.width  = 250;
 	window.buffer_size.height = 250;
 	window.window_size = window.buffer_size;
+	window.logical_size = window.window_size;
 	window.buffer_scale = 1;
 	window.buffer_transform = WL_OUTPUT_TRANSFORM_NORMAL;
 	window.needs_buffer_geometry_update = false;
