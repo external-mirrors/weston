@@ -50,6 +50,7 @@ struct egl_config_print_info {
 
 /* Keep in sync with gl-renderer-internal.h. */
 static const struct gl_extension_table client_table[] = {
+	EXT("EGL_EXT_device_base", EXTENSION_EXT_DEVICE_QUERY),
 	EXT("EGL_EXT_device_query", EXTENSION_EXT_DEVICE_QUERY),
 	EXT("EGL_EXT_platform_base", EXTENSION_EXT_PLATFORM_BASE),
 	EXT("EGL_EXT_platform_wayland", EXTENSION_EXT_PLATFORM_WAYLAND),
