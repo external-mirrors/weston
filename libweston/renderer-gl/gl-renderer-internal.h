@@ -732,7 +732,7 @@ void
 log_egl_config_info(struct gl_renderer *gr, EGLConfig eglconfig);
 
 const struct pixel_format_info **
-egl_set_supported_rendering_formats(EGLDisplay egldpy,
+egl_set_supported_rendering_formats(struct gl_renderer *gr,
 				    unsigned int *formats_count);
 
 EGLConfig

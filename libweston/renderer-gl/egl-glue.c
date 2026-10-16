@@ -281,10 +281,39 @@ out:
 	free(configs);
 }
 
+static const struct pixel_format_info **
+egl_set_supported_surfaceless_rendering_formats(struct gl_renderer *gr,
+						unsigned int *formats_count)
+{
+	const struct pixel_format_info *info, **f;
+	struct wl_array formats;
+	int known_formats_count;
+
+	known_formats_count = pixel_format_get_info_count();
+
+	wl_array_init(&formats);
+	for (int i = 0; i < known_formats_count; i++) {
+		info = pixel_format_get_info_by_index(i);
+		if (!info->gl.internal)
+			continue;
+
+		if (!gl_fbo_is_format_supported(gr, info->gl.internal))
+			continue;
+
+		f = wl_array_add(&formats, sizeof(*f));
+		*f = info;
+	}
+
+	*formats_count = formats.size / sizeof(info);
+	return formats.data;
+}
+
 const struct pixel_format_info **
-egl_set_supported_rendering_formats(EGLDisplay egldpy,
+egl_set_supported_rendering_formats(struct gl_renderer *gr,
 				    unsigned int *formats_count)
 {
+	EGLDisplay egldpy = gr->egl_display;
+	EGLenum platform = gr->platform;
 	struct wl_array formats;
 	const struct pixel_format_info **f, *p;
 	EGLConfig *configs;
@@ -292,6 +321,9 @@ egl_set_supported_rendering_formats(EGLDisplay egldpy,
 	EGLint value;
 	EGLint i;
 	bool found;
+
+	if (platform != EGL_PLATFORM_GBM_KHR)
+		return egl_set_supported_surfaceless_rendering_formats(gr, formats_count);
 
 	wl_array_init(&formats);
 

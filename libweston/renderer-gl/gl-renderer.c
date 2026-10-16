@@ -5413,13 +5413,11 @@ gl_renderer_display_create(struct weston_compositor *ec,
 	if (gr->allocator)
 		gr->base.dmabuf_alloc = gl_renderer_dmabuf_alloc;
 
-	if (gr->platform == EGL_PLATFORM_GBM_KHR) {
-		gr->supported_rendering_formats =
-			egl_set_supported_rendering_formats(gr->egl_display,
-							    &gr->supported_rendering_formats_count);
-		if (!gr->supported_rendering_formats)
-			goto fail_terminate;
-	}
+	gr->supported_rendering_formats =
+		egl_set_supported_rendering_formats(gr,
+						    &gr->supported_rendering_formats_count);
+	if (!gr->supported_rendering_formats)
+		goto fail_terminate;
 
 	/* No need to check for GL_OES_EGL_image_external because this is gated
 	 * by EGL_EXT_image_dma_buf_import_modifiers which depends on it. */
