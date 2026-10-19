@@ -2699,7 +2699,7 @@ drm_output_init_planes(struct drm_output *output)
 			output->cursor_handle = handle;
 			continue;
 		}
-		wl_list_insert(&output->plane_handle_list, &handle->link);
+		wl_list_insert(output->plane_handle_list.prev, &handle->link);
 	}
 
 	assert(output->scanout_handle);
