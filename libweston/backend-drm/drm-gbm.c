@@ -522,12 +522,13 @@ drm_gbm_bo_get_dmabuf(struct gbm_device *gbm, struct drm_output *output, struct 
 }
 
 static int
-create_renderbuffers(struct gbm_device *gbm, struct drm_output *output, unsigned int n)
+create_renderbuffers(struct gbm_device *gbm, struct drm_output *output)
 {
 	struct weston_compositor *compositor = output->base.compositor;
 	struct weston_renderer *renderer = compositor->renderer;
+	unsigned int num_buffers = ARRAY_LENGTH(output->renderbuffer);
 
-	for (unsigned int i = 0; i < n; i++) {
+	for (unsigned int i = 0; i < num_buffers; i++) {
 		struct drm_gbm_dmabuf *drm_gbm_dmabuf;
 		struct gbm_bo *bo;
 
@@ -561,7 +562,7 @@ create_renderbuffers(struct gbm_device *gbm, struct drm_output *output, unsigned
 	}
 	return 0;
 err:
-	for (unsigned int i = 0; i < n; i++) {
+	for (unsigned int i = 0; i < num_buffers; i++) {
 		if (output->renderbuffer[i]) {
 			renderer->destroy_renderbuffer(output->renderbuffer[i]);
 			output->renderbuffer[i] = NULL;
@@ -667,7 +668,7 @@ drm_output_init_vulkan(struct drm_output *output, struct drm_backend *b)
 		return -1;
 	}
 
-	if (create_renderbuffers(b->gbm, output, ARRAY_LENGTH(output->renderbuffer)) < 0) {
+	if (create_renderbuffers(b->gbm, output) < 0) {
 		weston_log("failed to create dmabufs\n");
 		return -1;
 	}
