@@ -121,4 +121,11 @@
 #define DRM_FORMAT_S416	fourcc_code('S', '4', '1', '6') /* non-subsampled Cb (1) and Cr (2) planes 16 bits per channel */
 #endif
 
+/*
+ * Greyscale
+ */
+#ifndef DRM_FORMAT_Y8
+#define DRM_FORMAT_Y8 fourcc_code('G', 'R', 'E', 'Y') /* 8-bit Y-only */
+#endif
+
 #endif

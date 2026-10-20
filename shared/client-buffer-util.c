@@ -63,6 +63,13 @@ client_buffer_util_fill_buffer_args(struct client_buffer *buf,
 	buf->dmabuf_fd = -1;
 
 	switch (buf->fmt->format) {
+	case DRM_FORMAT_Y8:
+		buf->bytes_per_line[0] = buf->width;
+		buf->strides[0] = get_aligned_stride(buf->bytes_per_line[0],
+						     align_for_gpu);
+		buf->offsets[0] = 0;
+		buf->bytes = buf->strides[0] * buf->height;
+		break;
 	case DRM_FORMAT_RGBX4444:
 	case DRM_FORMAT_RGBA4444:
 	case DRM_FORMAT_BGRX4444:
