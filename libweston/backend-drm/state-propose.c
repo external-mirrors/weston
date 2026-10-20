@@ -1630,6 +1630,22 @@ err:
 	return NULL;
 }
 
+static void
+drm_debug_print_mixed_state(struct drm_output *output)
+{
+	struct drm_device *device = output->device;
+	struct drm_backend *b = device->backend;
+
+	drm_debug(b, "\t[repaint] trying mixed state");
+	if (output->base.disable_planes)
+		drm_debug(b, " [planes disabled for output capture]");
+	if (device->disable_client_buffer_scanout)
+		drm_debug(b, " [client scanout disabled]");
+	if (device->cursors_are_broken)
+		drm_debug(b, " [cursors broken]");
+	drm_debug(b, "\n");
+}
+
 void
 drm_assign_planes(struct weston_output *output_base)
 {
@@ -1671,7 +1687,7 @@ drm_assign_planes(struct weston_output *output_base)
 	}
 
 	if (!state) {
-		drm_debug(b, "\t[repaint] trying mixed state\n");
+		drm_debug_print_mixed_state(output);
 		mode = DRM_OUTPUT_PROPOSE_STATE_MIXED;
 		state = drm_output_propose_state(output_base,
 						 pending_state,
