@@ -4706,6 +4706,7 @@ static void
 planes_binding(struct weston_keyboard *keyboard, const struct timespec *time,
 	       uint32_t key, void *data)
 {
+	struct weston_output *output_base;
 	struct drm_backend *b = data;
 	struct drm_device *device = b->drm;
 
@@ -4717,7 +4718,17 @@ planes_binding(struct weston_keyboard *keyboard, const struct timespec *time,
 		device->disable_client_buffer_scanout ^= true;
 		break;
 	default:
-		break;
+		return;
+	}
+
+	/* Make sure we don't reuse old state next repaint */
+	wl_list_for_each(output_base, &b->compositor->output_list, link) {
+		struct drm_output *output = to_drm_output(output_base);
+
+		if (!output)
+			continue;
+
+		output->force_rebuild_state = true;
 	}
 }
 
