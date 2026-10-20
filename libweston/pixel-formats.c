@@ -130,6 +130,12 @@
  */
 static const struct pixel_format_info pixel_format_table[] = {
 	{
+		DRM_FORMAT(Y8),
+		COLOR_MODEL(YUV),
+		.bpp = 8,
+		PIXMAN_FMT(g8),
+	},
+	{
 		DRM_FORMAT(R8),
 		COLOR_MODEL(RGB),
 		BITS_RGBA_FIXED(8, 0, 0, 0),

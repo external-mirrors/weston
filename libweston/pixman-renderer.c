@@ -82,8 +82,29 @@ struct pixman_renderer {
 	pixman_image_t *debug_color;
 	struct weston_binding *debug_binding;
 
+	/* Lookup table for greyscale images */
+	pixman_indexed_t g8_table;
+
 	struct wl_signal destroy_signal;
 };
+
+static void
+init_g8_indexed_table(struct pixman_renderer *renderer)
+{
+	pixman_indexed_t *table = &renderer->g8_table;
+	unsigned int i;
+
+	/* rgba[]: forward lookup for sampling — converts 8-bit
+	 * grayscale index to opaque ARGB (R=G=B=index). */
+	for (i = 0; i < 256; i++)
+		table->rgba[i] = (i << 16) | (i << 8) | i | 0xFF000000;
+
+	/* ent[]: reverse lookup for compositing into g8 targets —
+	 * converts 15-bit luminance (from pixman's internal
+	 * CONVERT_RGB24_TO_Y15) back to an 8-bit grayscale index. */
+	for (i = 0; i < 32768; i++)
+		table->ent[i] = i >> 7;
+}
 
 static inline struct pixman_output_state *
 get_output_state(struct weston_output *output)
@@ -199,6 +220,7 @@ composite_clipped(struct weston_output *output,
 		  pixman_filter_t filter,
 		  pixman_region32_t *src_clip)
 {
+	struct pixman_renderer *renderer = get_renderer(output->compositor);
 	int n_box;
 	pixman_box32_t *boxes;
 	int32_t dest_width;
@@ -244,6 +266,9 @@ composite_clipped(struct weston_output *output,
 					boxes[i].x2 - boxes[i].x1,
 					boxes[i].y2 - boxes[i].y1,
 					(uint32_t *)ptr, src_stride);
+
+		if (src_format == PIXMAN_g8)
+			pixman_image_set_indexed(boximg, &renderer->g8_table);
 
 		pixman_transform_translate(&adj, NULL,
 					   pixman_int_to_fixed(-boxes[i].x1),
@@ -536,7 +561,8 @@ copy_to_hw_buffer(struct weston_output *output, pixman_region32_t *region)
 }
 
 static void
-pixman_renderer_do_capture(struct weston_buffer *into, pixman_image_t *from)
+pixman_renderer_do_capture(struct pixman_renderer *renderer,
+			   struct weston_buffer *into, pixman_image_t *from)
 {
 	struct wl_shm_buffer *shm = into->shm_buffer;
 	pixman_image_t *dest;
@@ -551,6 +577,9 @@ pixman_renderer_do_capture(struct weston_buffer *into, pixman_image_t *from)
 					wl_shm_buffer_get_data(shm),
 					into->stride);
 	abort_oom_if_null(dest);
+
+	if (into->pixel_format->pixman_format == PIXMAN_g8)
+		pixman_image_set_indexed(dest, &renderer->g8_table);
 
 	pixman_image_composite32(PIXMAN_OP_SRC, from, NULL /* mask */, dest,
 				 0, 0, /* src_x, src_y */
@@ -569,6 +598,7 @@ pixman_renderer_do_capture_tasks(struct weston_output *output,
 				 pixman_image_t *from,
 				 const struct pixel_format_info *pfmt)
 {
+	struct pixman_renderer *renderer = get_renderer(output->compositor);
 	int width = pixman_image_get_width(from);
 	int height = pixman_image_get_height(from);
 	struct weston_capture_task *ct;
@@ -589,7 +619,7 @@ pixman_renderer_do_capture_tasks(struct weston_output *output,
 			continue;
 		}
 
-		pixman_renderer_do_capture(buffer, from);
+		pixman_renderer_do_capture(renderer, buffer, from);
 		weston_capture_task_retire_complete(ct);
 	}
 }
@@ -688,6 +718,7 @@ pixman_renderer_surface_set_color(struct weston_surface *es,
 static void
 pixman_renderer_attach(struct weston_paint_node *pnode)
 {
+	struct pixman_renderer *renderer = get_renderer(pnode->output->compositor);
 	struct weston_surface *es = pnode->surface;
 	struct weston_buffer *buffer = pnode->surface->buffer_ref.buffer;
 	struct pixman_surface_state *ps = get_surface_state(es);
@@ -756,6 +787,9 @@ pixman_renderer_attach(struct weston_paint_node *pnode)
 		buffer->width, buffer->height,
 		wl_shm_buffer_get_data(shm_buffer),
 		buffer->stride);
+
+	if (pixel_info->pixman_format == PIXMAN_g8)
+		pixman_image_set_indexed(ps->image, &renderer->g8_table);
 
 	ps->buffer_destroy_listener.notify =
 		buffer_state_handle_buffer_destroy;
@@ -885,6 +919,7 @@ pixman_renderer_create_renderbuffer(struct weston_output *output,
 				    weston_renderbuffer_discarded_func discarded_cb,
 				    void *user_data)
 {
+	struct pixman_renderer *renderer = get_renderer(output->compositor);
 	struct pixman_output_state *po = get_output_state(output);
 	struct pixman_renderbuffer *renderbuffer;
 
@@ -904,6 +939,9 @@ pixman_renderer_create_renderbuffer(struct weston_output *output,
 							  output->current_mode->width,
 							  output->current_mode->height,
 							  NULL, 0);
+
+	if (format->pixman_format == PIXMAN_g8)
+		pixman_image_set_indexed(renderbuffer->image, &renderer->g8_table);
 
 	if (!renderbuffer->image) {
 		free(renderbuffer);
@@ -982,6 +1020,7 @@ pixman_renderer_resize_output(struct weston_output *output,
 			      const struct weston_size *fb_size,
 			      const struct weston_geometry *area)
 {
+	struct pixman_renderer *renderer = get_renderer(output->compositor);
 	struct pixman_output_state *po = get_output_state(output);
 
 	check_compositing_area(fb_size, area);
@@ -1027,6 +1066,9 @@ pixman_renderer_resize_output(struct weston_output *output,
 		pixman_image_create_bits_no_clear(po->shadow_format->pixman_format,
 						  fb_size->width, fb_size->height,
 						  NULL, 0);
+
+	if (po->shadow_format->pixman_format == PIXMAN_g8)
+		pixman_image_set_indexed(po->shadow_image, &renderer->g8_table);
 
 	weston_output_update_capture_info(output,
 					  WESTON_OUTPUT_CAPTURE_SOURCE_BLENDING,
@@ -1118,6 +1160,8 @@ pixman_renderer_init(struct weston_compositor *ec)
 
 		wl_display_add_shm_format(ec->wl_display, pixel_info->format);
 	}
+
+	init_g8_indexed_table(renderer);
 
 	wl_signal_init(&renderer->destroy_signal);
 
