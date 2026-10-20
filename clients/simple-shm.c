@@ -97,9 +97,14 @@ struct window {
 	bool needs_update_buffer;
 };
 
+#ifndef WL_SHM_FORMAT_Y8
+#define WL_SHM_FORMAT_Y8	0x59455247
+#endif
+
 static const struct format shm_formats[] = {
 	/* 8 bpp formats */
 	FMT(R8,             8, 0x00, 0x55, 0xaa, 0xff ),
+	FMT(Y8,             8, 0x00, 0x55, 0xaa, 0xff ),
 
 	/* 16 bpp formats */
 	FMT(R16,           16, 0x0000, 0x5555, 0xaaaa, 0xffff ),
@@ -582,6 +587,7 @@ paint_format(void *image, const struct format *format, int width, int height)
 
 	switch (format->code) {
 	case WL_SHM_FORMAT_R8:
+	case WL_SHM_FORMAT_Y8:
 		for (i = 0; i < height; i++) {
 			color = GET_COLOR(i);
 			for (j = 0; j < width; j++)
@@ -894,7 +900,7 @@ usage(const char *program)
 		"  -F, --format <format>  Test format (see list below)\n"
 		"\n"
 		"RGB formats:\n"
-		"  -  8 bpp: r8.\n"
+		"  -  8 bpp: r8, y8.\n"
 		"\n"
 		"  - 16 bpp: r16, gr88, rg88, rgb565, bgr565, xrgb4444, argb4444, xbgr4444,\n"
 		"            abgr4444, rgbx4444, rgba4444, bgrx4444, bgra4444, xrgb1555,\n"
