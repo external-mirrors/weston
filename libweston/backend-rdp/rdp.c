@@ -2098,14 +2098,16 @@ rdp_backend_create(struct weston_compositor *compositor,
 			b->tls_enabled = 1;
 			rdp_debug(b, "TLS support activated\n");
 		}
-		if(b->tls_enabled && b->nla_ntlm_db) {
-			if (access(b->nla_ntlm_db, F_OK) == 0) {
-				b->nla_enabled = 1;
-				rdp_debug(b, "NLA support activated\n");
-			} else {
-				b->nla_enabled = 0;
-				rdp_debug(b, "NLA credential file ('%s') not found, fall back to TLS Security.\n", b->nla_ntlm_db);
+		if (b->tls_enabled && b->nla_ntlm_db) {
+			if (access(b->nla_ntlm_db, F_OK) != 0) {
+				weston_log("RDP refusing to start: "
+					   "cannot access nla-ntlm-db "
+					   "'%s': %s\n", b->nla_ntlm_db,
+					   strerror(errno));
+				goto err_free_strings;
 			}
+			b->nla_enabled = 1;
+			rdp_debug(b, "NLA support activated\n");
 		}
 	}
 
