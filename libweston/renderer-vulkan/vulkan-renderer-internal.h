@@ -115,6 +115,11 @@ struct vulkan_pipeline_requirements
 	 * Must be zero otherwise to avoid creating unnecessary pipelines. */
 	VkSampler immutable_sampler;
 	VkFormat ycbcr_format;
+	VkFilter sampler_filter;
+	VkSamplerYcbcrModelConversion ycbcr_model;
+	VkSamplerYcbcrRange ycbcr_range;
+	VkChromaLocation x_chroma_location;
+	VkChromaLocation y_chroma_location;
 };
 
 struct vulkan_pipeline_config {

@@ -1489,6 +1489,73 @@ vulkan_pipeline_texture_variant_can_be_premult(enum vulkan_pipeline_texture_vari
 	return true;
 }
 
+static VkSamplerYcbcrModelConversion
+get_vulkan_ycbcr_model(struct vulkan_renderer *vr,
+		       enum weston_color_matrix_coef coef)
+{
+	switch (coef) {
+	case WESTON_COLOR_MATRIX_COEF_IDENTITY:
+		return VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
+	case WESTON_COLOR_MATRIX_COEF_BT601:
+		return VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_601;
+	case WESTON_COLOR_MATRIX_COEF_BT709:
+		return VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_709;
+	case WESTON_COLOR_MATRIX_COEF_BT2020:
+		return VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_2020;
+	default:
+		weston_assert_not_reached(vr->compositor, "unknown color matrix coef");
+	}
+}
+
+static VkSamplerYcbcrRange
+get_vulkan_ycbcr_range(struct vulkan_renderer *vr,
+		       enum weston_color_quant_range range)
+{
+	switch (range) {
+	case WESTON_COLOR_QUANT_RANGE_FULL:
+		return VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
+	case WESTON_COLOR_QUANT_RANGE_LIMITED:
+		return VK_SAMPLER_YCBCR_RANGE_ITU_NARROW;
+	default:
+		weston_assert_not_reached(vr->compositor, "invalid quantization range");
+	}
+}
+
+static void
+get_vulkan_chroma_location(struct vulkan_renderer *vr,
+			   enum weston_ycbcr_chroma_location loc,
+			   VkChromaLocation *x_out, VkChromaLocation *y_out)
+{
+	/* Vulkan values as listed in the color-representation-v1 spec */
+
+	switch (loc) {
+	case WESTON_YCBCR_CHROMA_LOCATION_TYPE_0: /* x=0, y=0.5 */
+		*x_out = VK_CHROMA_LOCATION_COSITED_EVEN;
+		*y_out = VK_CHROMA_LOCATION_MIDPOINT;
+		return;
+	case WESTON_YCBCR_CHROMA_LOCATION_TYPE_1:
+	case WESTON_YCBCR_CHROMA_LOCATION_TYPE_5: /* no Vulkan equivalent listed */
+	case WESTON_YCBCR_CHROMA_LOCATION_UNSET:
+		*x_out = VK_CHROMA_LOCATION_MIDPOINT;
+		*y_out = VK_CHROMA_LOCATION_MIDPOINT;
+		return;
+	case WESTON_YCBCR_CHROMA_LOCATION_TYPE_2:
+		*x_out = VK_CHROMA_LOCATION_COSITED_EVEN;
+		*y_out = VK_CHROMA_LOCATION_COSITED_EVEN;
+		return;
+	case WESTON_YCBCR_CHROMA_LOCATION_TYPE_3:
+		*x_out = VK_CHROMA_LOCATION_MIDPOINT;
+		*y_out = VK_CHROMA_LOCATION_COSITED_EVEN;
+		return;
+	case WESTON_YCBCR_CHROMA_LOCATION_TYPE_4: /* no Vulkan equivalent listed */
+		*x_out = VK_CHROMA_LOCATION_COSITED_EVEN;
+		*y_out = VK_CHROMA_LOCATION_MIDPOINT;
+		return;
+	default:
+		weston_assert_not_reached(vr->compositor, "invalid chroma location");
+	}
+}
+
 static bool
 vulkan_pipeline_config_init_for_paint_node(struct vulkan_pipeline_config *pconf,
 					   struct weston_paint_node *pnode)
@@ -1515,8 +1582,24 @@ vulkan_pipeline_config_init_for_paint_node(struct vulkan_pipeline_config *pconf,
 	};
 
 	if (vs->draw_state && vs->draw_state->ycbcr_conv) {
+		struct weston_color_representation color_rep;
+		VkChromaLocation x_chroma_location;
+		VkChromaLocation y_chroma_location;
+
+		color_rep = weston_fill_color_representation(&pnode->surface->color_representation,
+							     buffer->pixel_format);
+
+		get_vulkan_chroma_location(vr, color_rep.chroma_location,
+					   &x_chroma_location,
+					   &y_chroma_location);
+
 		pconf->req.has_immutable_sampler = true;
 		pconf->req.ycbcr_format = buffer->pixel_format->vulkan_format;
+		pconf->req.ycbcr_model = get_vulkan_ycbcr_model(vr, color_rep.matrix_coefficients);
+		pconf->req.ycbcr_range = get_vulkan_ycbcr_range(vr, color_rep.quant_range);
+		pconf->req.sampler_filter = pnode->needs_filtering ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
+		pconf->req.x_chroma_location = x_chroma_location;
+		pconf->req.y_chroma_location = y_chroma_location;
 		pconf->req.immutable_sampler = pnode->needs_filtering ? vs->draw_state->sampler_linear : vs->draw_state->sampler_nearest;
 	}
 
@@ -2681,73 +2764,6 @@ vulkan_renderer_repaint_output(struct weston_output *output,
 	vo->frame_index = (vo->frame_index + 1) % vo->num_frames;
 
 	fr->frame_id = vr->frame_seq++;
-}
-
-static VkSamplerYcbcrModelConversion
-get_vulkan_ycbcr_model(struct vulkan_renderer *vr,
-		       enum weston_color_matrix_coef coef)
-{
-	switch (coef) {
-	case WESTON_COLOR_MATRIX_COEF_IDENTITY:
-		return VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
-	case WESTON_COLOR_MATRIX_COEF_BT601:
-		return VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_601;
-	case WESTON_COLOR_MATRIX_COEF_BT709:
-		return VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_709;
-	case WESTON_COLOR_MATRIX_COEF_BT2020:
-		return VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_2020;
-	default:
-		weston_assert_not_reached(vr->compositor, "unknown color matrix coef");
-	}
-}
-
-static VkSamplerYcbcrRange
-get_vulkan_ycbcr_range(struct vulkan_renderer *vr,
-		       enum weston_color_quant_range range)
-{
-	switch (range) {
-	case WESTON_COLOR_QUANT_RANGE_FULL:
-		return VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
-	case WESTON_COLOR_QUANT_RANGE_LIMITED:
-		return VK_SAMPLER_YCBCR_RANGE_ITU_NARROW;
-	default:
-		weston_assert_not_reached(vr->compositor, "invalid quantization range");
-	}
-}
-
-static void
-get_vulkan_chroma_location(struct vulkan_renderer *vr,
-			   enum weston_ycbcr_chroma_location loc,
-			   VkChromaLocation *x_out, VkChromaLocation *y_out)
-{
-	/* Vulkan values as listed in the color-representation-v1 spec */
-
-	switch (loc) {
-	case WESTON_YCBCR_CHROMA_LOCATION_TYPE_0: /* x=0, y=0.5 */
-		*x_out = VK_CHROMA_LOCATION_COSITED_EVEN;
-		*y_out = VK_CHROMA_LOCATION_MIDPOINT;
-		return;
-	case WESTON_YCBCR_CHROMA_LOCATION_TYPE_1:
-	case WESTON_YCBCR_CHROMA_LOCATION_TYPE_5: /* no Vulkan equivalent listed */
-	case WESTON_YCBCR_CHROMA_LOCATION_UNSET:
-		*x_out = VK_CHROMA_LOCATION_MIDPOINT;
-		*y_out = VK_CHROMA_LOCATION_MIDPOINT;
-		return;
-	case WESTON_YCBCR_CHROMA_LOCATION_TYPE_2:
-		*x_out = VK_CHROMA_LOCATION_COSITED_EVEN;
-		*y_out = VK_CHROMA_LOCATION_COSITED_EVEN;
-		return;
-	case WESTON_YCBCR_CHROMA_LOCATION_TYPE_3:
-		*x_out = VK_CHROMA_LOCATION_MIDPOINT;
-		*y_out = VK_CHROMA_LOCATION_COSITED_EVEN;
-		return;
-	case WESTON_YCBCR_CHROMA_LOCATION_TYPE_4: /* no Vulkan equivalent listed */
-		*x_out = VK_CHROMA_LOCATION_COSITED_EVEN;
-		*y_out = VK_CHROMA_LOCATION_MIDPOINT;
-		return;
-	default:
-		weston_assert_not_reached(vr->compositor, "invalid chroma location");
-	}
 }
 
 static void
