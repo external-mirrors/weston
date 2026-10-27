@@ -250,6 +250,7 @@ static const uint32_t pixman_format_must_pass[] = {
 	DRM_FORMAT_ARGB2101010,
 	DRM_FORMAT_XBGR2101010,
 	DRM_FORMAT_ABGR2101010,
+	DRM_FORMAT_Y8,
 };
 
 static const struct setup_args my_setup_args[] = {
@@ -1757,6 +1758,42 @@ p016_create_buffer(struct client *client,
 	return buf;
 }
 
+static struct client_buffer *
+y8_create_buffer(struct client *client,
+		 uint32_t drm_format,
+		 enum buffer_type type,
+		 enum weston_buffer_restriction restriction,
+		 pixman_image_t *rgb_image)
+{
+	struct image_header src = image_header_from(rgb_image);
+	struct client_buffer_create_data args = create_init(drm_format, type, &src,
+							    restriction);
+	struct client_buffer *buf;
+	int x, y;
+
+	test_assert_true(drm_format == DRM_FORMAT_Y8);
+
+	buf = client_buffer_create(client, &args);
+	if (!buf)
+		return NULL;
+
+	client_buffer_util_maybe_sync_dmabuf_start(buf);
+	for (y = 0; y < src.height; y++) {
+		uint8_t *dst_row = (uint8_t*) buf->data + src.width * y;
+		uint32_t *src_row = image_header_get_row_u32(&src, y);
+
+		for (x = 0; x < src.width; x++) {
+			/* Use green as a substitute for luma */
+			uint8_t g = (src_row[x] >> 8) & 0xff;
+
+			dst_row[x] = g;
+		}
+	}
+	client_buffer_util_maybe_sync_dmabuf_end(buf);
+
+	return buf;
+}
+
 static void
 show_window_with_client_buffer(struct client *client, struct client_buffer *buf)
 {
@@ -1834,6 +1871,7 @@ static const struct client_buffer_case client_buffer_cases[] = {
 	{ FMT(P010), 5, p016_create_buffer },
 	{ FMT(P012), 5, p016_create_buffer },
 	{ FMT(P016), 5, p016_create_buffer },
+	{ FMT(Y8), 6, y8_create_buffer },
 #undef FMT
 };
 
