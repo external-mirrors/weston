@@ -1455,6 +1455,7 @@ kiosk_shell_destroy(struct wl_listener *listener, void *data)
 
 	weston_desktop_destroy(shell->desktop);
 
+	weston_config_destroy(shell->config);
 	free(shell);
 }
 
