@@ -236,6 +236,22 @@ static const uint32_t vulkan_dmabuf_format_must_pass[] = {
 	DRM_FORMAT_P016,
 };
 
+static const uint32_t pixman_format_must_pass[] = {
+	DRM_FORMAT_RGB565,
+	DRM_FORMAT_RGBX8888,
+	DRM_FORMAT_RGBA8888,
+	DRM_FORMAT_BGRX8888,
+	DRM_FORMAT_BGRA8888,
+	DRM_FORMAT_XRGB8888,
+	DRM_FORMAT_ARGB8888,
+	DRM_FORMAT_XBGR8888,
+	DRM_FORMAT_ABGR8888,
+	DRM_FORMAT_XRGB2101010,
+	DRM_FORMAT_ARGB2101010,
+	DRM_FORMAT_XBGR2101010,
+	DRM_FORMAT_ABGR2101010,
+};
+
 static const struct setup_args my_setup_args[] = {
 	{
 		.meta.name = "GL",
@@ -279,6 +295,16 @@ static const struct setup_args my_setup_args[] = {
 		.dmabuf_format_num = ARRAY_LENGTH(gl_dmabuf_format_must_pass),
 		.gl_force_import_yuv_fallback = false,
 		.use_restricted_buffer = true,
+	},
+	{
+		.meta.name = "Pixman",
+		.renderer = WESTON_RENDERER_PIXMAN,
+		.logging_scopes = "log",
+		.shm_format_must_pass = pixman_format_must_pass,
+		.shm_format_num = ARRAY_LENGTH(pixman_format_must_pass),
+		.dmabuf_format_must_pass = NULL,
+		.dmabuf_format_num = 0,
+		.use_restricted_buffer = false,
 	},
 };
 
