@@ -1894,7 +1894,7 @@ format_must_pass(uint32_t drm_format, const uint32_t *must_pass, const size_t nu
 {
 #if WESTON_TEST_SKIP_IS_FAILURE
 	if (!must_pass || num == 0)
-		return true;
+		return false;
 
 	for (size_t i = 0; i < num; i++)
 		if (must_pass[i] == drm_format)
