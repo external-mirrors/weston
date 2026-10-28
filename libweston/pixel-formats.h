@@ -120,10 +120,6 @@ struct pixel_format_info {
 	/** Pixman data type, if it agrees exactly with the wl_shm format */
 	pixman_format_code_t pixman_format;
 
-	/** If set, this format can be used with the legacy drmModeAddFB()
-	 *  function (not AddFB2), using this and the bpp member. */
-	int addfb_legacy_depth;
-
 	/** Number of bits required to store a single pixel, for
 	 *  single-planar formats. */
 	int bpp;

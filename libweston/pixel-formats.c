@@ -295,7 +295,6 @@ static const struct pixel_format_info pixel_format_table[] = {
 		DRM_FORMAT(XRGB1555),
 		COLOR_MODEL(RGB),
 		BITS_RGBA_FIXED(5, 5, 5, 0),
-		.addfb_legacy_depth = 15,
 		.bpp = 16,
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 		VULKAN_FORMAT(VK_FORMAT_A1R5G5B5_UNORM_PACK16),
@@ -374,7 +373,6 @@ static const struct pixel_format_info pixel_format_table[] = {
 		DRM_FORMAT(RGB565),
 		COLOR_MODEL(RGB),
 		BITS_RGBA_FIXED(5, 6, 5, 0),
-		.addfb_legacy_depth = 16,
 		.bpp = 16,
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 		GL_FORMAT_INFO(GL_RGB565, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, RGB1),
@@ -418,7 +416,6 @@ static const struct pixel_format_info pixel_format_table[] = {
 		DRM_FORMAT(XRGB8888),
 		COLOR_MODEL(RGB),
 		BITS_RGBA_FIXED(8, 8, 8, 0),
-		.addfb_legacy_depth = 24,
 		.bpp = 32,
 		GL_FORMAT_INFO(GL_BGRA8_EXT, GL_BGRA_EXT, GL_UNSIGNED_BYTE, RGB1),
 		GL_INTERNALFORMAT(GL_RGB8),
@@ -436,7 +433,6 @@ static const struct pixel_format_info pixel_format_table[] = {
 		COLOR_MODEL(RGB),
 		BITS_RGBA_FIXED(8, 8, 8, 8),
 		.opaque_substitute = DRM_FORMAT_XRGB8888,
-		.addfb_legacy_depth = 32,
 		.bpp = 32,
 		GL_FORMAT_INFO(GL_BGRA8_EXT, GL_BGRA_EXT, GL_UNSIGNED_BYTE, RGBA),
 		GL_INTERNALFORMAT(GL_RGBA8),
@@ -542,7 +538,6 @@ static const struct pixel_format_info pixel_format_table[] = {
 		DRM_FORMAT(XRGB2101010),
 		COLOR_MODEL(RGB),
 		BITS_RGBA_FIXED(10, 10, 10, 0),
-		.addfb_legacy_depth = 30,
 		.bpp = 32,
 		GL_INTERNALFORMAT(GL_RGB10_A2),
 #if __BYTE_ORDER == __LITTLE_ENDIAN
