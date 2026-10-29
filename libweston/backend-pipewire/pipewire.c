@@ -1162,17 +1162,9 @@ out:
 	/* We didn't have anywhere to render to, so capture tasks could be
 	 * left dangling. Shoot them down.
 	 */
-	if (!rendered && weston_output_has_renderer_capture_tasks(base)) {
-		int width = base->current_mode->width;
-		int height = base->current_mode->height;
-		struct weston_capture_task *ct;
-
-		while ((ct = weston_output_pull_capture_task(base,
-							     WESTON_OUTPUT_CAPTURE_SOURCE_FRAMEBUFFER,
-							     width, height,
-							     ec->read_format,
-							     NULL)))
-			weston_capture_task_retire_failed(ct, "No pipewire buffer");
+	if (!rendered) {
+		weston_output_discard_capture_tasks(base, WESTON_OUTPUT_CAPTURE_SOURCE_FRAMEBUFFER,
+						    "No pipewire buffer");
 	}
 
 	pixman_region32_fini(&damage);

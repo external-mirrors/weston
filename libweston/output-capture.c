@@ -549,6 +549,37 @@ weston_output_has_renderer_capture_tasks(struct weston_output *output)
 	return false;
 }
 
+/** Fail all capture tasks for the source
+ *
+ * Calls weston_capture_task_retire_failed() for each pending capture task
+ * on the given source.
+ *
+ * This is used by backends that have to go through the repaint cycle, but
+ * might not be able to render at all because they have no framebuffer
+ * available for example.
+ *
+ * \param output The output whose tasks to filter through.
+ * \param src The capture source for which to discard tasks.
+ * \param err_msg Human-readable error message delivered to the client.
+ */
+WL_EXPORT void
+weston_output_discard_capture_tasks(struct weston_output *output,
+				    enum weston_output_capture_source src,
+				    const char *err_msg)
+{
+	struct weston_output_capture_info *ci = output->capture_info;
+	struct weston_capture_task *ct, *tmp;
+
+	wl_list_for_each_safe(ct, tmp, &ci->pending_capture_list, link) {
+		assert(ct->owner->output == output);
+
+		if (ct->owner->pixel_source != src)
+			continue;
+
+		weston_capture_task_retire_failed(ct, err_msg);
+	}
+}
+
 /** Get the destination buffer */
 WL_EXPORT struct weston_buffer *
 weston_capture_task_get_buffer(struct weston_capture_task *ct)
