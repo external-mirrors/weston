@@ -1600,7 +1600,6 @@ struct weston_compositor {
 	struct weston_idalloc *color_transform_id_generator;
 
 	struct weston_renderer *renderer;
-	const struct pixel_format_info *read_format;
 
 	/* Pointer to the first backend on backend_list */
 	struct weston_backend *primary_backend;

@@ -1306,7 +1306,7 @@ create_capture_task_shm_state(struct gl_renderer *gr,
 
 	glGenBuffers(1, &shm_state.pbo);
 
-	shm_state.stride = (gr->compositor->read_format->bpp / 8) * rect->width;
+	shm_state.stride = (gr->read_pixels_base_format->bpp / 8) * rect->width;
 	shm_state.height = rect->height;
 	shm_state.reverse = !gl_extensions_has(gr, EXTENSION_ANGLE_PACK_REVERSE_ROW_ORDER);
 
@@ -1602,14 +1602,14 @@ gl_renderer_do_capture_tasks(struct gl_renderer *gr,
 
 	switch (source) {
 	case WESTON_OUTPUT_CAPTURE_SOURCE_FRAMEBUFFER:
-		format = output->compositor->read_format;
+		format = gr->read_pixels_base_format;
 		rect = go->area;
 		/* Because glReadPixels has bottom-left origin */
 		if (is_y_flipped(go))
 			rect.y = go->fb_size.height - go->area.y - go->area.height;
 		break;
 	case WESTON_OUTPUT_CAPTURE_SOURCE_FULL_FRAMEBUFFER:
-		format = output->compositor->read_format;
+		format = gr->read_pixels_base_format;
 		rect.x = 0;
 		rect.y = 0;
 		rect.width = go->fb_size.width;
@@ -3473,7 +3473,7 @@ gl_renderer_repaint_output(struct weston_output *output,
 	if (rb->type == RENDERBUFFER_BUFFER && rb->buffer.data) {
 		uint32_t *pixels = rb->buffer.data;
 		int width = go->fb_size.width;
-		int stride = width * (compositor->read_format->bpp >> 3);
+		int stride = width * (gr->read_pixels_base_format->bpp >> 3);
 		pixman_box32_t extents;
 		struct weston_geometry rect = {
 			.x = go->area.x,
@@ -3503,7 +3503,7 @@ gl_renderer_repaint_output(struct weston_output *output,
 			pixels += extents.x1;
 		}
 
-		gl_renderer_do_read_pixels(gr, go, compositor->read_format,
+		gl_renderer_do_read_pixels(gr, go, gr->read_pixels_base_format,
 					   pixels, stride, &rect);
 
 		if (gr->gl_version >= gl_version(3, 0))
@@ -4794,13 +4794,13 @@ gl_renderer_resize_output(struct weston_output *output,
 	weston_output_update_capture_info(output,
 					  WESTON_OUTPUT_CAPTURE_SOURCE_FRAMEBUFFER,
 					  area->width, area->height,
-					  output->compositor->read_format,
+					  gr->read_pixels_base_format,
 					  NULL);
 
 	weston_output_update_capture_info(output,
 					  WESTON_OUTPUT_CAPTURE_SOURCE_FULL_FRAMEBUFFER,
 					  fb_size->width, fb_size->height,
-					  output->compositor->read_format,
+					  gr->read_pixels_base_format,
 					  NULL);
 
 	/* Discard renderbuffers as a last step in order to emit discarded
@@ -5671,9 +5671,9 @@ gl_renderer_setup(struct weston_compositor *ec)
 				 "glEGLImageTargetTexStorageEXT");
 
 	if (gl_extensions_has(gr, EXTENSION_EXT_READ_FORMAT_BGRA))
-		ec->read_format = pixel_format_get_info(DRM_FORMAT_ARGB8888);
+		gr->read_pixels_base_format = pixel_format_get_info(DRM_FORMAT_ARGB8888);
 	else
-		ec->read_format = pixel_format_get_info(DRM_FORMAT_ABGR8888);
+		gr->read_pixels_base_format = pixel_format_get_info(DRM_FORMAT_ABGR8888);
 
 	if (gr->gl_version < gl_version(3, 0) &&
 	    !gl_extensions_has(gr, EXTENSION_EXT_UNPACK_SUBIMAGE)) {
@@ -5818,7 +5818,7 @@ gl_renderer_setup(struct weston_compositor *ec)
 		   gl_version_major(gr->gl_version),
 		   gl_version_minor(gr->gl_version));
 	weston_log_continue(STAMP_SPACE "read-back format: %s\n",
-			    ec->read_format->drm_format_name);
+			    gr->read_pixels_base_format->drm_format_name);
 	weston_log_continue(STAMP_SPACE "glReadPixels supports y-flip: %s\n",
 			    yesno(gl_extensions_has(gr, EXTENSION_ANGLE_PACK_REVERSE_ROW_ORDER)));
 	weston_log_continue(STAMP_SPACE "glReadPixels supports PBO: %s\n",

@@ -455,6 +455,8 @@ struct gl_renderer {
 	unsigned int supported_rendering_formats_count;
 	const struct pixel_format_info **supported_rendering_formats;
 
+	const struct pixel_format_info *read_pixels_base_format;
+
 	uint64_t egl_client_extensions;
 	uint64_t egl_device_extensions;
 	uint64_t egl_display_extensions;
