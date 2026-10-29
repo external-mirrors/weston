@@ -75,7 +75,7 @@ static const struct setup_args my_setup_args[] = {
 		.meta.name = "Vulkan",
 		.renderer = WESTON_RENDERER_VULKAN,
 		.buffer_type = CLIENT_BUFFER_TYPE_SHM,
-		.expected_drm_format = DRM_FORMAT_ARGB8888,
+		.expected_drm_format = DRM_FORMAT_XRGB8888,
 	},
 };
 

@@ -1457,11 +1457,11 @@ vulkan_renderer_do_capture_tasks(struct vulkan_renderer *vr,
 
 	switch (source) {
 	case WESTON_OUTPUT_CAPTURE_SOURCE_FRAMEBUFFER:
-		pixel_format = output->compositor->read_format;
+		pixel_format = vo->pixel_format;
 		rect = vo->area;
 		break;
 	case WESTON_OUTPUT_CAPTURE_SOURCE_FULL_FRAMEBUFFER:
-		pixel_format = output->compositor->read_format;
+		pixel_format = vo->pixel_format;
 		rect.x = 0;
 		rect.y = 0;
 		rect.width = vo->fb_size.width;
@@ -2592,7 +2592,7 @@ vulkan_renderer_repaint_output(struct weston_output *output,
 	if (rb->buffer) {
 		uint32_t *pixels = rb->buffer;
 		int width = vo->fb_size.width;
-		int stride = width * (compositor->read_format->bpp >> 3);
+		int stride = width * (vo->pixel_format->bpp >> 3);
 		pixman_box32_t extents;
 
 		assert(rb->stride == stride);
@@ -2608,7 +2608,7 @@ vulkan_renderer_repaint_output(struct weston_output *output,
 		};
 
 		vulkan_renderer_do_read_pixels(vr, im->image, expected_layout,
-					       vo, compositor->read_format,
+					       vo, vo->pixel_format,
 					       pixels, stride, rect.x, rect.y, &rect);
 	}
 
@@ -3739,13 +3739,13 @@ vulkan_renderer_resize_output(struct weston_output *output,
 	weston_output_update_capture_info(output,
 					  WESTON_OUTPUT_CAPTURE_SOURCE_FRAMEBUFFER,
 					  area->width, area->height,
-					  output->compositor->read_format,
+					  vo->pixel_format,
 					  NULL);
 
 	weston_output_update_capture_info(output,
 					  WESTON_OUTPUT_CAPTURE_SOURCE_FULL_FRAMEBUFFER,
 					  fb_size->width, fb_size->height,
-					  output->compositor->read_format,
+					  vo->pixel_format,
 					  NULL);
 
 	if (!vulkan_renderer_discard_renderbuffers(vo, false))
@@ -4136,13 +4136,13 @@ vulkan_renderer_output_surface_create(struct weston_output *output,
 	weston_output_update_capture_info(output,
 					  WESTON_OUTPUT_CAPTURE_SOURCE_FRAMEBUFFER,
 					  area->width, area->height,
-					  output->compositor->read_format,
+					  vo->pixel_format,
 					  NULL);
 
 	weston_output_update_capture_info(output,
 					  WESTON_OUTPUT_CAPTURE_SOURCE_FULL_FRAMEBUFFER,
 					  fb_size->width, fb_size->height,
-					  output->compositor->read_format,
+					  vo->pixel_format,
 					  NULL);
 
 	vulkan_renderer_create_output_frames(output, fb_size, area, MAX_CONCURRENT_FRAMES);
@@ -4179,13 +4179,13 @@ vulkan_renderer_output_surfaceless_create(struct weston_output *output,
 	weston_output_update_capture_info(output,
 					  WESTON_OUTPUT_CAPTURE_SOURCE_FRAMEBUFFER,
 					  area->width, area->height,
-					  output->compositor->read_format,
+					  vo->pixel_format,
 					  NULL);
 
 	weston_output_update_capture_info(output,
 					  WESTON_OUTPUT_CAPTURE_SOURCE_FULL_FRAMEBUFFER,
 					  fb_size->width, fb_size->height,
-					  output->compositor->read_format,
+					  vo->pixel_format,
 					  NULL);
 
 	vulkan_renderer_create_output_frames(output, fb_size, area, MAX_CONCURRENT_FRAMES);
@@ -5034,8 +5034,6 @@ vulkan_renderer_display_create(struct weston_compositor *ec,
 	};
 	result = vkCreateCommandPool(vr->dev, &cmd_pool_create_info, NULL, &vr->cmd_pool);
 	check_vk_success(result, "vkCreateCommandPool");
-
-	ec->read_format = pixel_format_get_info(DRM_FORMAT_ARGB8888);
 
 	create_texture_image_dummy(vr); /* Workaround for solids */
 
