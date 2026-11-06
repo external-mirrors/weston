@@ -223,9 +223,73 @@ use_tc(struct wet_testsuite_data *suite_data)
 	return RESULT_OK;
 }
 
+static struct weston_surface *
+get_tearing_subsurface(struct weston_compositor *compositor)
+{
+	struct weston_surface *main_surf;
+	struct weston_subsurface *sub;
+
+	main_surf = weston_surface_get_main_surface(get_surf(compositor, NULL));
+	wl_list_for_each(sub, &main_surf->subsurface_list, parent_link) {
+		if (sub->surface->tearing_control)
+			return sub->surface;
+	}
+
+	return NULL;
+}
+
+/* Ensure the hint survives the synchronized sub-surface cache */
+static enum test_result_code
+use_tc_sync_subsurface(struct wet_testsuite_data *suite_data)
+{
+	struct client *client;
+	struct wl_surface *child;
+	struct wl_subsurface *sub;
+	struct wp_tearing_control_v1 *tc;
+	struct buffer *buf;
+	pixman_color_t red;
+
+	client = create_client_and_test_surface(100, 50, 100, 100);
+	test_assert_ptr_not_null(client);
+
+	child = wl_compositor_create_surface(client->wl_compositor);
+	sub = wl_subcompositor_get_subsurface(client->wl_subcompositor, child,
+					      client->surface->wl_surface);
+	tc = wp_tearing_control_manager_v1_get_tearing_control(client->tearing_control_manager,
+							       child);
+
+	wp_tearing_control_v1_set_presentation_hint(tc, WP_TEARING_CONTROL_V1_PRESENTATION_HINT_ASYNC);
+	color_rgb888(&red, 255, 0, 0);
+	buf = surface_commit_color(client, child, &red, 50, 50);
+	wl_surface_commit(client->surface->wl_surface);
+	client_roundtrip(client);
+	client_push_breakpoint(client, suite_data, WESTON_TEST_BREAKPOINT_IMMEDIATE,
+			       NULL);
+
+	RUN_INSIDE_BREAKPOINT(client, suite_data) {
+		struct weston_surface *surf;
+
+		test_assert_enum_eq(breakpoint->template_->breakpoint,
+				    WESTON_TEST_BREAKPOINT_IMMEDIATE);
+		surf = get_tearing_subsurface(breakpoint->compositor);
+		test_assert_ptr_not_null(surf);
+
+		test_assert_true(surf->may_tear);
+	}
+
+	wp_tearing_control_v1_destroy(tc);
+	wl_subsurface_destroy(sub);
+	wl_surface_destroy(child);
+	buffer_destroy(buf);
+	client_destroy(client);
+
+	return RESULT_OK;
+}
+
 DECLARE_TEST_LIST(
 	TESTFN(get_two_tc),
 	TESTFN(get_two_tc_safely),
 	TESTFN(use_inert_tc),
 	TESTFN(use_tc),
+	TESTFN(use_tc_sync_subsurface),
 );

@@ -753,6 +753,8 @@ weston_surface_state_merge_from(struct weston_surface_state *dst,
 
 	dst->alpha_modifier = src->alpha_modifier;
 
+	dst->may_tear = src->may_tear;
+
 	dst->status |= src->status;
 	src->status = WESTON_SURFACE_CLEAN;
 }
