@@ -187,26 +187,26 @@ weston_assert_fail_(const struct weston_compositor *compositor, const char *fmt,
 
 #define weston_assert_bit_set(compositor, value, bit)				\
 ({										\
-	struct weston_compositor *wc_ = compositor;				\
+	struct weston_compositor *wco_ = compositor;				\
 	uint64_t v = (value);							\
 	uint64_t b = (bit);							\
 	bool cond = (v & b) == b;						\
-	weston_assert_true(compositor, is_pow2_64(bit));			\
+	weston_assert_true(wco_, is_pow2_64(bit));				\
 	if (!cond)								\
-		custom_assert_fail_(wc_, "%s:%u: Assertion failed! Bit \"%s\" (%" PRIu64 ") of \"%s\" (0x%" PRIx64 ") is not set.\n",	\
+		custom_assert_fail_(wco_, "%s:%u: Assertion failed! Bit \"%s\" (%" PRIu64 ") of \"%s\" (0x%" PRIx64 ") is not set.\n",	\
 				    __FILE__, __LINE__, #bit, b, #value, v);	\
 	cond;									\
 })
 
 #define weston_assert_bit_not_set(compositor, value, bit)			\
 ({										\
-	struct weston_compositor *wc_ = compositor;				\
+	struct weston_compositor *wco_ = compositor;				\
 	uint64_t v = (value);							\
 	uint64_t b = (bit);							\
 	bool cond = (v & b) == 0;						\
-	weston_assert_true(compositor, is_pow2_64(bit));			\
+	weston_assert_true(wco_, is_pow2_64(bit));				\
 	if (!cond)								\
-		custom_assert_fail_(wc_, "%s:%u: Assertion failed! Bit \"%s\" (%" PRIu64 ") of \"%s\" (0x%" PRIx64 ") is set.\n",	\
+		custom_assert_fail_(wco_, "%s:%u: Assertion failed! Bit \"%s\" (%" PRIu64 ") of \"%s\" (0x%" PRIx64 ") is set.\n",	\
 				    __FILE__, __LINE__, #bit, b, #value, v);	\
 	cond;									\
 })
